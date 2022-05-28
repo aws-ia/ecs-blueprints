@@ -1,0 +1,25 @@
+{
+  "name": "aws-ecs-demo-backend",
+  "version": "1.0.0",
+  "description": "AWS Demo",
+  "author": "Marina Burkhardt",
+  "private": true,
+  "license": "MIT",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./src/app.js --exec  \"npm run lint && node\""
+  },
+  "keywords": [
+    "nodejs",
+    "express"
+  ],
+  "dependencies": {
+    "artillery": "^1.6.2",
+    "aws-sdk": "^2.876.0",
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "swagger-jsdoc": "6.0.0",
+    "swagger-model-validator": "^3.0.20",
+    "swagger-ui-express": "^4.1.6"
+  }
+}

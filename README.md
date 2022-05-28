@@ -1,87 +1,50 @@
 <!-- BEGIN_TF_DOCS -->
-# Creating modules for AWS I&A Organization
+# Amazon ECS Blueprints for Terraform
 
-This repo template is used to seed Terraform Module templates for the [AWS I&A GitHub organization](https://github.com/aws-ia). Usage of this template is allowed per included license. PRs to this template will be considered but are not guaranteed to be included. Consider creating an issue to discuss a feature you want to include before taking the time to create a PR.
-### TL;DR
+## Table of content
 
-1. [install pre-commit](https://pre-commit.com/)
-2. configure pre-commit: `pre-commit install`
-3. install required tools
-    - [tflint](https://github.com/terraform-linters/tflint)
-    - [tfsec](https://aquasecurity.github.io/tfsec/v1.0.11/)
-    - [terraform-docs](https://github.com/terraform-docs/terraform-docs)
-    - [golang](https://go.dev/doc/install) (for macos you can use `brew`)
-    - [coreutils](https://www.gnu.org/software/coreutils/)
+   * [Solution overview](#solution-overview)
+   * [General information](#general-information)
+   * [Solution-based scenarios](#solution-based-scenarios)
+      * [Usage](#usage)
+   * [Security](#security)
+   * [License](#license)
 
-Write code according to [I&A module standards](https://aws-ia.github.io/standards-terraform/)
 
-## Module Documentation
+## Solution overview
 
-**Do not manually update README.md**. `terraform-docs` is used to generate README files. For any instructions an content, please update [.header.md](./.header.md) then simply run `terraform-docs ./` or allow the `pre-commit` to do so.
+This repository contains Terraform code to deploy a solution that is intended to be used to run a demo. It shows how AWS resources can be used across different scenarios to build an architecture that reduces defects while deploying, eases remediation, mitigates deployment risks and improves the flow into production environments while gaining the advantages of a managed underlying infrastructure for containers.
 
-## Terratest
+## General information
 
-Please include tests to validate your examples/<> root modules, at a minimum. This can be accomplished with usually only slight modifications to the [boilerplate test provided in this template](./test/examples\_basic\_test.go)
+The project has been divided into different parts:
+- Application code: the code for the running full-stack application
+    - client: Vue.js code for the frontend application
+    - server: Node.js code for the backend application
+- Modules: reusable parametrized Terraform modules to be used across multiple examples
+- Examples: contains the Terraform code to deploy the needed AWS resources for specific examples
+- Templates: templates used across examples (i.e. definition of ECS tasks, CodeDeply files, etc)
 
-### Configure and run Terratest
+## Solution-based scenarios
 
-1. Install
+The examples folder contains the terraform code to deploy the AWS resources. The *Modules* folders have been created to store the Terraform modules used in this project. The *Templates* folder contains the different configuration files needed within the modules. The Terraform state is stored locally in the machine where you execute the terraform commands, but feel free to set a Terraform backend configuration like an AWS S3 Bucket or Terraform Cloud to store the state remotely. The scenarios to deply are the followings:
 
-    [golang](https://go.dev/doc/install) (for macos you can use `brew`)
-2. Change directory into the test folder.
-    
-    `cd test`
-3. Initialize your test
-    
-    go mod init github.com/[github org]/[repository]
+- Core Infra: this folder contains all the core Infrastructure needed accross any other scenario
+- Deployments
+    - Blue/Green: a Blue/Green deployment methodology implemented with CodeDeploy
+    - Rolling: a rolling deployment mthodology implemented with the native ECS deployment feature
 
-    `go mod init github.com/aws-ia/terraform-aws-vpc`
-4. Run tidy
+## Usage
 
-    `git mod tidy`
-5. Install Terratest
+**1.** Fork this repository and create the GitHub token granting access to this new repository in your account.
 
-    `go get github.com/gruntwork-io/terratest/modules/terraform`
-6. Run test (You can have multiple test files).
-    - Run all tests
+**2.** Read the readme of each scenario (folder). For any scenario you must deploy the core infrastructure (core\_infra folder) first.
 
-        `go test`
-    - Run a specific test with a timeout
+## Security
 
-        `go test -run examples_basic_test.go -timeout 45m`
-## Module Standards
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
-For best practices and information on developing with Terraform, see the [I&A Module Standards](https://aws-ia.github.io/standards-terraform/)
+## License
+This library is licensed under the Apache-2.0 License. See the [LICENSE](LICENSE) file.
 
-## Continuous Integration
-
-The I&A team uses AWS CodeBuild to perform continuous integration (CI) within the organization. Our CI uses the a repo's `.pre-commit-config.yaml` file as well as some other checks. All PRs with other CI will be rejected. See our [FAQ](https://aws-ia.github.io/standards-terraform/faq/#are-modules-protected-by-ci-automation) for more details.
-
-## Requirements
-
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.14.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 3.72.0 |
-| <a name="requirement_awscc"></a> [awscc](#requirement\_awscc) | >= 0.11.0 |
-
-## Providers
-
-No providers.
-
-## Modules
-
-No modules.
-
-## Resources
-
-No resources.
-
-## Inputs
-
-No inputs.
-
-## Outputs
-
-No outputs.
 <!-- END_TF_DOCS -->

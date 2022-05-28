@@ -1,0 +1,47 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - echo Checking for build type
+      - |
+        if expr "${FOLDER_PATH}" : ".*client*" ; then
+          echo "Client build, embedding frontend layer file with ALB backend DNS"
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/client/src/services/RestServices.js
+        else
+          echo "Replacing table name in the server function"
+          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application_code/server/src/app.js
+          echo "Adding Swagger host"
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/server/src/swagger/swagger.js
+        fi
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPO_URL $FOLDER_PATH
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $REPO_URL:$IMAGE_TAG
+      - echo Changing directory to Templates directory
+      - cd ./templates
+      - echo Preparing spec files in new folder
+      - mkdir artifacts
+      - cp imagedefinition.json artifacts/imagedefinition.json
+      - echo Changing directory to the artifacts directory
+      - cd artifacts
+      - echo Preparating artifacts
+      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" imagedefinition.json
+      - sed -i "s|<REPO_URL>|$REPO_URL|g" imagedefinition.json
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'templates/artifacts'
+  discard-paths: yes

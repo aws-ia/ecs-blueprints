@@ -1,0 +1,33 @@
+{
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_ROLE>",
+  "containerDefinitions": [
+    {
+      "name": "<CONTAINER_NAME>",
+      "image": "<REPO_URL>",
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": null,
+        "options": {
+          "awslogs-group": "/ecs/<TASK_DEFINITION_FAMILY>",
+          "awslogs-region": "<AWS_REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "portMappings": [
+        {
+          "hostPort": <SERVICE_PORT>,
+          "protocol": "tcp",
+          "containerPort": <SERVICE_PORT>
+        }
+      ]
+    }
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "memory": "512",
+  "cpu": "256",
+  "family": "<TASK_DEFINITION_FAMILY>"
+}

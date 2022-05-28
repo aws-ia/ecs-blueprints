@@ -1,0 +1,18 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config:
+  target: "" # Change me to the right env target
+  phases:
+    - duration: 100
+      arrivalRate: 20
+  http:
+    timeout: 5 # Wait 5 sec before aborting the request
+    pool: 50 # Fixed number of pool connection, to be reused
+scenarios:
+  - name: "Generating load on the client fleet of tasks"
+    flow:
+      - loop:
+          - get:
+              url: "/" # Change me to "/" if necessary
+        count: 10

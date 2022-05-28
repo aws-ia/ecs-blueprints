@@ -1,0 +1,7 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Global / general variables
+aws_profile = "deploys"
+aws_region = "eu-central-1"
+environment_name = "demo"
