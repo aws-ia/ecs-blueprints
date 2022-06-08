@@ -2,6 +2,7 @@
 
 This module provides an ECS Cluster.
 
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 No requirements.
@@ -20,7 +21,7 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_ecs_cluster.ecs_cluster](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_cluster) | resource |
+| [aws_ecs_cluster.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_cluster) | resource |
 
 ## Inputs
 
@@ -34,5 +35,5 @@ No modules.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_id"></a> [id](#output\_id) | The ID/ARN of the ECS Cluster |
-| <a name="output_name"></a> [name](#output\_name) | The name of the ECS Cluster |
+| <a name="output_id"></a> [id](#output\_id) | The ARN of the ECS Cluster |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

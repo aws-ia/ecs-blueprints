@@ -1,7 +1,10 @@
 # Module: ecs/roles
 
-This module provides IAM Roles (ECS Execution and ECS Task) needed for ECS.  Pass in the IAM policy that you want the task to assume.
+This module provides IAM Roles (ECS Execution and ECS Task) needed for ECS.
 
+Pass in the IAM policy that you want the task role to assume.
+
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 No requirements.
@@ -40,3 +43,4 @@ No modules.
 |------|-------------|
 | <a name="output_execution_role"></a> [execution\_role](#output\_execution\_role) | The task execution role arn |
 | <a name="output_task_role"></a> [task\_role](#output\_task\_role) | The task role arn |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

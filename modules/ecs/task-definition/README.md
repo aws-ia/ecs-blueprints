@@ -2,6 +2,7 @@
 
 This module provides an ECS Task Definition.
 
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 No requirements.
@@ -28,7 +29,7 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_cloudwatch_log_group"></a> [cloudwatch\_log\_group](#input\_cloudwatch\_log\_group) | cloudwatch log group | `string` | n/a | yes |
 | <a name="input_container_name"></a> [container\_name](#input\_container\_name) | The name of the Container specified in the Task definition | `string` | `"app"` | no |
-| <a name="input_container_port"></a> [container\_port](#input\_container\_port) | The port that the container will use to listen to requests | `number` | n/a | yes |
+| <a name="input_container_port"></a> [container\_port](#input\_container\_port) | The port that the container will use to listen to requests | `number` | `8080` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of cpu units used by the task. | `number` | `256` | no |
 | <a name="input_execution_role"></a> [execution\_role](#input\_execution\_role) | The task execution role arn | `string` | n/a | yes |
 | <a name="input_image"></a> [image](#input\_image) | The container image | `string` | n/a | yes |
@@ -43,3 +44,4 @@ No modules.
 |------|-------------|
 | <a name="output_task_definition_arn"></a> [task\_definition\_arn](#output\_task\_definition\_arn) | The ARN of the task definition |
 | <a name="output_task_definition_family"></a> [task\_definition\_family](#output\_task\_definition\_family) | The family name of the task definition |
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
