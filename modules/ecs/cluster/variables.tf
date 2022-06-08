@@ -2,6 +2,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 variable "name" {
-  description = "The name of the deployed environment"
+  description = "The cluster namespace"
   type        = string
+}
+
+variable "container_insights" {
+  description = "Whether or not Container Insights is enabled."
+  type        = bool
+  default     = true
+}
+
+variable "tags" {
+  description = "tags"
+  type        = map(string)
 }
