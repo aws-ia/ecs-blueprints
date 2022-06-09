@@ -5,10 +5,11 @@
         AWS ECS Cluster
 ===============================*/
 
-resource "aws_ecs_cluster" "ecs_cluster" {
-  name = "Cluster-${var.name}"
+resource "aws_ecs_cluster" "main" {
+  name = var.name
+  tags = var.tags
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = var.container_insights ? "enabled" : "disabled"
   }
 }
