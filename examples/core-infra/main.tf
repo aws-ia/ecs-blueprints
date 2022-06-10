@@ -22,4 +22,5 @@ module "networking" {
 module "ecs_cluster" {
   source = "../../modules/ecs/cluster"
   name   = var.environment_name
+  tags   = var.tags
 }
