@@ -168,3 +168,8 @@ variable "deployment_maximum_percent" {
   description = "Maximum percentage of task able to be deployed"
   type        = map(any)
 }
+
+variable "tags" {
+  description = "Tags to apply to all resources."
+  type        = map(string)
+}
