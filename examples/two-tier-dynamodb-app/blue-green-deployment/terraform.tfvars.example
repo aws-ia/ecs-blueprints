@@ -4,9 +4,9 @@
 # Global / general variables
 aws_profile      = "deploys"
 aws_region       = "eu-central-1"
-environment_name = "blueprints-example-bg"
+environment_name = "blueprints-example"
 tags = {
-  app = "blueprints-example-bg"
+  app = "blueprints-example"
 }
 
 # Networking
@@ -25,8 +25,8 @@ public_subnets = [
 ]
 
 # ECS
-ecs_cluster_name = "blueprints-example-bg"
-ecs_cluster_id = "arn:aws:ecs:eu-central-1:123456789012:cluster/blueprints-example-bg"
+ecs_cluster_name = "blueprints-example"
+ecs_cluster_id = "arn:aws:ecs:eu-central-1:123456789012:cluster/blueprints-example"
 
 ecs_service_name = {
   client = "service-client"

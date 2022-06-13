@@ -4,7 +4,7 @@
 # Global / general variables
 aws_profile = "deploys"
 aws_region = "eu-central-1"
-environment_name = "blueprints-example-bg"
+environment_name = "blueprints-example"
 tags = {
-  app = "blueprints-example-bg"
+  app = "blueprints-example"
 }
