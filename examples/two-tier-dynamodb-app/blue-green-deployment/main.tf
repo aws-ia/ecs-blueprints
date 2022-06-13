@@ -136,18 +136,21 @@ module "ecs_role_policy" {
 
 # ------- Creating server ECR Repository to store Docker Images -------
 module "ecr_server" {
-  source = "./../../../modules/ecr"
-  name   = "repo-server"
-  tags   = var.tags
+  source               = "./../../../modules/ecr"
+  name                 = "repo-server"
+  image_tag_mutability = "MUTABLE"
+  tags                 = var.tags
 }
 
 # ------- Creating client ECR Repository to store Docker Images -------
 module "ecr_client" {
-  source = "./../../../modules/ecr"
-  name   = "repo-client"
-  tags   = var.tags
+  source               = "./../../../modules/ecr"
+  name                 = "repo-client"
+  image_tag_mutability = "MUTABLE"
+  tags                 = var.tags
 }
 
+# ------- Creating Cloudwatch LogGroups for the task definitions -------
 resource "aws_cloudwatch_log_group" "client" {
   name              = "/ecs/task-definition-${var.ecs_service_name["client"]}"
   retention_in_days = 30

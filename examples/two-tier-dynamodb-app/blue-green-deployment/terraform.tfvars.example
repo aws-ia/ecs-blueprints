@@ -2,21 +2,41 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Global / general variables
-aws_profile      = "test"
-aws_region       = "us-east-1"
+aws_profile      = "deploys"
+aws_region       = "eu-central-1"
 environment_name = "blueprints-example-bg"
-ecs_cluster_name = "blueprints-example"
-ecs_cluster_id = "arn:aws:ecs:us-east-1:123456789:cluster/blueprints-example"
+tags = {
+  app = "blueprints-example-bg"
+}
+
+# Networking
+vpc = "vpc-123456789"
+private_subnets_client = [
+  "subnet-abc",
+  "subnet-123",
+]
+private_subnets_server = [
+  "subnet-abc",
+  "subnet-123",
+]
+public_subnets = [
+  "subnet-abc",
+  "subnet-123",
+]
+
+# ECS
+ecs_cluster_name = "blueprints-example-bg"
+ecs_cluster_id = "arn:aws:ecs:eu-central-1:123456789012:cluster/blueprints-example-bg"
+
+ecs_service_name = {
+  client = "service-client"
+  server = "service-server"
+}
 
 ecs_task_client_cpu    = 256
 ecs_task_client_memory = 512
 ecs_task_server_cpu    = 256
 ecs_task_server_memory = 512
-
-ecs_service_name = {
-  client = "client"
-  server = "server"
-}
 
 cpu_threshold = {
   client = "80"
@@ -43,27 +63,10 @@ ecs_autoscaling_max_capacity = {
   server = 8
 }
 
-tags = {
-  app = "blueprints-example-bg"
-}
-
-vpc = "vpc-123456789"
-
-private_subnets_client = [
-  "subnet-abc",
-  "subnet-123",
-]
-private_subnets_server = [
-  "subnet-abc",
-  "subnet-123",
-]
-public_subnets = [
-  "subnet-abc",
-  "subnet-123",
-]
-
 seconds_health_check_grace_period = 30
 
-repository_name  = ""
+# GitHub connection
 repository_owner = ""
-github_token     = ""
+repository_name = ""
+repository_branch = ""
+github_token = ""
