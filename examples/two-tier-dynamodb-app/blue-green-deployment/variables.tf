@@ -187,3 +187,8 @@ variable "cpu_threshold" {
   description = "The desired threashold for CPU consumption"
   type        = map(any)
 }
+
+variable "tags" {
+  description = "Tags to apply to all resources."
+  type        = map(string)
+}

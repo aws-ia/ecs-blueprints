@@ -30,6 +30,7 @@ module "target_group_server_blue" {
   tg_type             = "ip"
   health_check_path   = "/status"
   health_check_port   = var.port_app_server
+  tags                = var.tags
 }
 
 # ------- Creating Target Group for the server ALB green environment -------
@@ -43,6 +44,7 @@ module "target_group_server_green" {
   tg_type             = "ip"
   health_check_path   = "/status"
   health_check_port   = var.port_app_server
+  tags                = var.tags
 }
 
 # ------- Creating Target Group for the client ALB blue environment -------
@@ -56,6 +58,7 @@ module "target_group_client_blue" {
   tg_type             = "ip"
   health_check_path   = "/"
   health_check_port   = var.port_app_client
+  tags                = var.tags
 }
 
 # ------- Creating Target Group for the client ALB green environment -------
@@ -69,6 +72,7 @@ module "target_group_client_green" {
   tg_type             = "ip"
   health_check_path   = "/"
   health_check_port   = var.port_app_client
+  tags                = var.tags
 }
 
 # ------- Creating Security Group for the server ALB -------
@@ -99,6 +103,7 @@ module "alb_server" {
   subnets        = [var.public_subnets[0], var.public_subnets[1]]
   security_group = module.security_group_alb_server.sg_id
   target_group   = module.target_group_server_blue.arn_tg
+  tags           = var.tags
 }
 
 # ------- Creating Client Application ALB -------
@@ -109,6 +114,7 @@ module "alb_client" {
   subnets        = [var.public_subnets[0], var.public_subnets[1]]
   security_group = module.security_group_alb_client.sg_id
   target_group   = module.target_group_client_blue.arn_tg
+  tags           = var.tags
 }
 
 # ------- ECS Role -------
@@ -132,40 +138,54 @@ module "ecs_role_policy" {
 module "ecr_server" {
   source = "./../../../modules/ecr"
   name   = "repo-server"
+  tags   = var.tags
 }
 
 # ------- Creating client ECR Repository to store Docker Images -------
 module "ecr_client" {
   source = "./../../../modules/ecr"
   name   = "repo-client"
+  tags   = var.tags
+}
+
+resource "aws_cloudwatch_log_group" "client" {
+  name              = "/ecs/task-definition-${var.ecs_service_name["client"]}"
+  retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_group" "server" {
+  name              = "/ecs/task-definition-${var.ecs_service_name["server"]}"
+  retention_in_days = 30
 }
 
 # ------- Creating ECS Task Definition for the server -------
-module "ecs_taks_definition_server" {
-  source             = "./../../../modules/ecs/task_definition"
-  name               = var.ecs_service_name["server"]
-  container_name     = var.container_name["server"]
-  execution_role_arn = module.ecs_role.arn_role
-  task_role_arn      = module.ecs_role.arn_role_ecs_task_role
-  cpu                = var.ecs_task_server_cpu
-  memory             = var.ecs_task_server_memory
-  docker_repo        = module.ecr_server.ecr_repository_url
-  region             = var.aws_region
-  container_port     = var.port_app_server
+module "ecs_task_definition_server" {
+  source               = "./../../../modules/ecs/task-definition"
+  name                 = var.ecs_service_name["server"]
+  container_name       = var.container_name["server"]
+  execution_role       = module.ecs_role.arn_role
+  task_role            = module.ecs_role.arn_role_ecs_task_role
+  cpu                  = var.ecs_task_server_cpu
+  memory               = var.ecs_task_server_memory
+  image                = module.ecr_server.ecr_repository_url
+  region               = var.aws_region
+  container_port       = var.port_app_server
+  cloudwatch_log_group = aws_cloudwatch_log_group.server.name
 }
 
 # ------- Creating ECS Task Definition for the client -------
-module "ecs_taks_definition_client" {
-  source             = "./../../../modules/ecs/task_definition"
-  name               = var.ecs_service_name["client"]
-  container_name     = var.container_name["client"]
-  execution_role_arn = module.ecs_role.arn_role
-  task_role_arn      = module.ecs_role.arn_role_ecs_task_role
-  cpu                = var.ecs_task_client_cpu
-  memory             = var.ecs_task_client_memory
-  docker_repo        = module.ecr_client.ecr_repository_url
-  region             = var.aws_region
-  container_port     = var.port_app_client
+module "ecs_task_definition_client" {
+  source               = "./../../../modules/ecs/task-definition"
+  name                 = var.ecs_service_name["client"]
+  container_name       = var.container_name["client"]
+  execution_role       = module.ecs_role.arn_role
+  task_role            = module.ecs_role.arn_role_ecs_task_role
+  cpu                  = var.ecs_task_client_cpu
+  memory               = var.ecs_task_client_memory
+  image                = module.ecr_client.ecr_repository_url
+  region               = var.aws_region
+  container_port       = var.port_app_client
+  cloudwatch_log_group = aws_cloudwatch_log_group.client.name
 }
 
 # ------- Creating a server Security Group for ECS TASKS -------
@@ -189,48 +209,52 @@ module "security_group_ecs_task_client" {
 
 # ------- Creating ECS Service server -------
 module "ecs_service_server" {
-  depends_on                         = [module.alb_server]
-  source                             = "./../../../modules/ecs/service"
-  name                               = var.ecs_service_name["server"]
-  desired_tasks                      = var.ecs_desired_tasks["server"]
-  arn_security_group                 = module.security_group_ecs_task_server.sg_id
-  ecs_cluster_id                     = var.ecs_cluster_id
-  arn_target_group                   = module.target_group_server_blue.arn_tg
-  arn_task_definition                = module.ecs_taks_definition_server.arn_task_definition
-  subnets_id                         = [var.private_subnets_server[0], var.private_subnets_server[1]]
-  container_port                     = var.port_app_server
-  container_name                     = var.container_name["server"]
-  seconds_health_check_grace_period  = var.seconds_health_check_grace_period
-  deployment_controller              = "CODE_DEPLOY"
-  deployment_minimum_healthy_percent = null
-  deployment_maximum_percent         = null
+  depends_on      = [module.alb_server]
+  source          = "./../../../modules/ecs/service"
+  name            = var.ecs_service_name["server"]
+  desired_count   = var.ecs_desired_tasks["server"]
+  security_groups = [module.security_group_ecs_task_server.sg_id]
+  ecs_cluster_id  = var.ecs_cluster_id
+  load_balancers = [{
+    container_name   = var.container_name["server"]
+    container_port   = var.port_app_server
+    target_group_arn = module.target_group_server_blue.arn_tg
+  }]
+  task_definition                   = module.ecs_task_definition_server.task_definition_arn
+  subnets                           = var.private_subnets_server
+  container_name                    = var.container_name["server"]
+  health_check_grace_period_seconds = var.seconds_health_check_grace_period
+  deployment_controller             = "CODE_DEPLOY"
+  tags                              = var.tags
 }
 
 # ------- Creating ECS Service client -------
 module "ecs_service_client" {
-  depends_on                         = [module.alb_client]
-  source                             = "./../../../modules/ecs/service"
-  name                               = var.ecs_service_name["client"]
-  desired_tasks                      = var.ecs_desired_tasks["client"]
-  arn_security_group                 = module.security_group_ecs_task_client.sg_id
-  ecs_cluster_id                     = var.ecs_cluster_id
-  arn_target_group                   = module.target_group_client_blue.arn_tg
-  arn_task_definition                = module.ecs_taks_definition_client.arn_task_definition
-  subnets_id                         = [var.private_subnets_client[0], var.private_subnets_client[1]]
-  container_port                     = var.port_app_client
-  container_name                     = var.container_name["client"]
-  seconds_health_check_grace_period  = var.seconds_health_check_grace_period
-  deployment_controller              = "CODE_DEPLOY"
-  deployment_minimum_healthy_percent = null
-  deployment_maximum_percent         = null
+  depends_on      = [module.alb_client]
+  source          = "./../../../modules/ecs/service"
+  name            = var.ecs_service_name["client"]
+  desired_count   = var.ecs_desired_tasks["client"]
+  security_groups = [module.security_group_ecs_task_client.sg_id]
+  ecs_cluster_id  = var.ecs_cluster_id
+  load_balancers = [{
+    container_name   = var.container_name["client"]
+    container_port   = var.port_app_client
+    target_group_arn = module.target_group_client_blue.arn_tg
+  }]
+  task_definition                   = module.ecs_task_definition_client.task_definition_arn
+  subnets                           = var.private_subnets_client
+  container_name                    = var.container_name["client"]
+  health_check_grace_period_seconds = var.seconds_health_check_grace_period
+  deployment_controller             = "CODE_DEPLOY"
+  tags                              = var.tags
 }
 
 # ------- Creating ECS Autoscaling policies for the server application -------
 module "ecs_autoscaling_server" {
   depends_on       = [module.ecs_service_server]
   source           = "./../../../modules/ecs/autoscaling"
-  name             = "${var.environment_name}-server"
   cluster_name     = var.ecs_cluster_name
+  service_name     = var.ecs_service_name["server"]
   min_capacity     = var.ecs_autoscaling_min_capacity["server"]
   max_capacity     = var.ecs_autoscaling_max_capacity["server"]
   cpu_threshold    = var.cpu_threshold["server"]
@@ -241,8 +265,8 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   depends_on       = [module.ecs_service_client]
   source           = "./../../../modules/ecs/autoscaling"
-  name             = "${var.environment_name}-client"
   cluster_name     = var.ecs_cluster_name
+  service_name     = var.ecs_service_name["client"]
   min_capacity     = var.ecs_autoscaling_min_capacity["client"]
   max_capacity     = var.ecs_autoscaling_max_capacity["client"]
   cpu_threshold    = var.cpu_threshold["client"]
@@ -298,7 +322,7 @@ module "codebuild_server" {
   ecr_repo_url           = module.ecr_server.ecr_repository_url
   folder_path            = var.folder_path_server
   buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_taks_definition_server.task_definition_family
+  task_definition_family = module.ecs_task_definition_server.task_definition_family
   container_name         = var.container_name["server"]
   service_port           = var.port_app_server
   ecs_role               = var.iam_role_name["ecs"]
@@ -316,7 +340,7 @@ module "codebuild_client" {
   ecr_repo_url           = module.ecr_client.ecr_repository_url
   folder_path            = var.folder_path_client
   buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_taks_definition_client.task_definition_family
+  task_definition_family = module.ecs_task_definition_client.task_definition_family
   container_name         = var.container_name["client"]
   service_port           = var.port_app_client
   ecs_role               = var.iam_role_name["ecs"]
