@@ -14,6 +14,7 @@ resource "aws_alb" "alb" {
   internal           = false
   enable_http2       = true
   idle_timeout       = 30
+  tags               = var.tags
 }
 
 # ------- ALB Listenet for HTTPS -------
@@ -22,6 +23,7 @@ resource "aws_alb_listener" "https_listener" {
   load_balancer_arn = aws_alb.alb[0].id
   port              = "443"
   protocol          = "HTTPS"
+  tags              = var.tags
 
   default_action {
     target_group_arn = var.target_group
@@ -40,6 +42,7 @@ resource "aws_alb_listener" "http_listener" {
   load_balancer_arn = aws_alb.alb[0].id
   port              = "80"
   protocol          = "HTTP"
+  tags              = var.tags
 
   default_action {
     target_group_arn = var.target_group
@@ -61,6 +64,7 @@ resource "aws_alb_target_group" "target_group" {
   vpc_id               = var.vpc
   target_type          = var.tg_type
   deregistration_delay = 5
+  tags                 = var.tags
 
   health_check {
     enabled             = true

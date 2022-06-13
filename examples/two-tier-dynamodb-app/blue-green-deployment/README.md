@@ -95,15 +95,15 @@ terraform init
 **4.** Complete the `terraform.tfvars` file with your custom values and then run the terraform plan command specifying the variables in the provided terraform.tfvars file:
 
 ```shell
-terraform plan -var-file="terraform.tfvars"
+terraform plan
 ```
 
-You can use the `terraform.tfvars.example` file for guidance. The values provided in the output of the previusly deployed Solution (core_infra) are part of the needed input parameters for the `terraform.tfvar` file.
+You can use the `terraform.tfvars.example` file for guidance. The values provided in the output of the previously deployed Solution (core_infra) are part of the needed input parameters for the `terraform.tfvars` file.
 
 **5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
-terraform apply -var-file="terraform.tfvars"
+terraform apply
 ```
 
 **6.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
@@ -168,7 +168,7 @@ The server exposes 3 endpoints:
 Run the following command if you want to delete all the resources created before:
 
 ```shell
-terraform destroy -var-file="terraform.tfvars"
+terraform destroy
 ```
 
 ## Security
