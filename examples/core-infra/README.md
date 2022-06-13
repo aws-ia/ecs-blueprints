@@ -1,4 +1,3 @@
-<!-- BEGIN_TF_DOCS -->
 # Amazon ECS Demo with fullstack app / Core Infrastructure / Terraform sample
 
 ## Table of content
@@ -96,6 +95,7 @@ terraform destroy -var-file="terraform.tfvars"
 
 ---
 
+<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
 | Name | Version |
@@ -125,6 +125,7 @@ No resources.
 | <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | The profile name that you have configured in the file .aws/credentials | `string` | n/a | yes |
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | The AWS Region in which you want to deploy the resources | `string` | n/a | yes |
 | <a name="input_environment_name"></a> [environment\_name](#input\_environment\_name) | The name of your environment | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources. | `map(string)` | n/a | yes |
 
 ## Outputs
 
@@ -132,8 +133,7 @@ No resources.
 |------|-------------|
 | <a name="output_aws_vpc"></a> [aws\_vpc](#output\_aws\_vpc) | The ID of the VPC |
 | <a name="output_ecs_cluster_id"></a> [ecs\_cluster\_id](#output\_ecs\_cluster\_id) | The ID of the ECS cluster |
-| <a name="output_ecs_cluster_name"></a> [ecs\_cluster\_name](#output\_ecs\_cluster\_name) | The name of the ECS cluster |
 | <a name="output_private_subnets_client"></a> [private\_subnets\_client](#output\_private\_subnets\_client) | A list of private subnets for the client app |
 | <a name="output_private_subnets_server"></a> [private\_subnets\_server](#output\_private\_subnets\_server) | A list of private subnets for the server app |
 | <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | A list of public subnets |
-<!-- END_TF_DOCS -->
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

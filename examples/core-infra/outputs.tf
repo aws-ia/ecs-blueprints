@@ -20,12 +20,7 @@ output "private_subnets_server" {
   value       = module.networking.private_subnets_server
 }
 
-output "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
-  value       = module.ecs_cluster.ecs_cluster_name
-}
-
 output "ecs_cluster_id" {
   description = "The ID of the ECS cluster"
-  value       = module.ecs_cluster.ecs_cluster_id
+  value       = module.ecs_cluster.id
 }

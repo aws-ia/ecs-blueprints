@@ -1,0 +1,74 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Global / general variables
+aws_profile      = "test"
+aws_region       = "us-east-1"
+environment_name = "blueprints-example"
+ecs_cluster_name = "blueprints-example"
+ecs_cluster_id   = "arn:aws:ecs:us-east-1:123456789:cluster/blueprints-example"
+
+ecs_service_name = {
+  client = "client"
+  server = "server"
+}
+
+cpu_threshold = {
+  client = "80"
+  server = "80"
+}
+
+memory_threshold = {
+  client = 80
+  server = 80
+}
+
+ecs_desired_tasks = {
+  client = 1
+  server  = 1
+}
+
+deployment_minimum_healthy_percent = {
+  client = 100
+  server  = 100
+}
+
+deployment_maximum_percent = {
+  client = 200
+  server  = 200
+}
+
+ecs_autoscaling_min_capacity = {
+  client = 1
+  server = 1
+}
+
+ecs_autoscaling_max_capacity = {
+  client = 8
+  server = 8
+}
+
+tags = {
+  app = "blueprints-example"
+}
+
+vpc = "vpc-123456789"
+
+private_subnets_client = [
+  "subnet-abc",
+  "subnet-123",
+]
+private_subnets_server = [
+  "subnet-abc",
+  "subnet-123",
+]
+public_subnets = [
+  "subnet-abc",
+  "subnet-123",
+]
+
+seconds_health_check_grace_period = 30
+
+repository_name  = ""
+repository_owner = ""
+github_token     = ""

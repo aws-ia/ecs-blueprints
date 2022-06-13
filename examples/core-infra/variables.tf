@@ -20,3 +20,8 @@ variable "environment_name" {
     error_message = "Due the this variable is used for concatenation of names of other resources, the value must have less than 23 characters."
   }
 }
+
+variable "tags" {
+  description = "Tags to apply to all resources."
+  type        = map(string)
+}

@@ -9,31 +9,33 @@ variable "name" {
 variable "container_name" {
   description = "The name of the Container specified in the Task definition"
   type        = string
+  default     = "app"
 }
 
-variable "execution_role_arn" {
-  description = "The IAM ARN role that the ECS task will use to call other AWS services"
+variable "execution_role" {
+  description = "The task execution role arn"
   type        = string
 }
 
-variable "task_role_arn" {
-  description = "The IAM ARN role that the ECS task will use to call other AWS services"
+variable "task_role" {
+  description = "The IAM role that the ECS task will use to call other AWS services"
   type        = string
-  default     = null
 }
 
 variable "cpu" {
-  description = "The CPU value to assign to the container, read AWS documentation for available values"
-  type        = string
+  description = "The number of cpu units used by the task."
+  type        = number
+  default     = 256
 }
 
 variable "memory" {
   description = "The MEMORY value to assign to the container, read AWS documentation to available values"
-  type        = string
+  type        = number
+  default     = 512
 }
 
-variable "docker_repo" {
-  description = "The docker registry URL in which ecs will get the Docker image"
+variable "image" {
+  description = "The container image"
   type        = string
 }
 
@@ -45,4 +47,10 @@ variable "region" {
 variable "container_port" {
   description = "The port that the container will use to listen to requests"
   type        = number
+  default     = 8080
+}
+
+variable "cloudwatch_log_group" {
+  description = "cloudwatch log group"
+  type        = string
 }
