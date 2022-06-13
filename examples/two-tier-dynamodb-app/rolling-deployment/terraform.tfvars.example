@@ -2,15 +2,35 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Global / general variables
-aws_profile      = "test"
-aws_region       = "us-east-1"
+aws_profile      = "deploys"
+aws_region       = "eu-central-1"
 environment_name = "blueprints-example"
+tags = {
+  app = "blueprints-example"
+}
+
+# Networking
+vpc = "vpc-123456789"
+private_subnets_client = [
+  "subnet-abc",
+  "subnet-123",
+]
+private_subnets_server = [
+  "subnet-abc",
+  "subnet-123",
+]
+public_subnets = [
+  "subnet-abc",
+  "subnet-123",
+]
+
+# ECS
 ecs_cluster_name = "blueprints-example"
-ecs_cluster_id   = "arn:aws:ecs:us-east-1:123456789:cluster/blueprints-example"
+ecs_cluster_id = "arn:aws:ecs:eu-central-1:797325079427:cluster/blueprints-example"
 
 ecs_service_name = {
-  client = "client"
-  server = "server"
+  client = "service-client"
+  server = "service-server"
 }
 
 cpu_threshold = {
@@ -48,27 +68,10 @@ ecs_autoscaling_max_capacity = {
   server = 8
 }
 
-tags = {
-  app = "blueprints-example"
-}
-
-vpc = "vpc-123456789"
-
-private_subnets_client = [
-  "subnet-abc",
-  "subnet-123",
-]
-private_subnets_server = [
-  "subnet-abc",
-  "subnet-123",
-]
-public_subnets = [
-  "subnet-abc",
-  "subnet-123",
-]
-
 seconds_health_check_grace_period = 30
 
-repository_name  = ""
+# GitHub connection
 repository_owner = ""
-github_token     = ""
+repository_name = ""
+repository_branch = ""
+github_token = ""

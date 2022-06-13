@@ -9,7 +9,7 @@
         "logDriver": "awslogs",
         "secretOptions": null,
         "options": {
-          "awslogs-group": "/ecs/<TASK_DEFINITION_FAMILY>",
+          "awslogs-group": "/ecs/task-definition-<TASK_DEFINITION_FAMILY>",
           "awslogs-region": "<AWS_REGION>",
           "awslogs-stream-prefix": "ecs"
         }

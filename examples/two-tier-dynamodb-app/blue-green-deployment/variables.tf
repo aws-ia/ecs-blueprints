@@ -36,13 +36,13 @@ variable "buildspec_path" {
 variable "folder_path_server" {
   description = "The location of the server files"
   type        = string
-  default     = "./application_code/server/."
+  default     = "./application-code/server/."
 }
 
 variable "folder_path_client" {
   description = "The location of the client files"
   type        = string
-  default     = "./application_code/client/."
+  default     = "./application-code/client/."
 }
 
 variable "container_name" {

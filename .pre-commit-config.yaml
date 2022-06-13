@@ -1,15 +1,3 @@
-# ---
-# fail_fast: false
-# minimum_pre_commit_version: "2.6.0"
-# repos:
-#   -
-#     repo: https://github.com/aws-ia/pre-commit-configs
-#     # To update run:
-#     # pre-commit autoupdate --freeze
-#     rev: 82b2dd4f3c3c8b064ce15c7cc518e14c43f6a068  # frozen: v1.4.1
-#     hooks:
-#       - id: aws-ia-meta-hook
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.2.0
@@ -29,8 +17,8 @@ repos:
       - id: terraform_docs
         args:
           - "--args=--lockfile=false"
-      # - id: terraform_validate
-      #   exclude: deploy
+      - id: terraform_validate
+        exclude: deploy
       - id: terraform_tflint
         args:
           - "--args=--only=terraform_deprecated_interpolation"
@@ -40,6 +28,6 @@ repos:
           - "--args=--only=terraform_documented_variables"
           - "--args=--only=terraform_typed_variables"
           - "--args=--only=terraform_module_pinned_source"
-          # - '--args=--only=terraform_naming_convention'
+          - '--args=--only=terraform_naming_convention'
           - "--args=--only=terraform_standard_module_structure"
           - "--args=--only=terraform_workspace_remote"

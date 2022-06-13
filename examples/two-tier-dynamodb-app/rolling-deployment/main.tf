@@ -30,6 +30,7 @@ module "target_group_server" {
   tg_type             = "ip"
   health_check_path   = "/status"
   health_check_port   = var.port_app_server
+  tags                = var.tags
 }
 
 # ------- Creating Target Group for the client ALB -------
@@ -43,6 +44,7 @@ module "target_group_client" {
   tg_type             = "ip"
   health_check_path   = "/"
   health_check_port   = var.port_app_client
+  tags                = var.tags
 }
 
 # ------- Creating Security Group for the server ALB -------
@@ -73,6 +75,7 @@ module "alb_server" {
   subnets        = [var.public_subnets[0], var.public_subnets[1]]
   security_group = module.security_group_alb_server.sg_id
   target_group   = module.target_group_server.arn_tg
+  tags                = var.tags
 }
 
 # ------- Creating Client Application ALB -------
@@ -83,6 +86,7 @@ module "alb_client" {
   subnets        = [var.public_subnets[0], var.public_subnets[1]]
   security_group = module.security_group_alb_client.sg_id
   target_group   = module.target_group_client.arn_tg
+  tags                = var.tags
 }
 
 # ------- ECS Role -------
@@ -106,6 +110,7 @@ module "ecs_role_policy" {
 module "ecr_server" {
   source = "./../../../modules/ecr"
   name   = "repo-server"
+  image_tag_mutability = "MUTABLE"
   tags   = var.tags
 }
 
@@ -113,6 +118,7 @@ module "ecr_server" {
 module "ecr_client" {
   source = "./../../../modules/ecr"
   name   = "repo-client"
+  image_tag_mutability = "MUTABLE"
   tags   = var.tags
 }
 
@@ -184,7 +190,7 @@ module "ecs_service_server" {
   security_groups = [module.security_group_ecs_task_server.sg_id]
   ecs_cluster_id  = var.ecs_cluster_id
   load_balancers = [{
-    container_name   = "server"
+    container_name   = var.container_name["server"]
     container_port   = var.port_app_server
     target_group_arn = module.target_group_server.arn_tg
   }]
@@ -207,7 +213,7 @@ module "ecs_service_client" {
   security_groups = [module.security_group_ecs_task_client.sg_id]
   ecs_cluster_id  = var.ecs_cluster_id
   load_balancers = [{
-    container_name   = "client"
+    container_name   = var.container_name["client"]
     container_port   = var.port_app_client
     target_group_arn = module.target_group_client.arn_tg
   }]
@@ -225,7 +231,8 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   depends_on       = [module.ecs_service_server]
   source           = "./../../../modules/ecs/autoscaling"
-  name             = "${var.environment_name}-server"
+  # name             = "${var.environment_name}-server"
+  service_name     = var.ecs_service_name["server"]
   cluster_name     = var.ecs_cluster_name
   min_capacity     = var.ecs_autoscaling_min_capacity["server"]
   max_capacity     = var.ecs_autoscaling_max_capacity["server"]
@@ -237,7 +244,8 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   depends_on       = [module.ecs_service_client]
   source           = "./../../../modules/ecs/autoscaling"
-  name             = "${var.environment_name}-client"
+  # name             = "${var.environment_name}-client"
+  service_name     = var.ecs_service_name["client"]
   cluster_name     = var.ecs_cluster_name
   min_capacity     = var.ecs_autoscaling_min_capacity["client"]
   max_capacity     = var.ecs_autoscaling_max_capacity["client"]

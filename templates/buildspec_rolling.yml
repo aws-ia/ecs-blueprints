@@ -12,12 +12,12 @@ phases:
       - |
         if expr "${FOLDER_PATH}" : ".*client*" ; then
           echo "Client build, embedding frontend layer file with ALB backend DNS"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/client/src/services/RestServices.js
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/client/src/services/RestServices.js
         else
           echo "Replacing table name in the server function"
-          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application_code/server/src/app.js
+          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application-code/server/src/app.js
           echo "Adding Swagger host"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/server/src/swagger/swagger.js
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/server/src/swagger/swagger.js
         fi
   build:
     commands:

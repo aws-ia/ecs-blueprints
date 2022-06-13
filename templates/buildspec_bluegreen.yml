@@ -12,16 +12,16 @@ phases:
       - |
         if expr "${FOLDER_PATH}" : ".*client*" ; then
           echo "Client build, embedding frontend layer file with ALB backend DNS"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/client/src/services/RestServices.js
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/client/src/services/RestServices.js
           echo "Client build, adding ECS Task Role to the task definition file"
           sed -i "3i\"taskRoleArn\": \"arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_TASK_ROLE>\"," ./templates/taskdef.json
         else
           echo "Server build, adding ECS Task Role to the task definition file"
           sed -i "3i\"taskRoleArn\": \"arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_TASK_ROLE>\"," ./templates/taskdef.json
           echo "Replacing table name in the server function"
-          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application_code/server/src/app.js
+          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application-code/server/src/app.js
           echo "Adding Swagger host"
-          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application_code/server/src/swagger/swagger.js
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/server/src/swagger/swagger.js
         fi
   build:
     commands:
