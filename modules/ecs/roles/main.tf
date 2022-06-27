@@ -23,7 +23,7 @@ resource "aws_iam_role_policy_attachment" "execution" {
 
 resource "aws_iam_role" "task" {
   name               = "${var.name}-task"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
+  assume_role_policy = data.aws_iam_policy_document.task.json
 }
 
 data "aws_iam_policy_document" "task" {

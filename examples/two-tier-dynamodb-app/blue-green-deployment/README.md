@@ -1,4 +1,4 @@
-# Amazon ECS Demo with fullstack app / Blue-Green Deployment / Terraform sample
+# Blue-Green Deployment
 
 ## Table of content
 

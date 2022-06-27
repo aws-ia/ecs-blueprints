@@ -12,12 +12,6 @@ variable "target_group" {
   default     = ""
 }
 
-variable "target_group_green" {
-  description = "The ANR of the created target group"
-  type        = string
-  default     = ""
-}
-
 variable "create_alb" {
   description = "Set to true to create an ALB"
   type        = bool

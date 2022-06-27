@@ -1,47 +1,45 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
+provider "aws" {
+  region = local.region
+}
 
-module "vpc" {
-  source     = "aws-ia/vpc/aws"
-  version    = ">= 1.0.0"
-  name       = var.namespace
-  cidr_block = "10.0.0.0/20"
-  az_count   = 3
-  tags       = var.tags
-  subnets = {
-    public = {
-      netmask                   = 24
-      nat_gateway_configuration = "all_azs"
-    }
-    private = {
-      netmask      = 24
-      route_to_nat = true
-    }
+data "aws_availability_zones" "available" {}
+
+locals {
+  name   = basename(path.cwd)
+  region = "us-west-2"
+
+  vpc_cidr = "10.0.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+
+  tags = {
+    Blueprint  = local.name
+    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
   }
 }
 
-locals {
-  # extract the subnet list from the vpc module
-  private_subnet_ids = [for _, value in module.vpc.private_subnet_attributes_by_az : value.id]
-}
+################################################################################
+# ECS Blueprint
+################################################################################
 
 module "ecr" {
   source = "../../modules/ecr"
-  name   = var.namespace
-  tags   = var.tags
+
+  name = local.name
+  tags = local.tags
 }
 
 module "cluster" {
   source = "../../modules/ecs/cluster"
-  name   = var.namespace
-  tags   = var.tags
+
+  name = local.name
+  tags = local.tags
 }
 
 resource "aws_security_group" "allow_all_egress" {
-  name        = var.namespace
+  name        = local.name
   description = "Allow access to all external resources"
-  vpc_id      = module.vpc.vpc_attributes.id
-  tags        = var.tags
+  vpc_id      = module.vpc.vpc_id
+  tags        = local.tags
 }
 
 resource "aws_security_group_rule" "allow_all_egress" {
@@ -55,20 +53,23 @@ resource "aws_security_group_rule" "allow_all_egress" {
 }
 
 module "service" {
-  source          = "../../modules/ecs/service"
-  name            = var.namespace
-  ecs_cluster_id  = var.namespace
+  source = "../../modules/ecs/service"
+
+  name            = local.name
+  ecs_cluster_id  = local.name
   task_definition = module.task_definition.task_definition_arn
   desired_count   = var.desired_count
-  tags            = var.tags
-  subnets         = local.private_subnet_ids
+  subnets         = module.vpc.private_subnets
   security_groups = [aws_security_group.allow_all_egress.id]
+
+  tags = local.tags
 }
 
 module "task_definition" {
-  source               = "../../modules/ecs/task-definition"
-  name                 = var.namespace
-  region               = var.region
+  source = "../../modules/ecs/task-definition"
+
+  name                 = local.name
+  region               = local.region
   cpu                  = var.cpu
   memory               = var.memory
   image                = var.image
@@ -86,12 +87,43 @@ data "aws_iam_policy_document" "task_role" {
 }
 
 module "roles" {
-  source           = "../../modules/ecs/roles"
-  name             = var.namespace
+  source = "../../modules/ecs/roles"
+
+  name             = local.name
   task_role_policy = data.aws_iam_policy_document.task_role.json
 }
 
 resource "aws_cloudwatch_log_group" "main" {
-  name              = "/ecs/service/${var.namespace}"
+  name              = "/ecs/service/${local.name}"
   retention_in_days = var.logs_retention_in_days
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 3.0"
+
+  name = local.name
+  cidr = local.vpc_cidr
+
+  azs             = local.azs
+  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 10)]
+
+  enable_nat_gateway   = true
+  single_nat_gateway   = true
+  enable_dns_hostnames = true
+
+  # Manage so we can name
+  manage_default_network_acl    = true
+  default_network_acl_tags      = { Name = "${local.name}-default" }
+  manage_default_route_table    = true
+  default_route_table_tags      = { Name = "${local.name}-default" }
+  manage_default_security_group = true
+  default_security_group_tags   = { Name = "${local.name}-default" }
+
+  tags = local.tags
 }

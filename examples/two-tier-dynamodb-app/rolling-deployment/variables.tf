@@ -1,26 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-variable "aws_profile" {
-  description = "The profile name that you have configured in the file .aws/credentials"
-  type        = string
-}
-
-variable "aws_region" {
-  description = "The AWS Region in which you want to deploy the resources"
-  type        = string
-}
-
-variable "environment_name" {
-  description = "The name of your environment"
-  type        = string
-
-  validation {
-    condition     = length(var.environment_name) < 23
-    error_message = "This variable is used for concatenation of names of other resources, the value must have less than 23 characters."
-  }
-}
-
 variable "github_token" {
   description = "Personal access token from Github"
   type        = string
@@ -92,28 +69,6 @@ variable "repository_branch" {
   default     = "main"
 }
 
-
-# ------- Tfvar variables -------
-variable "vpc" {
-  description = "The VPC ID of your environment"
-  type        = string
-}
-
-variable "public_subnets" {
-  description = "An array of strings with the subnets IDs"
-  type        = list(any)
-}
-
-variable "private_subnets_client" {
-  description = "An array of strings with the subnets IDs to be used by the client application"
-  type        = list(any)
-}
-
-variable "private_subnets_server" {
-  description = "An array of strings with the subnets IDs to be used by the server application"
-  type        = list(any)
-}
-
 variable "ecs_cluster_name" {
   description = "The name of the ECS cluster"
   type        = string
@@ -167,9 +122,4 @@ variable "deployment_minimum_healthy_percent" {
 variable "deployment_maximum_percent" {
   description = "Maximum percentage of task able to be deployed"
   type        = map(any)
-}
-
-variable "tags" {
-  description = "Tags to apply to all resources."
-  type        = map(string)
 }

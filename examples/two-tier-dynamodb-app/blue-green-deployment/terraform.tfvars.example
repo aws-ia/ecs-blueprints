@@ -1,29 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-# Global / general variables
-aws_profile      = "deploys"
-aws_region       = "eu-central-1"
-environment_name = "blueprints-example"
-tags = {
-  app = "blueprints-example"
-}
-
-# Networking
-vpc = "vpc-123456789"
-private_subnets_client = [
-  "subnet-abc",
-  "subnet-123",
-]
-private_subnets_server = [
-  "subnet-abc",
-  "subnet-123",
-]
-public_subnets = [
-  "subnet-abc",
-  "subnet-123",
-]
-
 # ECS
 ecs_cluster_name = "blueprints-example"
 ecs_cluster_id = "arn:aws:ecs:eu-central-1:123456789012:cluster/blueprints-example"

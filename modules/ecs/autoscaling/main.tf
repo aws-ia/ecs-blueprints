@@ -63,7 +63,7 @@ resource "aws_appautoscaling_policy" "memory" {
 ===============================================*/
 
 # ------- High memory alarm -------
-resource "aws_cloudwatch_metric_alarm" "high-memory-policy-alarm" {
+resource "aws_cloudwatch_metric_alarm" "high_memory_policy_alarm" {
   alarm_name          = "high-memory-ecs-service-${var.service_name}"
   alarm_description   = "High Memory for ecs service-${var.service_name}"
   comparison_operator = "GreaterThanOrEqualToThreshold"
@@ -82,7 +82,7 @@ resource "aws_cloudwatch_metric_alarm" "high-memory-policy-alarm" {
 }
 
 # ------- High CPU alarm -------
-resource "aws_cloudwatch_metric_alarm" "high-cpu-policy-alarm" {
+resource "aws_cloudwatch_metric_alarm" "high_cpu_policy_alarm" {
   alarm_name          = "high-cpu-ecs-service-${var.service_name}"
   alarm_description   = "High CPUPolicy Landing Page for ecs service-${var.service_name}"
   comparison_operator = "GreaterThanOrEqualToThreshold"

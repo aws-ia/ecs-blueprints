@@ -1,4 +1,4 @@
-# Amazon ECS Demo with fullstack app / Core Infrastructure / Terraform sample
+# Core Infrastructure
 
 ## Table of content
 
@@ -34,7 +34,7 @@ The AWS resources created by the script are detailed bellow:
         - 2 private subnets for the client side
         - 2 private subnets for the server side
 - ECS
-    - 1 ECS Cluster  
+    - 1 ECS Cluster
 
 ## Prerequisites
 There are general steps that you must follow in order to launch the infrastructure resources.
@@ -100,40 +100,35 @@ terraform destroy -var-file="terraform.tfvars"
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 3.38 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 3.72.0 |
 
 ## Providers
 
-No providers.
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.72.0 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_ecs_cluster"></a> [ecs\_cluster](#module\_ecs\_cluster) | ../../modules/ecs/cluster | n/a |
-| <a name="module_networking"></a> [networking](#module\_networking) | ../../modules/networking | n/a |
+| <a name="module_cluster"></a> [cluster](#module\_cluster) | ../../modules/ecs/cluster | n/a |
+| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | ~> 3.0 |
 
 ## Resources
 
-No resources.
+| Name | Type |
+|------|------|
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_aws_profile"></a> [aws\_profile](#input\_aws\_profile) | The profile name that you have configured in the file .aws/credentials | `string` | n/a | yes |
-| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | The AWS Region in which you want to deploy the resources | `string` | n/a | yes |
-| <a name="input_environment_name"></a> [environment\_name](#input\_environment\_name) | The name of your environment | `string` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | Tags to apply to all resources. | `map(string)` | n/a | yes |
+No inputs.
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_aws_vpc"></a> [aws\_vpc](#output\_aws\_vpc) | The ID of the VPC |
 | <a name="output_ecs_cluster_id"></a> [ecs\_cluster\_id](#output\_ecs\_cluster\_id) | The ID of the ECS cluster |
-| <a name="output_private_subnets_client"></a> [private\_subnets\_client](#output\_private\_subnets\_client) | A list of private subnets for the client app |
-| <a name="output_private_subnets_server"></a> [private\_subnets\_server](#output\_private\_subnets\_server) | A list of private subnets for the server app |
-| <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | A list of public subnets |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

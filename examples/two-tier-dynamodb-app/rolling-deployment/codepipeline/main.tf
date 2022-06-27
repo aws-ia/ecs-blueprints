@@ -1,10 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-/*=======================================================
-      AWS CodePipeline for build and deployment
-========================================================*/
-
 resource "aws_codepipeline" "aws_codepipeline" {
   name     = var.name
   role_arn = var.pipe_role
