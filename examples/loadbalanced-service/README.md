@@ -44,4 +44,3 @@ This blueprint provisions an ECS Fargate Service that can be accessed externally
 |------|-------------|
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
-

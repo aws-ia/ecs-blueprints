@@ -48,12 +48,6 @@ variable "subnets" {
   type        = list(string)
 }
 
-variable "container_name" {
-  description = "The name of the container"
-  type        = string
-  default     = "app"
-}
-
 variable "enable_ecs_managed_tags" {
   description = "Specifies whether to enable Amazon ECS managed tags for the tasks within the service."
   type        = bool

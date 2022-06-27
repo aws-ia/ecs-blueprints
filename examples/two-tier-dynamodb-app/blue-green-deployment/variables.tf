@@ -1,26 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-variable "aws_profile" {
-  description = "The profile name that you have configured in the file .aws/credentials"
-  type        = string
-}
-
-variable "aws_region" {
-  description = "The AWS Region in which you want to deploy the resources"
-  type        = string
-}
-
-variable "environment_name" {
-  description = "The name of your environment"
-  type        = string
-
-  validation {
-    condition     = length(var.environment_name) < 23
-    error_message = "Due the this variable is used for concatenation of names of other resources, the value must have less than 23 characters."
-  }
-}
-
 variable "github_token" {
   description = "Personal access token from Github"
   type        = string
@@ -79,32 +56,6 @@ variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
   default     = "main"
-}
-
-/*=================
-      TF Vars
-==================*/
-
-# ------- Networking -------
-
-variable "vpc" {
-  description = "The VPC ID of your environment"
-  type        = string
-}
-
-variable "public_subnets" {
-  description = "An array of strings with the subnets IDs"
-  type        = list(any)
-}
-
-variable "private_subnets_client" {
-  description = "An array of strings with the subnets IDs to be used by the client application"
-  type        = list(any)
-}
-
-variable "private_subnets_server" {
-  description = "An array of strings with the subnets IDs to be used by the server application"
-  type        = list(any)
 }
 
 # ------- ECS -------
@@ -186,9 +137,4 @@ variable "memory_threshold" {
 variable "cpu_threshold" {
   description = "The desired threashold for CPU consumption"
   type        = map(any)
-}
-
-variable "tags" {
-  description = "Tags to apply to all resources."
-  type        = map(string)
 }

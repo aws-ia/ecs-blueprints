@@ -18,7 +18,6 @@ variable "create_ecs_role" {
   default     = false
 }
 
-
 variable "create_devops_role" {
   description = "Set this variable to true if you want to create a role for AWS DevOps Tools"
   type        = bool
@@ -33,12 +32,6 @@ variable "create_codedeploy_role" {
 
 variable "create_devops_policy" {
   description = "Set this variable to true if you want to create a policy for AWS DevOps Tools"
-  type        = bool
-  default     = false
-}
-
-variable "create_policy" {
-  description = "Set this variable to true if you want to create an IAM Policy"
   type        = bool
   default     = false
 }
