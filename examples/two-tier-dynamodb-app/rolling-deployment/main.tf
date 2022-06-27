@@ -282,7 +282,8 @@ module "ecs_autoscaling_client" {
 
 # ------- Creating Bucket to store CodePipeline artifacts -------
 module "codepipeline_s3_bucket" {
-  source = "terraform-aws-modules/s3-bucket/aws"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 3.0"
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"
@@ -395,7 +396,8 @@ module "codepipeline" {
 
 # ------- Creating Bucket to store assets accessed by the Back-end -------
 module "assets_s3_bucket" {
-  source = "terraform-aws-modules/s3-bucket/aws"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 3.0"
 
   bucket = "assets-${local.region}-${random_id.this.hex}"
   acl    = "private"
