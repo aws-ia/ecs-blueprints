@@ -114,7 +114,7 @@ module "ecs_role" {
 
   name               = var.iam_role_name["ecs"]
   name_ecs_task_role = var.iam_role_name["ecs_task_role"]
-  dynamodb_table     = [module.dynamodb_table.dynamodb_table_arn]
+  dynamodb_table     = [module.assets_dynamodb_table.dynamodb_table_arn]
 }
 
 # ------- Creating a IAM Policy for role -------
@@ -330,7 +330,7 @@ module "codebuild_server" {
   service_port           = var.port_app_server
   ecs_role               = var.iam_role_name["ecs"]
   ecs_task_role          = var.iam_role_name["ecs_task_role"]
-  dynamodb_table_name    = module.dynamodb_table.dynamodb_table_name
+  dynamodb_table_name    = module.assets_dynamodb_table.dynamodb_table_id
 }
 
 # ------- Creating the client CodeBuild project -------
@@ -379,10 +379,13 @@ module "s3_assets" {
 }
 
 # ------- Creating Dynamodb table by the Back-end -------
-module "dynamodb_table" {
-  source = "./../../../modules/dynamodb"
+module "assets_dynamodb_table" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 2.0"
 
-  name = "assets-table-${local.name}"
+  name = "${local.name}-assets"
+
+  tags = local.tags
 }
 
 ################################################################################
