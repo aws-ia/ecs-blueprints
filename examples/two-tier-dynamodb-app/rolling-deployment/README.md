@@ -1,4 +1,4 @@
-# Amazon ECS Demo with fullstack app / Rolling Deployment / Terraform sample
+# Rolling Deployment
 
 ## Table of content
 

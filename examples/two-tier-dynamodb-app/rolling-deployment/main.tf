@@ -85,7 +85,7 @@ module "alb_server" {
   create_alb = true
 
   name           = "${local.name}-server"
-  subnets        = [var.public_subnets[0], var.public_subnets[1]]
+  subnets        = module.vpc.public_subnets
   security_group = module.security_group_alb_server.sg_id
   target_group   = module.target_group_server.arn_tg
 
@@ -99,7 +99,7 @@ module "alb_client" {
   create_alb = true
 
   name           = "${local.name}-client"
-  subnets        = [var.public_subnets[0], var.public_subnets[1]]
+  subnets        = module.vpc.public_subnets
   security_group = module.security_group_alb_client.sg_id
   target_group   = module.target_group_client.arn_tg
 
@@ -120,8 +120,6 @@ module "ecs_role" {
 # ------- Creating a IAM Policy for role -------
 module "ecs_role_policy" {
   source = "./../../../modules/iam"
-
-  create_policy = true
 
   name      = "ecs-ecr-${local.name}"
   attach_to = module.ecs_role.name_role
@@ -224,8 +222,7 @@ module "ecs_service_server" {
     target_group_arn = module.target_group_server.arn_tg
   }]
   task_definition                    = module.ecs_taks_definition_server.task_definition_arn
-  subnets                            = var.private_subnets_server
-  container_name                     = var.container_name["server"]
+  subnets                            = module.vpc.private_subnets
   deployment_maximum_percent         = var.deployment_maximum_percent["server"]
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent["server"]
   health_check_grace_period_seconds  = var.seconds_health_check_grace_period
@@ -248,8 +245,7 @@ module "ecs_service_client" {
     target_group_arn = module.target_group_client.arn_tg
   }]
   task_definition                    = module.ecs_taks_definition_client.task_definition_arn
-  subnets                            = var.private_subnets_client
-  container_name                     = var.container_name["client"]
+  subnets                            = module.vpc.private_subnets
   deployment_maximum_percent         = var.deployment_maximum_percent["client"]
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent["client"]
   health_check_grace_period_seconds  = var.seconds_health_check_grace_period
@@ -303,7 +299,6 @@ module "devops_role" {
 module "policy_devops_role" {
   source = "./../../../modules/iam"
 
-  create_policy        = true
   create_devops_policy = true
 
   name                = "devops-${local.name}"

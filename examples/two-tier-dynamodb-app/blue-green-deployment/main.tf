@@ -155,8 +155,6 @@ module "ecs_role" {
 module "ecs_role_policy" {
   source = "./../../../modules/iam"
 
-  create_policy = true
-
   name      = "ecs-ecr-${local.name}"
   attach_to = module.ecs_role.name_role
 }
@@ -260,7 +258,6 @@ module "ecs_service_server" {
   }]
   task_definition                   = module.ecs_task_definition_server.task_definition_arn
   subnets                           = module.vpc.private_subnets
-  container_name                    = var.container_name["server"]
   health_check_grace_period_seconds = var.seconds_health_check_grace_period
   deployment_controller             = "CODE_DEPLOY"
 
@@ -282,7 +279,6 @@ module "ecs_service_client" {
   }]
   task_definition                   = module.ecs_task_definition_client.task_definition_arn
   subnets                           = module.vpc.private_subnets
-  container_name                    = var.container_name["client"]
   health_check_grace_period_seconds = var.seconds_health_check_grace_period
   deployment_controller             = "CODE_DEPLOY"
 
@@ -345,7 +341,6 @@ module "codedeploy_role" {
 module "policy_devops_role" {
   source = "./../../../modules/iam"
 
-  create_policy        = true
   create_devops_policy = true
 
   name                  = "devops-${local.name}"

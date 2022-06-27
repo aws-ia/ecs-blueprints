@@ -1,4 +1,4 @@
-# Amazon ECS Demo with fullstack app / Core Infrastructure / Terraform sample
+# Core Infrastructure
 
 ## Table of content
 
@@ -34,7 +34,7 @@ The AWS resources created by the script are detailed bellow:
         - 2 private subnets for the client side
         - 2 private subnets for the server side
 - ECS
-    - 1 ECS Cluster  
+    - 1 ECS Cluster
 
 ## Prerequisites
 There are general steps that you must follow in order to launch the infrastructure resources.
