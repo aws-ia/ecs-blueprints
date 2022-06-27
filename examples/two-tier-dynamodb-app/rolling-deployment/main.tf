@@ -281,10 +281,32 @@ module "ecs_autoscaling_client" {
 # ------- CodePipeline -------
 
 # ------- Creating Bucket to store CodePipeline artifacts -------
-module "s3_codepipeline" {
-  source = "./../../../modules/s3"
+module "codepipeline_s3_bucket" {
+  source = "terraform-aws-modules/s3-bucket/aws"
 
-  bucket_name = "codepipeline-${local.region}-${random_id.this.hex}"
+  bucket = "codepipeline-${local.region}-${random_id.this.hex}"
+  acl    = "private"
+
+  # For example only - please evaluate for your environment
+  force_destroy = true
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  tags = local.tags
 }
 
 # ------- Creating IAM roles used during the pipeline excecution -------
@@ -357,7 +379,7 @@ module "codepipeline" {
 
   name                     = "pipeline-${local.name}"
   pipe_role                = module.devops_role.arn_role
-  s3_bucket                = module.s3_codepipeline.s3_bucket_id
+  s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
   github_token             = var.github_token
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
@@ -372,10 +394,32 @@ module "codepipeline" {
 }
 
 # ------- Creating Bucket to store assets accessed by the Back-end -------
-module "s3_assets" {
-  source = "./../../../modules/s3"
+module "assets_s3_bucket" {
+  source = "terraform-aws-modules/s3-bucket/aws"
 
-  bucket_name = "assets-${local.region}-${random_id.this.hex}"
+  bucket = "assets-${local.region}-${random_id.this.hex}"
+  acl    = "private"
+
+  # For example only - please evaluate for your environment
+  force_destroy = true
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  tags = local.tags
 }
 
 # ------- Creating Dynamodb table by the Back-end -------
