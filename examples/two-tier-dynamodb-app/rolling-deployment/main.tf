@@ -22,6 +22,15 @@ locals {
 # ECS Blueprint
 ################################################################################
 
+module "ecs" {
+  source  = "terraform-aws-modules/ecs/aws"
+  version = "~> 4.0"
+
+  cluster_name = local.name
+
+  tags = local.tags
+}
+
 # ------- Creating Target Group for the server ALB -------
 module "target_group_server" {
   source = "./../../../modules/alb"
@@ -215,7 +224,7 @@ module "ecs_service_server" {
   name            = var.ecs_service_name["server"]
   desired_count   = var.ecs_desired_tasks["server"]
   security_groups = [module.security_group_ecs_task_server.sg_id]
-  ecs_cluster_id  = var.ecs_cluster_id
+  ecs_cluster_id  = module.ecs.cluster_id
   load_balancers = [{
     container_name   = var.container_name["server"]
     container_port   = var.port_app_server
@@ -238,7 +247,7 @@ module "ecs_service_client" {
   name            = var.ecs_service_name["client"]
   desired_count   = var.ecs_desired_tasks["client"]
   security_groups = [module.security_group_ecs_task_client.sg_id]
-  ecs_cluster_id  = var.ecs_cluster_id
+  ecs_cluster_id  = module.ecs.cluster_id
   load_balancers = [{
     container_name   = var.container_name["client"]
     container_port   = var.port_app_client
@@ -259,7 +268,7 @@ module "ecs_autoscaling_server" {
   source = "./../../../modules/ecs/autoscaling"
 
   service_name     = var.ecs_service_name["server"]
-  cluster_name     = var.ecs_cluster_name
+  cluster_name     = module.ecs.cluster_id
   min_capacity     = var.ecs_autoscaling_min_capacity["server"]
   max_capacity     = var.ecs_autoscaling_max_capacity["server"]
   cpu_threshold    = var.cpu_threshold["server"]
@@ -271,7 +280,7 @@ module "ecs_autoscaling_client" {
   source = "./../../../modules/ecs/autoscaling"
 
   service_name     = var.ecs_service_name["client"]
-  cluster_name     = var.ecs_cluster_name
+  cluster_name     = module.ecs.cluster_id
   min_capacity     = var.ecs_autoscaling_min_capacity["client"]
   max_capacity     = var.ecs_autoscaling_max_capacity["client"]
   cpu_threshold    = var.cpu_threshold["client"]
@@ -364,10 +373,9 @@ module "codepipeline" {
   branch                   = var.repository_branch
   codebuild_project_server = module.codebuild_server.project_id
   codebuild_project_client = module.codebuild_client.project_id
-  ecs_cluster_name         = var.ecs_cluster_name
+  ecs_cluster_name         = module.ecs.cluster_id
   ecs_service_name_client  = var.ecs_service_name["client"]
   ecs_service_name_server  = var.ecs_service_name["server"]
-  depends_on               = [module.policy_devops_role]
   sns_topic                = module.sns.sns_arn
 }
 

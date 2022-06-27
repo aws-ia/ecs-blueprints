@@ -21,12 +21,15 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-module "cluster" {
-  source = "../../modules/ecs/cluster"
+module "ecs" {
+  source  = "terraform-aws-modules/ecs/aws"
+  version = "~> 4.0"
 
-  name = local.name
+  cluster_name = local.name
+
   tags = local.tags
 }
+
 
 ################################################################################
 # Supporting Resources

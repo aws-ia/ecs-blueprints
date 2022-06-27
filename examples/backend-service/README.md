@@ -20,8 +20,8 @@ This blueprint provisions an ECS Fargate Service that can't be accessed external
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_cluster"></a> [cluster](#module\_cluster) | ../../modules/ecs/cluster | n/a |
 | <a name="module_ecr"></a> [ecr](#module\_ecr) | ../../modules/ecr | n/a |
+| <a name="module_ecs"></a> [ecs](#module\_ecs) | terraform-aws-modules/ecs/aws | ~> 4.0 |
 | <a name="module_roles"></a> [roles](#module\_roles) | ../../modules/ecs/roles | n/a |
 | <a name="module_service"></a> [service](#module\_service) | ../../modules/ecs/service | n/a |
 | <a name="module_task_definition"></a> [task\_definition](#module\_task\_definition) | ../../modules/ecs/task-definition | n/a |
