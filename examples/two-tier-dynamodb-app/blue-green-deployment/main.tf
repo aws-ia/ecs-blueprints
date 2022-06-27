@@ -160,21 +160,27 @@ module "ecs_role_policy" {
 }
 
 # ------- Creating server ECR Repository to store Docker Images -------
-module "ecr_server" {
-  source = "./../../../modules/ecr"
+module "server_ecr" {
+  source  = "terraform-aws-modules/ecr/aws"
+  version = "~> 1.0"
 
-  name                 = "repo-server"
-  image_tag_mutability = "MUTABLE"
+  repository_name = "${local.name}-server"
+
+  repository_read_access_arns       = [module.ecs_role.arn_role]
+  repository_read_write_access_arns = [module.devops_role.arn_role]
 
   tags = local.tags
 }
 
 # ------- Creating client ECR Repository to store Docker Images -------
-module "ecr_client" {
-  source = "./../../../modules/ecr"
+module "client_ecr" {
+  source  = "terraform-aws-modules/ecr/aws"
+  version = "~> 1.0"
 
-  name                 = "repo-client"
-  image_tag_mutability = "MUTABLE"
+  repository_name = "${local.name}-client"
+
+  repository_read_access_arns       = [module.ecs_role.arn_role]
+  repository_read_write_access_arns = [module.devops_role.arn_role]
 
   tags = local.tags
 }
@@ -200,7 +206,7 @@ module "ecs_task_definition_server" {
   task_role            = module.ecs_role.arn_role_ecs_task_role
   cpu                  = var.ecs_task_server_cpu
   memory               = var.ecs_task_server_memory
-  image                = module.ecr_server.ecr_repository_url
+  image                = module.server_ecr.repository_url
   region               = local.region
   container_port       = var.port_app_server
   cloudwatch_log_group = aws_cloudwatch_log_group.server.name
@@ -216,7 +222,7 @@ module "ecs_task_definition_client" {
   task_role            = module.ecs_role.arn_role_ecs_task_role
   cpu                  = var.ecs_task_client_cpu
   memory               = var.ecs_task_client_memory
-  image                = module.ecr_client.ecr_repository_url
+  image                = module.client_ecr.repository_url
   region               = local.region
   container_port       = var.port_app_client
   cloudwatch_log_group = aws_cloudwatch_log_group.client.name
@@ -345,7 +351,7 @@ module "policy_devops_role" {
 
   name                  = "devops-${local.name}"
   attach_to             = module.devops_role.name_role
-  ecr_repositories      = [module.ecr_server.ecr_repository_arn, module.ecr_client.ecr_repository_arn]
+  ecr_repositories      = [module.server_ecr.repository_arn, module.client_ecr.repository_arn]
   code_build_projects   = [module.codebuild_client.project_arn, module.codebuild_server.project_arn]
   code_deploy_resources = [module.codedeploy_server.application_arn, module.codedeploy_server.deployment_group_arn, module.codedeploy_client.application_arn, module.codedeploy_client.deployment_group_arn]
 }
@@ -365,7 +371,7 @@ module "codebuild_server" {
   iam_role               = module.devops_role.arn_role
   region                 = local.region
   account_id             = data.aws_caller_identity.id_current_account.account_id
-  ecr_repo_url           = module.ecr_server.ecr_repository_url
+  ecr_repo_url           = module.server_ecr.repository_url
   folder_path            = var.folder_path_server
   buildspec_path         = var.buildspec_path
   task_definition_family = module.ecs_task_definition_server.task_definition_family
@@ -384,7 +390,7 @@ module "codebuild_client" {
   iam_role               = module.devops_role.arn_role
   region                 = local.region
   account_id             = data.aws_caller_identity.id_current_account.account_id
-  ecr_repo_url           = module.ecr_client.ecr_repository_url
+  ecr_repo_url           = module.client_ecr.repository_url
   folder_path            = var.folder_path_client
   buildspec_path         = var.buildspec_path
   task_definition_family = module.ecs_task_definition_client.task_definition_family
