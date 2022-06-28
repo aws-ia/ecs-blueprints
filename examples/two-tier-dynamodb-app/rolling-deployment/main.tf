@@ -22,86 +22,115 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-# ------- Creating Target Group for the server ALB -------
-module "target_group_server" {
-  source = "./../../../modules/alb"
+module "client_alb_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
 
-  create_target_group = true
+  name        = "${local.name}-client"
+  description = "Security group for client application"
+  vpc_id      = module.vpc.vpc_id
 
-  name              = "tg-${local.name}-s"
-  port              = 80
-  protocol          = "HTTP"
-  vpc               = module.vpc.vpc_id
-  tg_type           = "ip"
-  health_check_path = "/status"
-  health_check_port = var.port_app_server
+  ingress_rules       = ["http-80-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 
-  tags = local.tags
-}
-
-# ------- Creating Target Group for the client ALB -------
-module "target_group_client" {
-  source = "./../../../modules/alb"
-
-  create_target_group = true
-
-  name              = "tg-${local.name}-c"
-  port              = 80
-  protocol          = "HTTP"
-  vpc               = module.vpc.vpc_id
-  tg_type           = "ip"
-  health_check_path = "/"
-  health_check_port = var.port_app_client
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
 
   tags = local.tags
 }
 
-# ------- Creating Security Group for the server ALB -------
-module "security_group_alb_server" {
-  source = "./../../../modules/security_group"
+module "client_alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 7.0"
 
-  name                = "alb-${local.name}-server"
-  description         = "Controls access to the server ALB"
-  vpc_id              = module.vpc.vpc_id
-  cidr_blocks_ingress = ["0.0.0.0/0"]
-  ingress_port        = 80
-}
+  name = "${local.name}-client"
 
-# ------- Creating Security Group for the client ALB -------
-module "security_group_alb_client" {
-  source = "./../../../modules/security_group"
+  load_balancer_type = "application"
 
-  name                = "alb-${local.name}-client"
-  description         = "Controls access to the client ALB"
-  vpc_id              = module.vpc.vpc_id
-  cidr_blocks_ingress = ["0.0.0.0/0"]
-  ingress_port        = 80
-}
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.public_subnets
+  security_groups = [module.client_alb_security_group.security_group_id]
 
-# ------- Creating Server Application ALB -------
-module "alb_server" {
-  source = "./../../../modules/alb"
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+    },
+  ]
 
-  create_alb = true
-
-  name           = "${local.name}-server"
-  subnets        = module.vpc.public_subnets
-  security_group = module.security_group_alb_server.sg_id
-  target_group   = module.target_group_server.arn_tg
+  target_groups = [
+    {
+      name_prefix      = "${local.name}-client-blue-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "ip"
+      health_check = {
+        path    = "/"
+        port    = var.port_app_client
+        matcher = "200-299"
+      }
+    },
+  ]
 
   tags = local.tags
 }
 
-# ------- Creating Client Application ALB -------
-module "alb_client" {
-  source = "./../../../modules/alb"
+module "server_alb_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
 
-  create_alb = true
+  name        = "${local.name}-client"
+  description = "Security group for client application"
+  vpc_id      = module.vpc.vpc_id
 
-  name           = "${local.name}-client"
-  subnets        = module.vpc.public_subnets
-  security_group = module.security_group_alb_client.sg_id
-  target_group   = module.target_group_client.arn_tg
+  ingress_with_source_security_group_id = [
+    {
+      rule                     = "http-80-tcp"
+      source_security_group_id = module.client_alb_security_group.security_group_id
+    },
+  ]
+
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+
+  tags = local.tags
+}
+
+module "server_alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 7.0"
+
+  name = "${local.name}-server"
+
+  load_balancer_type = "application"
+  internal           = true
+
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.private_subnets
+  security_groups = [module.server_alb_security_group.security_group_id]
+
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+    },
+  ]
+
+  target_groups = [
+    {
+      name_prefix      = "${local.name}-server-blue-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "ip"
+      health_check = {
+        path    = "/status"
+        port    = var.port_app_server
+        matcher = "200-299"
+      }
+    },
+  ]
 
   tags = local.tags
 }
@@ -188,24 +217,46 @@ module "ecs_taks_definition_client" {
 }
 
 # ------- Creating a server Security Group for ECS TASKS -------
-module "security_group_ecs_task_server" {
-  source = "./../../../modules/security_group"
+module "client_task_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
 
-  name            = "ecs-task-${local.name}-server"
-  description     = "Controls access to the server ECS task"
-  vpc_id          = module.vpc.vpc_id
-  ingress_port    = var.port_app_server
-  security_groups = [module.security_group_alb_server.sg_id]
+  name        = "${local.name}-client-task"
+  description = "Security group for client task"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_with_source_security_group_id = [
+    {
+      rule                     = "http-80-tcp"
+      source_security_group_id = module.client_alb_security_group.security_group_id
+    },
+  ]
+
+  egress_rules = ["all-all"]
+
+  tags = local.tags
 }
-# ------- Creating a client Security Group for ECS TASKS -------
-module "security_group_ecs_task_client" {
-  source = "./../../../modules/security_group"
 
-  name            = "ecs-task-${local.name}-client"
-  description     = "Controls access to the client ECS task"
-  vpc_id          = module.vpc.vpc_id
-  ingress_port    = var.port_app_client
-  security_groups = [module.security_group_alb_client.sg_id]
+module "server_task_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
+
+  name        = "${local.name}-server-task"
+  description = "Security group for server task"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_with_source_security_group_id = [
+    {
+      from_port                = var.port_app_server
+      to_port                  = var.port_app_server
+      protocol                 = "tcp"
+      source_security_group_id = module.server_alb_security_group.security_group_id
+    },
+  ]
+
+  egress_rules = ["all-all"]
+
+  tags = local.tags
 }
 
 # ------- Creating ECS Service server -------
@@ -214,12 +265,12 @@ module "ecs_service_server" {
 
   name            = var.ecs_service_name["server"]
   desired_count   = var.ecs_desired_tasks["server"]
-  security_groups = [module.security_group_ecs_task_server.sg_id]
+  security_groups = [module.server_task_security_group.security_group_id]
   ecs_cluster_id  = var.ecs_cluster_id
   load_balancers = [{
     container_name   = var.container_name["server"]
     container_port   = var.port_app_server
-    target_group_arn = module.target_group_server.arn_tg
+    target_group_arn = element(module.server_alb.target_group_arns, 0)
   }]
   task_definition                    = module.ecs_taks_definition_server.task_definition_arn
   subnets                            = module.vpc.private_subnets
@@ -237,12 +288,12 @@ module "ecs_service_client" {
 
   name            = var.ecs_service_name["client"]
   desired_count   = var.ecs_desired_tasks["client"]
-  security_groups = [module.security_group_ecs_task_client.sg_id]
+  security_groups = [module.client_task_security_group.security_group_id]
   ecs_cluster_id  = var.ecs_cluster_id
   load_balancers = [{
     container_name   = var.container_name["client"]
     container_port   = var.port_app_client
-    target_group_arn = module.target_group_client.arn_tg
+    target_group_arn = element(module.client_alb.target_group_arns, 0)
   }]
   task_definition                    = module.ecs_taks_definition_client.task_definition_arn
   subnets                            = module.vpc.private_subnets
@@ -371,7 +422,7 @@ module "codebuild_client" {
   container_name         = var.container_name["client"]
   service_port           = var.port_app_client
   ecs_role               = var.iam_role_name["ecs"]
-  server_alb_url         = module.alb_server.dns_alb
+  server_alb_url         = module.server_alb.lb_dns_name
 }
 
 # ------- Creating CodePipeline -------
