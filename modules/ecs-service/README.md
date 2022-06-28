@@ -1,6 +1,4 @@
-# Module: ecs/service
-
-This module provides an ECS Service.
+# AWS ECS AutoScaling
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
