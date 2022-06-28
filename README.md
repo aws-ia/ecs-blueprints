@@ -15,8 +15,8 @@ Start with the architectural blueprint that most closely matches your use case. 
 - ✅ [Backend Service](./examples/backend-service/README.md)
 - [ ] Worker Service
 - [ ] Scheduled Task
-- ✅ [2-Tier DynamoDB Application (Rolling Deployment)](./examples/two-tier-dynamodb-app/rolling_deployment/README.md)
-- ✅ [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/two-tier-dynamodb-app/blue_green_deployment/README.md)
+- ✅ [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling_deployment/README.md)
+- ✅ [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue_green_deployment/README.md)
 
 
 ## Motivation

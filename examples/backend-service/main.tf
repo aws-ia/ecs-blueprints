@@ -21,15 +21,6 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-module "ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
-
-  repository_name = local.name
-
-  tags = local.tags
-}
-
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
   version = "~> 4.0"
@@ -39,47 +30,37 @@ module "ecs" {
   tags = local.tags
 }
 
-resource "aws_security_group" "allow_all_egress" {
-  name        = local.name
-  description = "Allow access to all external resources"
+module "service_security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "~> 4.0"
+
+  name        = "${local.name}-service"
+  description = "Security group for service"
   vpc_id      = module.vpc.vpc_id
-  tags        = local.tags
-}
 
-resource "aws_security_group_rule" "allow_all_egress" {
-  security_group_id = aws_security_group.allow_all_egress.id
-  description       = "Allows task to establish connections to all external resources"
-  type              = "egress"
-  from_port         = "0"
-  to_port           = "0"
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
-
-module "service" {
-  source = "../../modules/ecs/service"
-
-  name            = local.name
-  ecs_cluster_id  = module.ecs.cluster_id
-  task_definition = module.task_definition.task_definition_arn
-  desired_count   = var.desired_count
-  subnets         = module.vpc.private_subnets
-  security_groups = [aws_security_group.allow_all_egress.id]
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 
   tags = local.tags
 }
 
-module "task_definition" {
-  source = "../../modules/ecs/task-definition"
+module "service" {
+  source = "../../modules/ecs-service"
 
-  name                 = local.name
-  region               = local.region
-  cpu                  = var.cpu
-  memory               = var.memory
-  image                = var.image
-  execution_role       = module.roles.execution_role
-  task_role            = module.roles.task_role
-  cloudwatch_log_group = aws_cloudwatch_log_group.main.name
+  name           = local.name
+  desired_count  = 1
+  ecs_cluster_id = module.ecs.cluster_id
+
+  security_groups = [module.service_security_group.security_group_id]
+  subnets         = module.vpc.private_subnets
+
+  # Task Definition
+  cpu              = 256
+  memory           = 512
+  image            = "public.ecr.aws/nginx/nginx:1.23-alpine-perl"
+  task_role_policy = data.aws_iam_policy_document.task_role.json
+
+  tags = local.tags
 }
 
 # TODO: set a custom policy
@@ -88,18 +69,6 @@ data "aws_iam_policy_document" "task_role" {
     actions   = ["ecs:DescribeClusters"]
     resources = [module.ecs.cluster_id]
   }
-}
-
-module "roles" {
-  source = "../../modules/ecs/roles"
-
-  name             = local.name
-  task_role_policy = data.aws_iam_policy_document.task_role.json
-}
-
-resource "aws_cloudwatch_log_group" "main" {
-  name              = "/ecs/service/${local.name}"
-  retention_in_days = var.logs_retention_in_days
 }
 
 ################################################################################
