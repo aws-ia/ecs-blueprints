@@ -1,7 +1,3 @@
-# ECS
-ecs_cluster_name = "blueprints-example"
-ecs_cluster_id = "arn:aws:ecs:eu-central-1:797325079427:cluster/blueprints-example"
-
 ecs_service_name = {
   client = "service-client"
   server = "service-server"

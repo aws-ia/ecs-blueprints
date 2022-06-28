@@ -69,16 +69,6 @@ variable "repository_branch" {
   default     = "main"
 }
 
-variable "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
-  type        = string
-}
-
-variable "ecs_cluster_id" {
-  description = "The ARN of the ECS cluster"
-  type        = string
-}
-
 variable "ecs_service_name" {
   description = "The name each ECS service"
   type        = map(any)

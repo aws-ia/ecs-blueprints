@@ -22,6 +22,15 @@ locals {
 # ECS Blueprint
 ################################################################################
 
+module "ecs" {
+  source  = "terraform-aws-modules/ecs/aws"
+  version = "~> 4.0"
+
+  cluster_name = local.name
+
+  tags = local.tags
+}
+
 module "client_alb_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
@@ -315,7 +324,7 @@ module "ecs_service_server" {
   name            = var.ecs_service_name["server"]
   desired_count   = var.ecs_desired_tasks["server"]
   security_groups = [module.server_task_security_group.security_group_id]
-  ecs_cluster_id  = var.ecs_cluster_id
+  ecs_cluster_id  = module.ecs.cluster_id
   load_balancers = [{
     container_name   = var.container_name["server"]
     container_port   = var.port_app_server
@@ -336,7 +345,7 @@ module "ecs_service_client" {
   name            = var.ecs_service_name["client"]
   desired_count   = var.ecs_desired_tasks["client"]
   security_groups = [module.client_task_security_group.security_group_id]
-  ecs_cluster_id  = var.ecs_cluster_id
+  ecs_cluster_id  = module.ecs.cluster_id
   load_balancers = [{
     container_name   = var.container_name["client"]
     container_port   = var.port_app_client
@@ -354,7 +363,7 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   source = "./../../../modules/ecs/autoscaling"
 
-  cluster_name     = var.ecs_cluster_name
+  cluster_name     = module.ecs.cluster_id
   service_name     = var.ecs_service_name["server"]
   min_capacity     = var.ecs_autoscaling_min_capacity["server"]
   max_capacity     = var.ecs_autoscaling_max_capacity["server"]
@@ -368,7 +377,7 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   source = "./../../../modules/ecs/autoscaling"
 
-  cluster_name     = var.ecs_cluster_name
+  cluster_name     = module.ecs.cluster_id
   service_name     = var.ecs_service_name["client"]
   min_capacity     = var.ecs_autoscaling_min_capacity["client"]
   max_capacity     = var.ecs_autoscaling_max_capacity["client"]
@@ -488,7 +497,7 @@ module "codedeploy_server" {
   source = "./codedeploy"
 
   name            = "Deploy-${local.name}-server"
-  ecs_cluster     = var.ecs_cluster_name
+  ecs_cluster     = module.ecs.cluster_id
   ecs_service     = var.ecs_service_name["server"]
   alb_listener    = aws_alb_listener.server.arn
   tg_blue         = element(module.server_alb.target_group_arns, 0)
@@ -502,7 +511,7 @@ module "codedeploy_client" {
   source = "./codedeploy"
 
   name            = "Deploy-${local.name}-client"
-  ecs_cluster     = var.ecs_cluster_name
+  ecs_cluster     = module.ecs.cluster_id
   ecs_service     = var.ecs_service_name["client"]
   alb_listener    = aws_alb_listener.client.arn
   tg_blue         = element(module.client_alb.target_group_arns, 0)
