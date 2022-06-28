@@ -1,11 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-/*===========================================
-      AWS IAM for different resources
-============================================*/
-
-# ------- IAM Roles -------
 resource "aws_iam_role" "ecs_task_excecution_role" {
   count              = var.create_ecs_role == true ? 1 : 0
   name               = var.name

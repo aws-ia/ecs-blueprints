@@ -1,6 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 output "arn_role" {
   description = "The ARN of the IAM role"
   value = (var.create_ecs_role == true

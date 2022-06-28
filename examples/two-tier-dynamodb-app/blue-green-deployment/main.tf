@@ -447,11 +447,24 @@ module "policy_devops_role" {
   code_deploy_resources = [module.codedeploy_server.application_arn, module.codedeploy_server.deployment_group_arn, module.codedeploy_client.application_arn, module.codedeploy_client.deployment_group_arn]
 }
 
-# ------- Creating a SNS topic -------
-module "sns" {
-  source = "./../../../modules/sns"
+resource "aws_sns_topic" "codestar_notification" {
+  name = local.name
 
-  sns_name = "sns-${local.name}"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sns:Publish"
+        Effect = "Allow"
+        Sid    = "WriteAccess"
+        Principal = {
+          Service = "codestar-notifications.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = local.tags
 }
 
 # ------- Creating the server CodeBuild project -------
@@ -502,7 +515,7 @@ module "codedeploy_server" {
   alb_listener    = aws_alb_listener.server.arn
   tg_blue         = element(module.server_alb.target_group_arns, 0)
   tg_green        = element(module.server_alb.target_group_arns, 1)
-  sns_topic_arn   = module.sns.sns_arn
+  sns_topic_arn   = aws_sns_topic.codestar_notification.arn
   codedeploy_role = module.codedeploy_role.arn_role_codedeploy
 }
 
@@ -516,7 +529,7 @@ module "codedeploy_client" {
   alb_listener    = aws_alb_listener.client.arn
   tg_blue         = element(module.client_alb.target_group_arns, 0)
   tg_green        = element(module.client_alb.target_group_arns, 1)
-  sns_topic_arn   = module.sns.sns_arn
+  sns_topic_arn   = aws_sns_topic.codestar_notification.arn
   codedeploy_role = module.codedeploy_role.arn_role_codedeploy
 }
 
@@ -537,7 +550,7 @@ module "codepipeline" {
   app_name_client          = module.codedeploy_client.application_name
   deployment_group_server  = module.codedeploy_server.deployment_group_name
   deployment_group_client  = module.codedeploy_client.deployment_group_name
-  sns_topic                = module.sns.sns_arn
+  sns_topic                = aws_sns_topic.codestar_notification.arn
 }
 
 # ------- Creating Bucket to store assets accessed by the Back-end -------
