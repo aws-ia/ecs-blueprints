@@ -22,9 +22,11 @@ locals {
 ################################################################################
 
 module "ecr" {
-  source = "../../modules/ecr"
+  source  = "terraform-aws-modules/ecr/aws"
+  version = "~> 1.0"
 
-  name = local.name
+  repository_name = local.name
+
   tags = local.tags
 }
 
