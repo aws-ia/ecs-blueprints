@@ -396,11 +396,24 @@ module "policy_devops_role" {
   code_build_projects = [module.codebuild_client.project_arn, module.codebuild_server.project_arn]
 }
 
-# ------- Creating a SNS topic -------
-module "sns" {
-  source = "./../../../modules/sns"
+resource "aws_sns_topic" "codestar_notification" {
+  name = local.name
 
-  sns_name = "sns-${local.name}"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sns:Publish"
+        Effect = "Allow"
+        Sid    = "WriteAccess"
+        Principal = {
+          Service = "codestar-notifications.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = local.tags
 }
 
 # ------- Creating the server CodeBuild project -------
@@ -456,7 +469,7 @@ module "codepipeline" {
   ecs_cluster_name         = module.ecs.cluster_id
   ecs_service_name_client  = var.ecs_service_name["client"]
   ecs_service_name_server  = var.ecs_service_name["server"]
-  sns_topic                = module.sns.sns_arn
+  sns_topic                = aws_sns_topic.codestar_notification.arn
 }
 
 # ------- Creating Bucket to store assets accessed by the Back-end -------

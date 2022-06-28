@@ -1,6 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
 resource "aws_iam_role" "execution" {
   name               = "${var.name}-execution"
   assume_role_policy = data.aws_iam_policy_document.execution.json

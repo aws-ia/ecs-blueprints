@@ -1,10 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-/*====================================
-      AWS ECS Task definition
-=====================================*/
-
 resource "aws_ecs_task_definition" "main" {
   family                   = var.name
   network_mode             = "awsvpc"

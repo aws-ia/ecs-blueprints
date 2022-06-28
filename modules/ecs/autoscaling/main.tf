@@ -1,10 +1,3 @@
-# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-/*====================================
-        AWS ECS Autoscaling
-=====================================*/
-
 # ------- AWS Autoscaling target to linke the ECS cluster and service -------
 resource "aws_appautoscaling_target" "ecs_target" {
   min_capacity       = var.min_capacity
