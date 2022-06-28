@@ -67,28 +67,22 @@ cd examples/core_infra/
 ```shell
 terraform init
 ```
-**4.** Complete the `terraform.tfvars` file with your custom values and then run the terraform plan command specifying the variables in the provided terraform.tfvars file:
+
+**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
-terraform plan -var-file="terraform.tfvars"
-```
-
-You can use the `terraform.tfvars.example` file for guidance.
-
-**5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
-
-```shell
-terraform apply -var-file="terraform.tfvars"
+terraform plan
+terraform apply
 ```
 
 ## Outputs
 
-After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies (values to be used in the tfvars).
+After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies.
 
 ## Cleanup
 
 Run the following command if you want to delete all the resources created before:
 
 ```shell
-terraform destroy -var-file="terraform.tfvars"
+terraform destroy
 ```

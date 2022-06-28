@@ -56,7 +56,7 @@ The AWS resources created by the script are detailed bellow:
 The following diagram represents the Infrastructure architecture being deployed with this project:
 
 <p align="center">
-  <img src="../../../docs/infrastructure_architecture.png"/>
+  <img src="../../docs/infrastructure_architecture.png"/>
 </p>
 
 ### Infrastructure considerations due to demo proposals
@@ -71,7 +71,7 @@ Feel fre to create a subscriptor for the SNS topic created by this code, in orde
 The following diagram represents the CI/CD architecture being deployed with this project:
 
 <p align="center">
-  <img src="../../../docs/cicd_architecture_bluegreen.png"/>
+  <img src="../../docs/cicd_architecture_bluegreen.png"/>
 </p>
 
 ## Prerequisites
@@ -92,23 +92,17 @@ cd examples/two-tier-dynamodb-app/blue_green_deployment
 ```shell
 terraform init
 ```
-**4.** Complete the `terraform.tfvars` file with your custom values and then run the terraform plan command specifying the variables in the provided terraform.tfvars file:
+
+**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
-```
-
-You can use the `terraform.tfvars.example` file for guidance. The values provided in the output of the previously deployed Solution (core_infra) are part of the needed input parameters for the `terraform.tfvars` file.
-
-**5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
-
-```shell
 terraform apply
 ```
 
-**6.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
+**5.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
 
-**7.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
+**6.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
 
 ### Notifications
 
