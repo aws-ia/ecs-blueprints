@@ -27,7 +27,7 @@ locals {
 
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 4.0"
+  version = "~> 4.1"
 
   cluster_name = local.name
 
@@ -347,7 +347,7 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = local.name # TODO module.ecs.cluster_name
+  cluster_name     = module.ecs.cluster_name
   service_name     = module.ecs_service_server.name
   min_capacity     = 1
   max_capacity     = 8
@@ -358,7 +358,7 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = local.name # TODO module.ecs.cluster_name
+  cluster_name     = module.ecs.cluster_name
   service_name     = module.ecs_service_server.name
   min_capacity     = 1
   max_capacity     = 8
@@ -483,7 +483,7 @@ module "codedeploy_server" {
   source = "../../modules/codedeploy"
 
   name            = "Deploy-${local.name}-server"
-  ecs_cluster     = local.name # TODO module.ecs.cluster_name
+  ecs_cluster     = module.ecs.cluster_name
   ecs_service     = module.ecs_service_server.name
   alb_listener    = aws_alb_listener.server.arn
   tg_blue         = element(module.server_alb.target_group_arns, 0)
@@ -498,7 +498,7 @@ module "codedeploy_client" {
   source = "../../modules/codedeploy"
 
   name            = "Deploy-${local.name}-client"
-  ecs_cluster     = local.name # TODO module.ecs.cluster_name
+  ecs_cluster     = module.ecs.cluster_name
   ecs_service     = module.ecs_service_client.name
   alb_listener    = aws_alb_listener.client.arn
   tg_blue         = element(module.client_alb.target_group_arns, 0)

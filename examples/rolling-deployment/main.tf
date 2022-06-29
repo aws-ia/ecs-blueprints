@@ -27,7 +27,7 @@ locals {
 
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 4.0"
+  version = "~> 4.1"
 
   cluster_name = local.name
 
@@ -303,7 +303,7 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = local.name # TODO module.ecs.cluster_name
+  cluster_name     = module.ecs.cluster_name
   service_name     = module.ecs_service_server.name
   min_capacity     = 1
   max_capacity     = 5
@@ -314,7 +314,7 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = local.name # TODO module.ecs.cluster_name
+  cluster_name     = module.ecs.cluster_name
   service_name     = module.ecs_service_client.name
   min_capacity     = 1
   max_capacity     = 5
@@ -437,12 +437,12 @@ module "codepipeline" {
   sns_topic                = aws_sns_topic.codestar_notification.arn
 
   client_deploy_configuration = {
-    ClusterName = local.name # TODO module.ecs.cluster_name
+    ClusterName = module.ecs.cluster_name
     ServiceName = module.ecs_service_server.name
     FileName    = "imagedefinition.json"
   }
   server_deploy_configuration = {
-    ClusterName = local.name # TODO module.ecs.cluster_name
+    ClusterName = module.ecs.cluster_name
     ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
