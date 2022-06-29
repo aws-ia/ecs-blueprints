@@ -78,7 +78,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
       name            = "Deploy_client"
       category        = "Deploy"
       owner           = "AWS"
-      provider        = "ECS"
+      provider        = var.deploy_provider
       input_artifacts = ["BuildArtifact_client"]
       version         = "1"
 

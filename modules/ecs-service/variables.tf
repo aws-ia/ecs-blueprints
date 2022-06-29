@@ -40,7 +40,7 @@ variable "load_balancers" {
 variable "platform_version" {
   description = "Platform version on which to run your service"
   type        = string
-  default     = "LATEST"
+  default     = null
 }
 
 variable "subnets" {
@@ -126,6 +126,12 @@ variable "container_port" {
   description = "The port that the container will use to listen to requests"
   type        = number
   default     = 8080
+}
+
+variable "attach_task_role_policy" {
+  description = "Attach the task role policy to the task role"
+  type        = bool
+  default     = true
 }
 
 variable "task_role_policy" {

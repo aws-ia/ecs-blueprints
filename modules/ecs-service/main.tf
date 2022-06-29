@@ -143,7 +143,7 @@ data "aws_iam_policy_document" "task" {
 }
 
 resource "aws_iam_role_policy" "task" {
-  count = var.task_role_policy != null ? 1 : 0
+  count = var.attach_task_role_policy ? 1 : 0
 
   name   = "${var.name}-task"
   role   = aws_iam_role.task.id

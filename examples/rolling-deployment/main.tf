@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
@@ -72,7 +73,7 @@ module "client_alb" {
 
   target_groups = [
     {
-      name_prefix      = "${local.name}-client-blue-"
+      name             = "client"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "ip"
@@ -131,7 +132,7 @@ module "server_alb" {
 
   target_groups = [
     {
-      name_prefix      = "${local.name}-server-blue-"
+      name             = "server"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "ip"
@@ -152,6 +153,7 @@ module "server_ecr" {
 
   repository_name = "${local.name}-server"
 
+  create_lifecycle_policy           = false
   repository_read_access_arns       = [module.ecs_service_server.task_execution_role_arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
@@ -164,6 +166,7 @@ module "client_ecr" {
 
   repository_name = "${local.name}-client"
 
+  create_lifecycle_policy           = false
   repository_read_access_arns       = [module.ecs_service_client.task_execution_role_arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
@@ -177,7 +180,10 @@ data "aws_iam_policy_document" "task_role" {
       "s3:GetObject",
       "s3:ListBucket",
     ]
-    resources = [module.assets_s3_bucket.s3_bucket_arn]
+    resources = [
+      module.assets_s3_bucket.s3_bucket_arn,
+      "${module.assets_s3_bucket.s3_bucket_arn}/*",
+    ]
   }
 
   statement {
@@ -196,7 +202,7 @@ data "aws_iam_policy_document" "task_role" {
       "dynamodb:Query",
       "dynamodb:Scan",
     ]
-    resources = [module.assets_dynamodb_table.dynamodb_table_id]
+    resources = [module.assets_dynamodb_table.dynamodb_table_arn]
   }
 }
 
@@ -297,7 +303,7 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = module.ecs.cluster_id
+  cluster_name     = local.name # TODO module.ecs.cluster_name
   service_name     = module.ecs_service_server.name
   min_capacity     = 1
   max_capacity     = 5
@@ -308,7 +314,7 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = module.ecs.cluster_id
+  cluster_name     = local.name # TODO module.ecs.cluster_name
   service_name     = module.ecs_service_client.name
   min_capacity     = 1
   max_capacity     = 5
@@ -356,9 +362,10 @@ resource "aws_sns_topic" "codestar_notification" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sns:Publish"
-        Effect = "Allow"
-        Sid    = "WriteAccess"
+        Sid      = "WriteAccess"
+        Effect   = "Allow"
+        Action   = "sns:Publish"
+        Resource = "arn:aws:sns:${local.region}:${data.aws_caller_identity.current.account_id}:${local.name}"
         Principal = {
           Service = "codestar-notifications.amazonaws.com"
         }
@@ -430,12 +437,12 @@ module "codepipeline" {
   sns_topic                = aws_sns_topic.codestar_notification.arn
 
   client_deploy_configuration = {
-    ClusterName = module.ecs.cluster_id
+    ClusterName = local.name # TODO module.ecs.cluster_name
     ServiceName = module.ecs_service_server.name
     FileName    = "imagedefinition.json"
   }
   server_deploy_configuration = {
-    ClusterName = module.ecs.cluster_id
+    ClusterName = local.name # TODO module.ecs.cluster_name
     ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
@@ -480,7 +487,15 @@ module "assets_dynamodb_table" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 2.0"
 
-  name = "${local.name}-assets"
+  name     = "${local.name}-assets"
+  hash_key = "id"
+
+  attributes = [
+    {
+      name = "id"
+      type = "N"
+    }
+  ]
 
   tags = local.tags
 }
