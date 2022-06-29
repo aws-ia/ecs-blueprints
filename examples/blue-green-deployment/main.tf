@@ -359,7 +359,7 @@ module "ecs_autoscaling_client" {
   source = "../../modules/ecs-autoscaling"
 
   cluster_name     = module.ecs.cluster_name
-  service_name     = module.ecs_service_server.name
+  service_name     = module.ecs_service_client.name
   min_capacity     = 1
   max_capacity     = 8
   cpu_threshold    = 75
