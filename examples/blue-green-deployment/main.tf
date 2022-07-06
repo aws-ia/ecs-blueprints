@@ -535,16 +535,16 @@ module "codepipeline" {
   client_deploy_configuration = {
     ApplicationName                = module.codedeploy_client.application_name
     DeploymentGroupName            = module.codedeploy_client.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_client"
-    TaskDefinitionTemplatePath     = "taskdef.json"
+    TaskDefinitionTemplateArtifact  = "BuildArtifact_client"
+    TaskDefinitionTemplatePath      = "taskdef.json"
     AppSpecTemplateArtifact        = "BuildArtifact_client"
     AppSpecTemplatePath            = "appspec.yaml"
   }
   server_deploy_configuration = {
     ApplicationName                = module.codedeploy_server.application_name
     DeploymentGroupName            = module.codedeploy_server.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_server"
-    TaskDefinitionTemplatePath     = "taskdef.json"
+    TaskDefinitionTemplateArtifact  = "BuildArtifact_server"
+    TaskDefinitionTemplatePath      = "taskdef.json"
     AppSpecTemplateArtifact        = "BuildArtifact_server"
     AppSpecTemplatePath            = "appspec.yaml"
   }

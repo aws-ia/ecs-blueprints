@@ -27,11 +27,13 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $REPO_URL:$IMAGE_TAG $FOLDER_PATH
+      - docker build -t $REPO_URL $FOLDER_PATH
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
+      - docker push $REPO_URL || true #chicken & egg problem : ecr immutable this push will only works one time, but required for first deployment from terraform
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
       - docker push $REPO_URL:$IMAGE_TAG
       - echo Changing directory to Templates directory
       - cd ./templates
