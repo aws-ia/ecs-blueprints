@@ -20,6 +20,9 @@ phases:
           echo "Adding Swagger host"
           sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/server/src/swagger/swagger.js
         fi
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo IMAGE_TAG=$IMAGE_TAG
   build:
     commands:
       - echo Build started on `date`
@@ -43,9 +46,10 @@ phases:
       - sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" appspec.yaml taskdef.json
       - sed -i "s|<ECS_ROLE>|$ECS_ROLE|g" taskdef.json
       - sed -i "s|<ECS_TASK_ROLE>|$ECS_TASK_ROLE|g" taskdef.json
-      - sed -i "s|<REPO_URL>|$REPO_URL|g" taskdef.json
+      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" taskdef.json
       - sed -i "s|<AWS_ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" taskdef.json
       - sed -i "s|<AWS_REGION>|$AWS_REGION|g" taskdef.json
+      - cat taskdef.json
 
 artifacts:
   files:

@@ -32,10 +32,10 @@ resource "aws_codebuild_project" "aws_codebuild" {
       value = var.ecr_repo_url
     }
 
-    environment_variable {
-      name  = "IMAGE_TAG"
-      value = "latest"
-    }
+    # environment_variable {
+    #   name  = "IMAGE_TAG"
+    #   value = "latest"
+    # }
 
     environment_variable {
       name  = "DYNAMODB_TABLE"
