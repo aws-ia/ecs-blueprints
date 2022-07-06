@@ -486,8 +486,8 @@ module "codedeploy_server" {
   ecs_cluster     = module.ecs.cluster_name
   ecs_service     = module.ecs_service_server.name
   alb_listener    = aws_alb_listener.server.arn
-  tg_blue         = element(module.server_alb.target_group_arns, 0)
-  tg_green        = element(module.server_alb.target_group_arns, 1)
+  tg_blue         = element(module.server_alb.target_group_names, 0)
+  tg_green        = element(module.server_alb.target_group_names, 1)
   sns_topic_arn   = aws_sns_topic.codestar_notification.arn
   codedeploy_role = module.codedeploy_role.codedeploy_role_arn
 
@@ -501,8 +501,8 @@ module "codedeploy_client" {
   ecs_cluster     = module.ecs.cluster_name
   ecs_service     = module.ecs_service_client.name
   alb_listener    = aws_alb_listener.client.arn
-  tg_blue         = element(module.client_alb.target_group_arns, 0)
-  tg_green        = element(module.client_alb.target_group_arns, 1)
+  tg_blue         = element(module.client_alb.target_group_names, 0)
+  tg_green        = element(module.client_alb.target_group_names, 1)
   sns_topic_arn   = aws_sns_topic.codestar_notification.arn
   codedeploy_role = module.codedeploy_role.codedeploy_role_arn
 
