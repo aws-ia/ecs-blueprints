@@ -17,7 +17,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
 }
 
@@ -509,13 +509,21 @@ module "codedeploy_client" {
   tags = local.tags
 }
 
+data "aws_secretsmanager_secret" "github_token" {
+  name = "ecs-github-token"
+}
+
+data "aws_secretsmanager_secret_version" "secret-version" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
+}
+
 module "codepipeline" {
   source = "../../modules/codepipeline"
 
   name                     = "pipeline-${local.name}"
   pipe_role                = module.devops_role.devops_role_arn
   s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
-  github_token             = var.github_token
+  github_token             = data.aws_secretsmanager_secret_version.secret-version.secret_string
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
   branch                   = var.repository_branch
