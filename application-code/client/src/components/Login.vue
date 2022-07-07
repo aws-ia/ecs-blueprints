@@ -4,7 +4,7 @@
 <template>
   <div id="login">
     <div class="form">
-      <h1>AWS Demo Login*</h1>
+      <h1>AWS Demo Login v2*</h1>
       <form @submit.prevent="onSubmit">
         <input
           v-model="user"
