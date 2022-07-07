@@ -33,11 +33,6 @@ resource "aws_codebuild_project" "aws_codebuild" {
     }
 
     environment_variable {
-      name  = "IMAGE_TAG"
-      value = "latest"
-    }
-
-    environment_variable {
       name  = "DYNAMODB_TABLE"
       value = var.dynamodb_table_name
     }
@@ -63,13 +58,13 @@ resource "aws_codebuild_project" "aws_codebuild" {
     }
 
     environment_variable {
-      name  = "ECS_ROLE"
-      value = var.ecs_role
+      name  = "ECS_TASK_ROLE_ARN"
+      value = var.ecs_task_role_arn
     }
 
     environment_variable {
-      name  = "ECS_TASK_ROLE"
-      value = var.ecs_task_role
+      name  = "ECS_EXEC_ROLE_ARN"
+      value = var.ecs_exec_role_arn
     }
 
     environment_variable {

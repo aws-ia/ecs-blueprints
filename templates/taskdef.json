@@ -1,5 +1,6 @@
 {
-  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/<ECS_ROLE>",
+  "executionRoleArn": "<ECS_EXEC_ROLE_ARN>",
+  "taskRoleArn": "<ECS_TASK_ROLE_ARN>",
   "containerDefinitions": [
     {
       "name": "<CONTAINER_NAME>",
@@ -9,7 +10,7 @@
         "logDriver": "awslogs",
         "secretOptions": null,
         "options": {
-          "awslogs-group": "/ecs/task-definition-<TASK_DEFINITION_FAMILY>",
+          "awslogs-group": "/ecs/<TASK_DEFINITION_FAMILY>",
           "awslogs-region": "<AWS_REGION>",
           "awslogs-stream-prefix": "ecs"
         }
