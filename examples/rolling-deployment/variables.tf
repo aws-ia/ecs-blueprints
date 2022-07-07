@@ -2,7 +2,7 @@
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
-  default     = "./templates/buildspec_bluegreen.yml"
+  default     = "./templates/buildspec_rolling.yml"
 }
 
 variable "folder_path_server" {
