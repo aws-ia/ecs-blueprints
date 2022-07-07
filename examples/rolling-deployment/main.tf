@@ -17,7 +17,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
 }
 
@@ -399,8 +399,8 @@ module "codebuild_server" {
   task_definition_family = module.ecs_service_server.task_definition_family
   container_name         = module.ecs_service_server.container_name
   service_port           = local.app_server_port
-  ecs_role               = "${local.name}-ecs"
-  ecs_task_role          = module.ecs_service_server.task_role_arn
+  ecs_task_role_arn      = module.ecs_service_server.task_role_arn
+  ecs_exec_role_arn      = module.ecs_service_server.task_execution_role_arn
 
   tags = local.tags
 }
@@ -416,10 +416,18 @@ module "codebuild_client" {
   task_definition_family = module.ecs_service_client.task_definition_family
   container_name         = module.ecs_service_client.container_name
   service_port           = local.app_client_port
-  ecs_role               = "${local.name}-ecs"
+  ecs_task_role_arn      = module.ecs_service_client.task_role_arn
+  ecs_exec_role_arn      = module.ecs_service_client.task_execution_role_arn
   server_alb_url         = module.server_alb.lb_dns_name
 
   tags = local.tags
+}
+data "aws_secretsmanager_secret" "github_token" {
+  name = "ecs-github-token"
+}
+
+data "aws_secretsmanager_secret_version" "secret-version" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
 module "codepipeline" {
@@ -428,7 +436,7 @@ module "codepipeline" {
   name                     = "pipeline-${local.name}"
   pipe_role                = module.devops_role.devops_role_arn
   s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
-  github_token             = var.github_token
+  github_token             = data.aws_secretsmanager_secret_version.secret-version.secret_string
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
   branch                   = var.repository_branch

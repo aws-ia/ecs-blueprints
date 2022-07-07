@@ -310,7 +310,7 @@ module "ecs_service_server" {
   container_port   = local.app_server_port
   cpu              = 256
   memory           = 512
-  image            = "${module.server_ecr.repository_url}:a9c6480" # TODO: remove this
+  image            = module.server_ecr.repository_url 
   task_role_policy = data.aws_iam_policy_document.task_role.json
 
   tags = local.tags
