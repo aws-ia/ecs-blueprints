@@ -44,8 +44,8 @@ variable "service_port" {
   type        = number
 }
 
-variable "ecs_role" {
-  description = "The name of the ECS Task Excecution role to specify in the Task Definition"
+variable "ecs_exec_role_arn" {
+  description = "The Arn of the ECS Task Excecution role to specify in the Task Definition"
   type        = string
 }
 
@@ -55,8 +55,8 @@ variable "server_alb_url" {
   default     = ""
 }
 
-variable "ecs_task_role" {
-  description = "The name of the ECS Task role to specify in the Task Definition"
+variable "ecs_task_role_arn" {
+  description = "The Arn of the ECS Task role to specify in the Task Definition"
   type        = string
   default     = "null"
 }
