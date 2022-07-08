@@ -3,7 +3,7 @@
 
 <template>
   <div class="container">
-    <h1>Welcome to the Demo website v2!</h1>
+    <h1>Welcome to the Demo website!</h1>
     <h3>Are you ready to learn how to build a full stack application with Amazon ECS, combining it with DevOps practices?</h3>
     <br>
 
