@@ -9,7 +9,7 @@ resource "aws_ecs_service" "this" {
   cluster                            = var.ecs_cluster_id
   launch_type                        = "FARGATE"
   platform_version                   = var.platform_version
-  task_definition                    = aws_ecs_task_definition.this.arn
+  task_definition                     = aws_ecs_task_definition.this.arn
   desired_count                      = var.desired_count
   enable_ecs_managed_tags            = var.enable_ecs_managed_tags
   propagate_tags                     = var.propagate_tags

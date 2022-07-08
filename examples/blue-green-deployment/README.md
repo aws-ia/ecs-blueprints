@@ -87,22 +87,26 @@ Before launching this solution please deploy the `core_infra` solution, which is
 cd examples/two-tier-dynamodb-app/blue_green_deployment
 ```
 
-**3.** Run Terraform init to download the providers and install the modules
+**3.** Create Github Token secret in Secret Manager
+
+Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret name `github-token` with your Plaintext github token value.
+
+**4.** Run Terraform init to download the providers and install the modules
 
 ```shell
 terraform init
 ```
 
-**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
+**5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
 terraform apply
 ```
 
-**5.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
+**6.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
 
-**6.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
+**7.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
 
 ### Notifications
 

@@ -95,7 +95,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
 }
 
 resource "aws_codestarnotifications_notification_rule" "codepipeline" {
-  name        = "pipeline_execution_status"
+  name        = "${var.name}_pipeline_execution_status"
   detail_type = "FULL"
 
   event_type_ids = [

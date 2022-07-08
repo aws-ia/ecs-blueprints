@@ -310,7 +310,7 @@ module "ecs_service_server" {
   container_port   = local.app_server_port
   cpu              = 256
   memory           = 512
-  image            = module.server_ecr.repository_url
+  image            = module.server_ecr.repository_url 
   task_role_policy = data.aws_iam_policy_document.task_role.json
 
   tags = local.tags
@@ -535,16 +535,16 @@ module "codepipeline" {
   client_deploy_configuration = {
     ApplicationName                = module.codedeploy_client.application_name
     DeploymentGroupName            = module.codedeploy_client.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_client"
-    TaskDefinitionTemplatePath     = "taskdef.json"
+    TaskDefinitionTemplateArtifact  = "BuildArtifact_client"
+    TaskDefinitionTemplatePath      = "taskdef.json"
     AppSpecTemplateArtifact        = "BuildArtifact_client"
     AppSpecTemplatePath            = "appspec.yaml"
   }
   server_deploy_configuration = {
     ApplicationName                = module.codedeploy_server.application_name
     DeploymentGroupName            = module.codedeploy_server.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_server"
-    TaskDefinitionTemplatePath     = "taskdef.json"
+    TaskDefinitionTemplateArtifact  = "BuildArtifact_server"
+    TaskDefinitionTemplatePath      = "taskdef.json"
     AppSpecTemplateArtifact        = "BuildArtifact_server"
     AppSpecTemplatePath            = "appspec.yaml"
   }
@@ -560,7 +560,7 @@ module "assets_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "assets-${local.region}-${random_id.this.hex}"
+  bucket = "${local.name}-assets-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment

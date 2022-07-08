@@ -17,7 +17,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
 }
 
@@ -422,6 +422,13 @@ module "codebuild_client" {
 
   tags = local.tags
 }
+data "aws_secretsmanager_secret" "github_token" {
+  name = "ecs-github-token"
+}
+
+data "aws_secretsmanager_secret_version" "secret-version" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
+}
 
 module "codepipeline" {
   source = "../../modules/codepipeline"
@@ -429,7 +436,7 @@ module "codepipeline" {
   name                     = "pipeline-${local.name}"
   pipe_role                = module.devops_role.devops_role_arn
   s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
-  github_token             = var.github_token
+  github_token             = data.aws_secretsmanager_secret_version.secret-version.secret_string
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
   branch                   = var.repository_branch
@@ -459,7 +466,7 @@ module "assets_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "assets-${local.region}-${random_id.this.hex}"
+  bucket = "${local.name}-assets-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please evaluate for your environment
