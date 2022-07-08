@@ -1,27 +1,19 @@
-output "arn_role" {
+output "devops_role_arn" {
   description = "The ARN of the IAM role"
-  value = (var.create_ecs_role == true
-    ? (length(aws_iam_role.ecs_task_excecution_role) > 0 ? aws_iam_role.ecs_task_excecution_role[0].arn : "")
-  : (length(aws_iam_role.devops_role) > 0 ? aws_iam_role.devops_role[0].arn : ""))
+  value       = try(aws_iam_role.devops[0].arn, null)
 }
 
-output "name_role" {
+output "devops_role_name" {
   description = "The name of the IAM role"
-  value = (var.create_ecs_role == true
-    ? (length(aws_iam_role.ecs_task_excecution_role) > 0 ? aws_iam_role.ecs_task_excecution_role[0].name : "")
-  : (length(aws_iam_role.devops_role) > 0 ? aws_iam_role.devops_role[0].name : ""))
+  value       = try(aws_iam_role.devops[0].name, null)
 }
 
-output "arn_role_codedeploy" {
+output "codedeploy_role_arn" {
   description = "The ARN of the CodeDeploy IAM role"
-  value = (var.create_codedeploy_role == true
-    ? (length(aws_iam_role.codedeploy_role) > 0 ? aws_iam_role.codedeploy_role[0].arn : "")
-  : "")
+  value       = try(aws_iam_role.codedeploy[0].arn, null)
 }
 
-output "arn_role_ecs_task_role" {
-  description = "The ARN of the IAM role for the ECS task role"
-  value = (var.create_ecs_role == true
-    ? (length(aws_iam_role.ecs_task_role) > 0 ? aws_iam_role.ecs_task_role[0].arn : "")
-  : "")
+output "codedeploy_role_name" {
+  description = "The name of the IAM role"
+  value       = try(aws_iam_role.codedeploy[0].name, null)
 }
