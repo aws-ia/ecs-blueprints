@@ -513,7 +513,7 @@ data "aws_secretsmanager_secret" "github_token" {
   name = "ecs-github-token"
 }
 
-data "aws_secretsmanager_secret_version" "secret-version" {
+data "aws_secretsmanager_secret_version" "secret_version" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
@@ -523,7 +523,7 @@ module "codepipeline" {
   name                     = "pipeline-${local.name}"
   pipe_role                = module.devops_role.devops_role_arn
   s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
-  github_token             = data.aws_secretsmanager_secret_version.secret-version.secret_string
+  github_token             = data.aws_secretsmanager_secret_version.secret_version.secret_string
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
   branch                   = var.repository_branch

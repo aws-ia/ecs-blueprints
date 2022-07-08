@@ -34,8 +34,8 @@ No modules.
 | <a name="input_container_name"></a> [container\_name](#input\_container\_name) | The name of the Container specified in the Task definition | `string` | n/a | yes |
 | <a name="input_dynamodb_table_name"></a> [dynamodb\_table\_name](#input\_dynamodb\_table\_name) | The name of Dynamodb table used by the server application | `string` | `""` | no |
 | <a name="input_ecr_repo_url"></a> [ecr\_repo\_url](#input\_ecr\_repo\_url) | AWS ECR repository URL where docker images are being stored | `string` | n/a | yes |
-| <a name="input_ecs_role"></a> [ecs\_role](#input\_ecs\_role) | The name of the ECS Task Excecution role to specify in the Task Definition | `string` | n/a | yes |
-| <a name="input_ecs_task_role"></a> [ecs\_task\_role](#input\_ecs\_task\_role) | The name of the ECS Task role to specify in the Task Definition | `string` | `"null"` | no |
+| <a name="input_ecs_exec_role_arn"></a> [ecs\_exec\_role\_arn](#input\_ecs\_exec\_role\_arn) | The Arn of the ECS Task Excecution role to specify in the Task Definition | `string` | n/a | yes |
+| <a name="input_ecs_task_role_arn"></a> [ecs\_task\_role\_arn](#input\_ecs\_task\_role\_arn) | The Arn of the ECS Task role to specify in the Task Definition | `string` | `"null"` | no |
 | <a name="input_folder_path"></a> [folder\_path](#input\_folder\_path) | Folder path to use to build the docker images/containers | `string` | n/a | yes |
 | <a name="input_iam_role"></a> [iam\_role](#input\_iam\_role) | IAM role to attach to CodeBuild | `string` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | CodeBuild Project name | `string` | n/a | yes |
