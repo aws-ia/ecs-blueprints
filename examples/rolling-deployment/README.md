@@ -2,19 +2,21 @@
 
 ## Table of content
 
-   * [Folder overview](#folder-overview)
-   * [Infrastructure](#infrastructure)
-      * [Prerequisites](#prerequisites)
-      * [Usage](#usage)
-        * [Notifications](#notifications)
-   * [Application Code](#application-code)
-     * [Client app](#client-app)
-       * [Client considerations due to demo proposal](#client-considerations-due-to-demo-proposals)
-     * [Server app](#server-app)
-   * [Cleanup](#cleanup)
-   * [Security](#security)
-   * [License](#license)
-
+- [Rolling Deployment](#rolling-deployment)
+  - [Table of content](#table-of-content)
+  - [Folder overview](#folder-overview)
+  - [Infrastructure](#infrastructure)
+  - [Infrastructure Architecture](#infrastructure-architecture)
+    - [Infrastructure considerations due to demo proposals](#infrastructure-considerations-due-to-demo-proposals)
+  - [CI/CD Architecture](#cicd-architecture)
+  - [Prerequisites](#prerequisites)
+  - [Usage](#usage)
+    - [Notifications](#notifications)
+  - [Application Code](#application-code)
+    - [Client app](#client-app)
+    - [Client considerations due to demo proposals](#client-considerations-due-to-demo-proposals)
+    - [Server app](#server-app)
+  - [Cleanup](#cleanup)
 
 ## Folder overview
 
@@ -25,28 +27,27 @@ This folder contains Terraform code to deploy a solution that is intended to be 
 The AWS resources created by the script are detailed bellow:
 
 - Networking
-    - 2 ALBs - public facing ones (1 for the client and 1 for the server)
-    - Security Groups
+  - 2 ALBs - public facing ones (1 for the client and 1 for the server)
+  - Security Groups
 - Development code
-    - 2 ECR Repositories (1 for the client and 1 for the server)
-    - 1 S3 Bucket (used to store assets accessible from within the application)
-    - 1 Dynamodb table (used by the application)
+  - 2 ECR Repositories (1 for the client and 1 for the server)
+  - 1 S3 Bucket (used to store assets accessible from within the application)
+  - 1 Dynamodb table (used by the application)
 - ECS Infrastructure
-    - 1 ECS Cluster
-    - 2 ECS Services
-    - 2 Task definitions
-    - IAM roles
-    - Security Groups
-    - 2 Target groups
-    - 2 Autoscaling groups + Cloudwatch rules for it
+  - 1 ECS Cluster
+  - 2 ECS Services
+  - 2 Task definitions
+  - IAM roles
+  - Security Groups
+  - 2 Target groups
+  - 2 Autoscaling groups + Cloudwatch rules for it
 - CI/CD
-    - 1 CodePipeline pipeline
-    - 1 GitHub integration
-    - 2 CodeBuild Projects
-    - 2 ECS Rolling Deployment cofigurations
-    - 1 S3 Bucket (used by CodePipeline to store the artifacts)
-    - 1 SNS topic
-
+  - 1 CodePipeline pipeline
+  - 1 GitHub integration
+  - 2 CodeBuild Projects
+  - 2 ECS Rolling Deployment cofigurations
+  - 1 S3 Bucket (used by CodePipeline to store the artifacts)
+  - 1 SNS topic
 
 ## Infrastructure Architecture
 
@@ -57,6 +58,7 @@ The following diagram represents the Infrastructure architecture being deployed 
 </p>
 
 ### Infrastructure considerations due to demo proposals
+
 The task definition template (templates/taskdef.json) that enables the CodePipeline to execute a Blue/Green deployment in ECS has hardcoded values for the memory and CPU values for the server and client application.
 
 Feel free to change it, by adding for example a set of "sed" commands in CodeBuild (following the ones already provided as example) to replace the values dynamically.
@@ -72,7 +74,8 @@ The following diagram represents the CI/CD architecture being deployed with this
 </p>
 
 ## Prerequisites
-Before launching this solution please deploy the `core_infra` solution, which is provided in the *examples* folder of this repository.
+
+Before launching this solution please deploy the `core_infra` solution, which is provided in the _examples_ folder of this repository.
 
 ## Usage
 
@@ -84,22 +87,26 @@ Before launching this solution please deploy the `core_infra` solution, which is
 cd examples/two-tier-dynamodb-app/rolling_deployment/
 ```
 
-**3.** Run Terraform init to download the providers and install the modules
+**3.** Create Github Token secret in Secret Manager
+
+Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret name `github-token` with your Plaintext github token value.
+
+**4.** Run Terraform init to download the providers and install the modules
 
 ```shell
 terraform init
 ```
 
-**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
+**5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
 terraform apply
 ```
 
-**5.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
+**6.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the _application_url_ value from the output and open it in a browser.
 
-**6.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
+**7.** In order to access the also implemented Swagger endpoint copy the _swagger_endpoint_ value from the Terraform output and open it in a browser.
 
 ### Notifications
 
@@ -114,18 +121,20 @@ The Client folder contains the code to run the frontend. This code is written in
 The application folder structure is separeted in components, views and services, despite the router and the assets.
 
 ### Client considerations due to demo proposals
-1) The assets used by the client application are going to be requested from the S3 bucket created with this code. Please add 3 images to the created S3 bucket.
 
-2) The Dynamodb structure used by the client application is the following one:
+1. The assets used by the client application are going to be requested from the S3 bucket created with this code. Please add 3 images to the created S3 bucket.
+
+2. The Dynamodb structure used by the client application is the following one:
 
 ```shell
   - id: N (HASH)
   - path: S
   - title: S
 ```
+
 Feel free to change the structure as needed. But in order to have full demo experience, please add 3 Dynamodb Items with the specified structure from above. Below is an example.
 
-*Note: The path attribute correspondes to the S3 Object URL of each added asset from the previous step.*
+_Note: The path attribute correspondes to the S3 Object URL of each added asset from the previous step._
 
 Example of a Dynamodb Item:
 
@@ -150,6 +159,7 @@ The Server folder contains the code to run the backend. This code is written in 
 Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, you can grab the output link and access it through a browser.
 
 The server exposes 3 endpoints:
+
 - /status: serves as a dummy endpoint to know if the server is up and running. This one is used as the health check endpoint by the AWS ECS resources
 - /api/getAllProducts: main endpoint, which returns all the Items from an AWS Dynamodb table
 - /api/docs: the Swagger enpoint for the API documentation
