@@ -26,11 +26,11 @@ variable "repository_owner" {
 variable "repository_name" {
   description = "The name of the Github repository"
   type        = string
-  default     = "main"
+  default     = "terraform-aws-ecs-blueprints"
 }
 
 variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
-  default     = "refactor/module-resource-consolidation"
+  default     = "main"
 }
