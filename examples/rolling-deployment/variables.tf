@@ -20,8 +20,7 @@ variable "folder_path_client" {
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
-  #default     = "aws-ia"
-  default     = "allamand"  
+  default     = "aws-ia"  
 }
 
 variable "repository_name" {
@@ -33,6 +32,5 @@ variable "repository_name" {
 variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
-  #default     = "main"
-  default     = "refactor/module-resource-consolidation"
+  default     = "main"
 }

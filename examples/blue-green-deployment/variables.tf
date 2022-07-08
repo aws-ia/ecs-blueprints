@@ -20,13 +20,13 @@ variable "folder_path_client" {
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
-  default     = "allamand"
+  default     = "aws-ia"
 }
 
 variable "repository_name" {
   description = "The name of the Github repository"
   type        = string
-  default     = "terraform-aws-ecs-blueprints"
+  default     = "main"
 }
 
 variable "repository_branch" {
