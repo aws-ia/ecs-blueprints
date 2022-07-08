@@ -560,7 +560,7 @@ module "assets_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "assets-${local.region}-${random_id.this.hex}"
+  bucket = "${local.name}-assets-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
