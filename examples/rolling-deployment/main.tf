@@ -446,12 +446,12 @@ module "codepipeline" {
 
   client_deploy_configuration = {
     ClusterName = module.ecs.cluster_name
-    ServiceName = module.ecs_service_server.name
+    ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
   server_deploy_configuration = {
     ClusterName = module.ecs.cluster_name
-    ServiceName = module.ecs_service_client.name
+    ServiceName = module.ecs_service_server.name
     FileName    = "imagedefinition.json"
   }
 

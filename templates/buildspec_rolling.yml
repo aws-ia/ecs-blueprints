@@ -18,7 +18,7 @@ phases:
         fi
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo IMAGE_TAG=$IMAGE_TAG        
+      - echo IMAGE_TAG=$IMAGE_TAG
   build:
     commands:
       - echo Build started on `date`
@@ -29,7 +29,7 @@ phases:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push $REPO_URL || true #chicken & egg problem : ecr immutable this push will only works one time, but required for first deployment from terraform
-      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG      
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
       - docker push $REPO_URL:$IMAGE_TAG
       - echo Changing directory to Templates directory
       - cd ./templates
@@ -40,7 +40,8 @@ phases:
       - cd artifacts
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" imagedefinition.json
-      - sed -i "s|<REPO_URL>|$REPO_URL|g" imagedefinition.json
+      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" imagedefinition.json
+      - cat imagedefinition.json
 
 artifacts:
   files:
