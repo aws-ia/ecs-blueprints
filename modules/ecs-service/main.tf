@@ -149,3 +149,107 @@ resource "aws_iam_role_policy" "task" {
   role   = aws_iam_role.task.id
   policy = var.task_role_policy
 }
+
+################################################################################
+# Autoscaling
+################################################################################
+
+# ------- AWS Autoscaling target to linke the ECS cluster and service -------
+resource "aws_appautoscaling_target" "this" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  min_capacity       = var.autoscaling_min_capacity
+  max_capacity       = var.autoscaling_max_capacity
+  resource_id        = "service/${var.ecs_cluster_id}/${aws_ecs_service.this.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+
+  lifecycle {
+    ignore_changes = [
+      role_arn,
+    ]
+  }
+}
+
+# ------- AWS Autoscaling policy using CPU allocation -------
+resource "aws_appautoscaling_policy" "cpu" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  name               = "ecs_scale_cpu_service_${aws_ecs_service.this.name}"
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 50
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+  }
+}
+
+# ------- AWS Autoscaling policy using memory allocation -------
+resource "aws_appautoscaling_policy" "memory" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  name               = "ecs_scale_memory_service_${aws_ecs_service.this.name}"
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = 50
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+  }
+}
+
+# ------- High memory alarm -------
+resource "aws_cloudwatch_metric_alarm" "high_memory_policy_alarm" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  alarm_name          = "high-memory-ecs-service-${aws_ecs_service.this.name}"
+  alarm_description   = "High Memory for ecs service-${aws_ecs_service.this.name}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "MemoryUtilization"
+  namespace           = "AWS/ECS"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = var.autoscaling_memory_threshold
+
+  dimensions = {
+    "ServiceName" = aws_ecs_service.this.name
+    "ClusterName" = var.ecs_cluster_id
+  }
+
+}
+
+# ------- High CPU alarm -------
+resource "aws_cloudwatch_metric_alarm" "high_cpu_policy_alarm" {
+  count = var.enable_autoscaling ? 1 : 0
+
+  alarm_name          = "high-cpu-ecs-service-${aws_ecs_service.this.name}"
+  alarm_description   = "High CPUPolicy Landing Page for ecs service-${aws_ecs_service.this.name}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = var.autoscaling_cpu_threshold
+
+  dimensions = {
+    "ServiceName" = aws_ecs_service.this.name
+    "ClusterName" = var.ecs_cluster_id
+  }
+}

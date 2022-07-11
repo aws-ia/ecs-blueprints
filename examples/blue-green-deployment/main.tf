@@ -313,6 +313,13 @@ module "ecs_service_server" {
   image            = module.server_ecr.repository_url
   task_role_policy = data.aws_iam_policy_document.task_role.json
 
+  # Autoscalnig
+  enable_autoscaling           = true
+  autoscaling_min_capacity     = 1
+  autoscaling_max_capacity     = 8
+  autoscaling_cpu_threshold    = 75
+  autoscaling_memory_threshold = 75
+
   tags = local.tags
 }
 
@@ -341,29 +348,14 @@ module "ecs_service_client" {
   image            = module.client_ecr.repository_url
   task_role_policy = data.aws_iam_policy_document.task_role.json
 
+  # Autoscalnig
+  enable_autoscaling           = true
+  autoscaling_min_capacity     = 1
+  autoscaling_max_capacity     = 8
+  autoscaling_cpu_threshold    = 75
+  autoscaling_memory_threshold = 75
+
   tags = local.tags
-}
-
-module "ecs_autoscaling_server" {
-  source = "../../modules/ecs-autoscaling"
-
-  cluster_name     = module.ecs.cluster_name
-  service_name     = module.ecs_service_server.name
-  min_capacity     = 1
-  max_capacity     = 8
-  cpu_threshold    = 75
-  memory_threshold = 75
-}
-
-module "ecs_autoscaling_client" {
-  source = "../../modules/ecs-autoscaling"
-
-  cluster_name     = module.ecs.cluster_name
-  service_name     = module.ecs_service_client.name
-  min_capacity     = 1
-  max_capacity     = 8
-  cpu_threshold    = 75
-  memory_threshold = 75
 }
 
 ################################################################################

@@ -139,3 +139,37 @@ variable "task_role_policy" {
   type        = string
   default     = null
 }
+
+################################################################################
+# Autoscaling
+################################################################################
+
+variable "enable_autoscaling" {
+  description = "Determines whether autoscaling is enabled for the service"
+  type        = bool
+  default     = false
+}
+
+variable "autoscaling_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 3
+}
+
+variable "autoscaling_memory_threshold" {
+  description = "The desired threashold for memory consumption"
+  type        = number
+  default     = 75
+}
+
+variable "autoscaling_cpu_threshold" {
+  description = "The desired threashold for CPU consumption"
+  type        = number
+  default     = 75
+}
