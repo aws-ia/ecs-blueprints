@@ -139,3 +139,8 @@ variable "task_role_policy" {
   type        = string
   default     = null
 }
+
+variable "execution_role_arn" {
+  description = "Core-infra ECS execution ARN"
+  type        = string
+}

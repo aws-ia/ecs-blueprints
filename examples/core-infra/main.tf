@@ -27,6 +27,20 @@ module "ecs" {
 
   cluster_name = local.name
 
+cluster_configuration = {
+    execute_command_configuration = {
+      logging = "OVERRIDE"
+      log_configuration = {
+        cloud_watch_log_group_name = "/aws/ecs/${local.name}"
+      }
+    }
+  }
+
+cluster_settings = {
+  "name": "containerInsights",
+  "value": "enabled"
+}
+
   tags = local.tags
 }
 
@@ -58,4 +72,30 @@ module "vpc" {
   default_security_group_tags   = { Name = "${local.name}-default" }
 
   tags = local.tags
+}
+
+################################################################################
+# Task Execution Role
+################################################################################
+
+resource "aws_iam_role" "execution" {
+  name               = "${local.name}-execution"
+  assume_role_policy = data.aws_iam_policy_document.execution.json
+
+  tags = local.tags
+}
+
+data "aws_iam_policy_document" "execution" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "execution" {
+  role       = aws_iam_role.execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }

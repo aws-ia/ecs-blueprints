@@ -9,9 +9,6 @@ locals {
   name   = basename(path.cwd)
   region = "us-west-2"
 
-  vpc_cidr = "10.0.0.0/16"
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
-
   app_server_port = 3001
   app_client_port = 80
 
@@ -25,28 +22,19 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 4.1"
-
-  cluster_name = local.name
-
-  tags = local.tags
-}
-
 module "client_alb_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
 
   name        = "${local.name}-client"
   description = "Security group for client application"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.aws_vpc.vpc.id
 
   ingress_rules       = ["http-80-tcp"]
   ingress_cidr_blocks = ["0.0.0.0/0"]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  egress_cidr_blocks = [for s in data.aws_subnet.private : s.cidr_block]
 
   tags = local.tags
 }
@@ -59,8 +47,8 @@ module "client_alb" {
 
   load_balancer_type = "application"
 
-  vpc_id          = module.vpc.vpc_id
-  subnets         = module.vpc.public_subnets
+  vpc_id          = data.aws_vpc.vpc.id
+  subnets         = toset(data.aws_subnets.public_subnets.ids)
   security_groups = [module.client_alb_security_group.security_group_id]
 
   http_tcp_listeners = [
@@ -94,7 +82,7 @@ module "server_alb_security_group" {
 
   name        = "${local.name}-client"
   description = "Security group for client application"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.aws_vpc.vpc.id
 
   ingress_with_source_security_group_id = [
     {
@@ -104,7 +92,7 @@ module "server_alb_security_group" {
   ]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
+  egress_cidr_blocks = [for s in data.aws_subnet.public : s.cidr_block]
 
   tags = local.tags
 }
@@ -118,8 +106,8 @@ module "server_alb" {
   load_balancer_type = "application"
   internal           = true
 
-  vpc_id          = module.vpc.vpc_id
-  subnets         = module.vpc.private_subnets
+  vpc_id          = data.aws_vpc.vpc.id
+  subnets         = toset(data.aws_subnets.public_subnets.ids)
   security_groups = [module.server_alb_security_group.security_group_id]
 
   http_tcp_listeners = [
@@ -154,7 +142,7 @@ module "server_ecr" {
   repository_name = "${local.name}-server"
 
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [module.ecs_service_server.task_execution_role_arn]
+  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
@@ -167,7 +155,7 @@ module "client_ecr" {
   repository_name = "${local.name}-client"
 
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [module.ecs_service_client.task_execution_role_arn]
+  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
@@ -212,7 +200,7 @@ module "client_task_security_group" {
 
   name        = "${local.name}-client-task"
   description = "Security group for client task"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.aws_vpc.vpc.id
 
   ingress_with_source_security_group_id = [
     {
@@ -232,7 +220,7 @@ module "server_task_security_group" {
 
   name        = "${local.name}-server-task"
   description = "Security group for server task"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = data.aws_vpc.vpc.id
 
   ingress_with_source_security_group_id = [
     {
@@ -253,10 +241,10 @@ module "ecs_service_server" {
 
   name           = "${local.name}-server"
   desired_count  = 1
-  ecs_cluster_id = module.ecs.cluster_id
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
   security_groups = [module.server_task_security_group.security_group_id]
-  subnets         = module.vpc.private_subnets
+  subnets         = toset(data.aws_subnets.private_subnets.ids)
 
   load_balancers = [{
     target_group_arn = element(module.server_alb.target_group_arns, 0)
@@ -264,25 +252,26 @@ module "ecs_service_server" {
   deployment_controller = "ECS"
 
   # Task Definition
-  container_name   = "${local.name}-server"
-  container_port   = local.app_server_port
-  cpu              = 256
-  memory           = 512
-  image            = module.server_ecr.repository_url
-  task_role_policy = data.aws_iam_policy_document.task_role.json
+  container_name     = "${local.name}-server"
+  container_port     = local.app_server_port
+  cpu                = 256
+  memory             = 512
+  image              = module.server_ecr.repository_url
+  task_role_policy   = data.aws_iam_policy_document.task_role.json
+  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }
 
 module "ecs_service_client" {
   source = "../../modules/ecs-service"
-
+  
   name           = "${local.name}-client"
   desired_count  = 1
-  ecs_cluster_id = module.ecs.cluster_id
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
   security_groups = [module.client_task_security_group.security_group_id]
-  subnets         = module.vpc.private_subnets
+  subnets         = toset(data.aws_subnets.private_subnets.ids)
 
   load_balancers = [{
     target_group_arn = element(module.client_alb.target_group_arns, 0)
@@ -290,12 +279,13 @@ module "ecs_service_client" {
   deployment_controller = "ECS"
 
   # Task Definition
-  container_name   = "${local.name}-client"
-  container_port   = local.app_client_port
-  cpu              = 256
-  memory           = 512
-  image            = module.client_ecr.repository_url
-  task_role_policy = data.aws_iam_policy_document.task_role.json
+  container_name     = "${local.name}-client"
+  container_port     = local.app_client_port
+  cpu                = 256
+  memory             = 512
+  image              = module.client_ecr.repository_url
+  task_role_policy   = data.aws_iam_policy_document.task_role.json
+  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }
@@ -303,7 +293,7 @@ module "ecs_service_client" {
 module "ecs_autoscaling_server" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = module.ecs.cluster_name
+  cluster_name     = data.aws_ecs_cluster.core_infra.cluster_name
   service_name     = module.ecs_service_server.name
   min_capacity     = 1
   max_capacity     = 5
@@ -314,7 +304,7 @@ module "ecs_autoscaling_server" {
 module "ecs_autoscaling_client" {
   source = "../../modules/ecs-autoscaling"
 
-  cluster_name     = module.ecs.cluster_name
+  cluster_name     = data.aws_ecs_cluster.core_infra.cluster_name
   service_name     = module.ecs_service_client.name
   min_capacity     = 1
   max_capacity     = 5
@@ -399,8 +389,8 @@ module "codebuild_server" {
   task_definition_family = module.ecs_service_server.task_definition_family
   container_name         = module.ecs_service_server.container_name
   service_port           = local.app_server_port
-  ecs_task_role_arn      = module.ecs_service_server.task_role_arn
-  ecs_exec_role_arn      = module.ecs_service_server.task_execution_role_arn
+  ecs_task_role_arn      = module.ecs_service_client.task_role_arn
+  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }
@@ -417,7 +407,7 @@ module "codebuild_client" {
   container_name         = module.ecs_service_client.container_name
   service_port           = local.app_client_port
   ecs_task_role_arn      = module.ecs_service_client.task_role_arn
-  ecs_exec_role_arn      = module.ecs_service_client.task_execution_role_arn
+  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
   server_alb_url         = module.server_alb.lb_dns_name
 
   tags = local.tags
@@ -446,12 +436,12 @@ module "codepipeline" {
   sns_topic                = aws_sns_topic.codestar_notification.arn
 
   client_deploy_configuration = {
-    ClusterName = module.ecs.cluster_name
+    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
     ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
   server_deploy_configuration = {
-    ClusterName = module.ecs.cluster_name
+    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
     ServiceName = module.ecs_service_server.name
     FileName    = "imagedefinition.json"
   }
@@ -512,32 +502,6 @@ module "assets_dynamodb_table" {
 ################################################################################
 # Supporting Resources
 ################################################################################
-
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 3.0"
-
-  name = local.name
-  cidr = local.vpc_cidr
-
-  azs             = local.azs
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 10)]
-
-  enable_nat_gateway   = true
-  single_nat_gateway   = true
-  enable_dns_hostnames = true
-
-  # Manage so we can name
-  manage_default_network_acl    = true
-  default_network_acl_tags      = { Name = "${local.name}-default" }
-  manage_default_route_table    = true
-  default_route_table_tags      = { Name = "${local.name}-default" }
-  manage_default_security_group = true
-  default_security_group_tags   = { Name = "${local.name}-default" }
-
-  tags = local.tags
-}
 
 resource "random_id" "this" {
   byte_length = "2"
