@@ -137,10 +137,11 @@ module "server_alb" {
 
 module "server_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-server"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
@@ -150,10 +151,11 @@ module "server_ecr" {
 
 module "client_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-client"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
