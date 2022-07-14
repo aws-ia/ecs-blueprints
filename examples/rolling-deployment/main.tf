@@ -2,7 +2,6 @@ provider "aws" {
   region = local.region
 }
 
-data "aws_availability_zones" "available" {}
 data "aws_caller_identity" "current" {}
 
 locals {
@@ -16,6 +15,49 @@ locals {
     Blueprint  = local.name
     GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
+}
+
+################################################################################
+# Data Sources from core-infra
+################################################################################
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:${var.vpc_tag_key}"
+    values = [var.vpc_tag_value]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:${var.vpc_tag_key}"
+    values = ["${var.private_subnets}*"]
+  }
+}
+
+data "aws_subnet" "private_cidr" {
+  for_each = toset(data.aws_subnets.private.ids)
+  id       = each.value
+}
+
+data "aws_subnets" "public" {
+  filter {
+    name   = "tag:${var.vpc_tag_key}"
+    values = ["${var.public_subnets}*"]
+  }
+}
+
+data "aws_subnet" "public_cidr" {
+  for_each = toset(data.aws_subnets.private.ids)
+  id       = each.value
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = var.ecs_cluster_name
+}
+
+data "aws_iam_role" "ecs_core_infra_exec_role" {
+  name = var.ecs_task_execution_role_name
 }
 
 ################################################################################
@@ -34,7 +76,7 @@ module "client_alb_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.private : s.cidr_block]
+  egress_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
 
   tags = local.tags
 }
@@ -48,7 +90,7 @@ module "client_alb" {
   load_balancer_type = "application"
 
   vpc_id          = data.aws_vpc.vpc.id
-  subnets         = toset(data.aws_subnets.public_subnets.ids)
+  subnets         = data.aws_subnets.public.ids
   security_groups = [module.client_alb_security_group.security_group_id]
 
   http_tcp_listeners = [
@@ -92,7 +134,7 @@ module "server_alb_security_group" {
   ]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.public : s.cidr_block]
+  egress_cidr_blocks = [for s in data.aws_subnet.public_cidr : s.cidr_block]
 
   tags = local.tags
 }
@@ -107,7 +149,7 @@ module "server_alb" {
   internal           = true
 
   vpc_id          = data.aws_vpc.vpc.id
-  subnets         = toset(data.aws_subnets.public_subnets.ids)
+  subnets         = data.aws_subnets.public.ids
   security_groups = [module.server_alb_security_group.security_group_id]
 
   http_tcp_listeners = [
@@ -246,7 +288,7 @@ module "ecs_service_server" {
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
   security_groups = [module.server_task_security_group.security_group_id]
-  subnets         = toset(data.aws_subnets.private_subnets.ids)
+  subnets         = data.aws_subnets.private.ids
 
   load_balancers = [{
     target_group_arn = element(module.server_alb.target_group_arns, 0)
@@ -267,13 +309,13 @@ module "ecs_service_server" {
 
 module "ecs_service_client" {
   source = "../../modules/ecs-service"
-  
+
   name           = "${local.name}-client"
   desired_count  = 1
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
   security_groups = [module.client_task_security_group.security_group_id]
-  subnets         = toset(data.aws_subnets.private_subnets.ids)
+  subnets         = data.aws_subnets.private.ids
 
   load_balancers = [{
     target_group_arn = element(module.client_alb.target_group_arns, 0)

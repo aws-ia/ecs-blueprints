@@ -2,7 +2,7 @@
 variable "vpc_tag_key" {
   description = "The tag key of the VCP and subnets"
   type        = string
-  default     = "Name" 
+  default     = "Name"
 }
 
 variable "vpc_tag_value" {

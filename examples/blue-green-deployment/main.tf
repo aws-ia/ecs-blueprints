@@ -4,6 +4,9 @@ provider "aws" {
 
 data "aws_availability_zones" "available" {}
 data "aws_caller_identity" "current" {}
+data "aws_iam_role" "ecs_core_infra_exec_role" {
+  name = var.ecs_task_execution_role_name
+}
 
 locals {
   name   = basename(path.cwd)
@@ -196,7 +199,7 @@ module "server_ecr" {
   repository_name = "${local.name}-server"
 
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [module.ecs_service_server.task_execution_role_arn]
+  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
@@ -209,7 +212,7 @@ module "client_ecr" {
   repository_name = "${local.name}-client"
 
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [module.ecs_service_client.task_execution_role_arn]
+  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
@@ -306,12 +309,13 @@ module "ecs_service_server" {
   deployment_controller = "CODE_DEPLOY"
 
   # Task Definition
-  container_name   = "${local.name}-server"
-  container_port   = local.app_server_port
-  cpu              = 256
-  memory           = 512
-  image            = module.server_ecr.repository_url
-  task_role_policy = data.aws_iam_policy_document.task_role.json
+  container_name     = "${local.name}-server"
+  container_port     = local.app_server_port
+  cpu                = 256
+  memory             = 512
+  image              = module.server_ecr.repository_url
+  task_role_policy   = data.aws_iam_policy_document.task_role.json
+  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }
@@ -334,12 +338,13 @@ module "ecs_service_client" {
   deployment_controller = "CODE_DEPLOY"
 
   # Task Definition
-  container_name   = "${local.name}-client"
-  container_port   = local.app_client_port
-  cpu              = 256
-  memory           = 512
-  image            = module.client_ecr.repository_url
-  task_role_policy = data.aws_iam_policy_document.task_role.json
+  container_name     = "${local.name}-client"
+  container_port     = local.app_client_port
+  cpu                = 256
+  memory             = 512
+  image              = module.client_ecr.repository_url
+  task_role_policy   = data.aws_iam_policy_document.task_role.json
+  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }
@@ -455,7 +460,7 @@ module "codebuild_server" {
   container_name         = module.ecs_service_server.container_name
   service_port           = local.app_server_port
   ecs_task_role_arn      = module.ecs_service_server.task_role_arn
-  ecs_exec_role_arn      = module.ecs_service_server.task_execution_role_arn
+  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
   dynamodb_table_name    = module.assets_dynamodb_table.dynamodb_table_id
 
   tags = local.tags
@@ -473,7 +478,7 @@ module "codebuild_client" {
   container_name         = module.ecs_service_client.container_name
   service_port           = local.app_client_port
   ecs_task_role_arn      = module.ecs_service_client.task_role_arn
-  ecs_exec_role_arn      = module.ecs_service_client.task_execution_role_arn
+  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
   server_alb_url         = module.server_alb.lb_dns_name
 
   tags = local.tags

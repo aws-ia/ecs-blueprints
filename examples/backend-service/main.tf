@@ -3,6 +3,9 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_iam_role" "ecs_core_infra_exec_role" {
+  name = var.ecs_task_execution_role_name
+}
 
 locals {
   name   = basename(path.cwd)
@@ -55,10 +58,11 @@ module "service" {
   subnets         = module.vpc.private_subnets
 
   # Task Definition
-  cpu              = 256
-  memory           = 512
-  image            = "public.ecr.aws/nginx/nginx:1.23-alpine-perl"
-  task_role_policy = data.aws_iam_policy_document.task_role.json
+  cpu                = 256
+  memory             = 512
+  image              = "public.ecr.aws/nginx/nginx:1.23-alpine-perl"
+  task_role_policy   = data.aws_iam_policy_document.task_role.json
+  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }

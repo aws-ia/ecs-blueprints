@@ -27,19 +27,14 @@ module "ecs" {
 
   cluster_name = local.name
 
-cluster_configuration = {
+  cluster_configuration = {
     execute_command_configuration = {
       logging = "OVERRIDE"
       log_configuration = {
-        cloud_watch_log_group_name = "/aws/ecs/${local.name}"
+        cloud_watch_log_group_name = aws_cloudwatch_log_group.this.name
       }
     }
   }
-
-cluster_settings = {
-  "name": "containerInsights",
-  "value": "enabled"
-}
 
   tags = local.tags
 }
@@ -70,6 +65,13 @@ module "vpc" {
   default_route_table_tags      = { Name = "${local.name}-default" }
   manage_default_security_group = true
   default_security_group_tags   = { Name = "${local.name}-default" }
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  name              = "/aws/ecs/${local.name}"
+  retention_in_days = 7
 
   tags = local.tags
 }
