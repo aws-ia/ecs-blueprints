@@ -1,3 +1,8 @@
+variable "ecs_task_execution_role_name" {
+  description = "The ARN of the task execution role"
+  type        = string
+  default     = "core-infra-execution"
+}
 
 variable "buildspec_path" {
   description = "The location of the buildspec file"
