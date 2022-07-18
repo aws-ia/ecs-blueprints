@@ -194,10 +194,11 @@ resource "aws_alb_listener" "server" {
 
 module "server_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-server"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
@@ -207,10 +208,11 @@ module "server_ecr" {
 
 module "client_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-client"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
@@ -539,9 +541,9 @@ module "codepipeline_server" {
   app_deploy_configuration = {
     ApplicationName                = module.codedeploy_server.application_name
     DeploymentGroupName            = module.codedeploy_server.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_server"
+    TaskDefinitionTemplateArtifact = "BuildArtifact_app"
     TaskDefinitionTemplatePath     = "taskdef.json"
-    AppSpecTemplateArtifact        = "BuildArtifact_server"
+    AppSpecTemplateArtifact        = "BuildArtifact_app"
     AppSpecTemplatePath            = "appspec.yaml"
   }
 
@@ -565,9 +567,9 @@ module "codepipeline_client" {
   app_deploy_configuration = {
     ApplicationName                = module.codedeploy_client.application_name
     DeploymentGroupName            = module.codedeploy_client.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_client"
+    TaskDefinitionTemplateArtifact = "BuildArtifact_app"
     TaskDefinitionTemplatePath     = "taskdef.json"
-    AppSpecTemplateArtifact        = "BuildArtifact_client"
+    AppSpecTemplateArtifact        = "BuildArtifact_app"
     AppSpecTemplatePath            = "appspec.yaml"
   }
 
