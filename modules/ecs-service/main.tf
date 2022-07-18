@@ -156,7 +156,7 @@ resource "aws_appautoscaling_policy" "cpu" {
   policy_type        = "TargetTrackingScaling"
 
   target_tracking_scaling_policy_configuration {
-    target_value       = 50
+    target_value       = var.autoscaling_cpu_threshold
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
 
@@ -177,7 +177,7 @@ resource "aws_appautoscaling_policy" "memory" {
   policy_type        = "TargetTrackingScaling"
 
   target_tracking_scaling_policy_configuration {
-    target_value       = 50
+    target_value       = var.autoscaling_memory_threshold
     scale_in_cooldown  = 60
     scale_out_cooldown = 60
 
