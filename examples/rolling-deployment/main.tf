@@ -465,28 +465,44 @@ data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
-module "codepipeline" {
+module "codepipeline_server" {
   source = "../../modules/codepipeline"
 
-  name                     = "pipeline-${local.name}"
+  name                     = "pipeline-${module.ecs_service_server.name}"
   pipe_role                = module.devops_role.devops_role_arn
   s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
   github_token             = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner               = var.repository_owner
   repo_name                = var.repository_name
   branch                   = var.repository_branch
-  codebuild_project_server = module.codebuild_server.project_id
-  codebuild_project_client = module.codebuild_client.project_id
+  codebuild_project_app    = module.codebuild_server.project_id
   sns_topic                = aws_sns_topic.codestar_notification.arn
 
-  client_deploy_configuration = {
-    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-    ServiceName = module.ecs_service_client.name
-    FileName    = "imagedefinition.json"
-  }
-  server_deploy_configuration = {
+  app_deploy_configuration = {
     ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
     ServiceName = module.ecs_service_server.name
+    FileName    = "imagedefinition.json"
+  }
+
+  tags = local.tags
+}
+
+module "codepipeline_client" {
+  source = "../../modules/codepipeline"
+
+  name                     = "pipeline-${module.ecs_service_client.name}"
+  pipe_role                = module.devops_role.devops_role_arn
+  s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
+  github_token             = data.aws_secretsmanager_secret_version.github_token.secret_string
+  repo_owner               = var.repository_owner
+  repo_name                = var.repository_name
+  branch                   = var.repository_branch
+  codebuild_project_app    = module.codebuild_client.project_id
+  sns_topic                = aws_sns_topic.codestar_notification.arn
+
+  app_deploy_configuration = {
+    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+    ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
 

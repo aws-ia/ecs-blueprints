@@ -40,13 +40,8 @@ variable "branch" {
   type        = string
 }
 
-variable "codebuild_project_server" {
+variable "codebuild_project_app" {
   description = "Server's CodeBuild project name"
-  type        = string
-}
-
-variable "codebuild_project_client" {
-  description = "Client's CodeBuild project name"
   type        = string
 }
 
@@ -61,14 +56,9 @@ variable "deploy_provider" {
   default     = "ECS"
 }
 
-variable "client_deploy_configuration" {
+variable "app_deploy_configuration" {
   description = "The configuration to use for the client deployment"
   type        = map(string)
   default     = {}
 }
 
-variable "server_deploy_configuration" {
-  description = "The configuration to use for the server deployment"
-  type        = map(string)
-  default     = {}
-}
