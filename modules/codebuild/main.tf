@@ -1,82 +1,59 @@
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
-
-resource "aws_codebuild_project" "aws_codebuild" {
+resource "aws_codebuild_project" "this" {
   name          = var.name
-  description   = "Terraform CodeBuild project"
-  build_timeout = "10"
-  service_role  = var.iam_role
+  description   = var.description
+  build_timeout = var.build_timeout
+  service_role  = var.service_role
 
   artifacts {
     type = "CODEPIPELINE"
   }
 
-  environment {
-    compute_type    = "BUILD_GENERAL1_SMALL"
-    image           = "aws/codebuild/standard:4.0"
-    type            = "LINUX_CONTAINER"
-    privileged_mode = true
+  dynamic "environment" {
+    for_each = [var.environment]
 
-    environment_variable {
-      name  = "AWS_REGION"
-      value = data.aws_region.current.name
-    }
+    content {
+      compute_type                = try(environment.value.compute_type, "BUILD_GENERAL1_SMALL")
+      image                       = try(environment.value.image, "aws/codebuild/standard:4.0")
+      image_pull_credentials_type = try(environment.value.image_pull_credentials_type, null)
+      type                        = try(environment.value.type, "LINUX_CONTAINER")
+      privileged_mode             = try(environment.value.privileged_mode, null)
 
-    environment_variable {
-      name  = "AWS_ACCOUNT_ID"
-      value = data.aws_caller_identity.current.account_id
-    }
+      dynamic "environment_variable" {
+        for_each = try(environment.value.environment_variables, [])
 
-    environment_variable {
-      name  = "REPO_URL"
-      value = var.ecr_repo_url
-    }
-
-    environment_variable {
-      name  = "DYNAMODB_TABLE"
-      value = var.dynamodb_table_name
-    }
-
-    environment_variable {
-      name  = "TASK_DEFINITION_FAMILY"
-      value = var.task_definition_family
-    }
-
-    environment_variable {
-      name  = "CONTAINER_NAME"
-      value = var.container_name
-    }
-
-    environment_variable {
-      name  = "SERVICE_PORT"
-      value = var.service_port
-    }
-
-    environment_variable {
-      name  = "FOLDER_PATH"
-      value = var.folder_path
-    }
-
-    environment_variable {
-      name  = "ECS_TASK_ROLE_ARN"
-      value = var.ecs_task_role_arn
-    }
-
-    environment_variable {
-      name  = "ECS_EXEC_ROLE_ARN"
-      value = var.ecs_exec_role_arn
-    }
-
-    environment_variable {
-      name  = "SERVER_ALB_URL"
-      value = var.server_alb_url
+        content {
+          name  = environment_variable.value.name
+          value = environment_variable.value.value
+          type  = environment_variable.value.type
+        }
+      }
     }
   }
 
-  logs_config {
-    cloudwatch_logs {
-      group_name  = "/codebuild/${var.container_name}"
-      stream_name = "/codebuild/${var.container_name}/build/"
+  dynamic "logs_config" {
+    for_each = length(var.logs_config) > 0 ? [var.logs_config] : []
+
+    content {
+      dynamic "cloudwatch_logs" {
+        for_each = try([logs_config.value.cloudwatch_logs], [])
+
+        content {
+          group_name  = try(cloudwatch_logs.value.group_name, null)
+          status      = try(cloudwatch_logs.value.status, null)
+          stream_name = try(cloudwatch_logs.value.stream_name, null)
+        }
+      }
+
+      dynamic "s3_logs" {
+        for_each = try([logs_config.value.s3_logs], [])
+
+        content {
+          encryption_disabled = try(s3_logs.value.encryption_disabled, null)
+          location            = try(s3_logs.value.location, null)
+          status              = try(s3_logs.value.status, null)
+          bucket_owner_access = try(s3_logs.value.bucket_owner_access, null)
+        }
+      }
     }
   }
 

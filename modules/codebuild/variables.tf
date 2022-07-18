@@ -1,27 +1,37 @@
 variable "name" {
-  type        = string
   description = "CodeBuild Project name"
+  type        = string
 }
 
-variable "tags" {
-  description = "tags"
-  type        = map(string)
+variable "description" {
+  description = "Short description of the project"
+  type        = string
+  default     = null
+}
+
+variable "build_timeout" {
+  description = "Number of minutes, from 5 to 480 (8 hours), for AWS CodeBuild to wait until timing out any related build that does not get marked as completed. The default is 10 minutes"
+  type        = number
+  default     = 10
+}
+
+variable "service_role" {
+  description = "Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account"
+  type        = string
+}
+
+variable "environment" {
+  description = "CodeBuild environment configuration details. At least one attribute is required since `environment` is a required by CodeBuild"
+  type        = any
+  default = {
+    image = "aws/codebuild/standard:4.0"
+  }
+}
+
+variable "logs_config" {
+  description = "CodeBuild logs configuration details"
+  type        = any
   default     = {}
-}
-
-variable "iam_role" {
-  type        = string
-  description = "IAM role to attach to CodeBuild"
-}
-
-variable "ecr_repo_url" {
-  description = "AWS ECR repository URL where docker images are being stored"
-  type        = string
-}
-
-variable "folder_path" {
-  description = "Folder path to use to build the docker images/containers"
-  type        = string
 }
 
 variable "buildspec_path" {
@@ -29,40 +39,8 @@ variable "buildspec_path" {
   type        = string
 }
 
-variable "task_definition_family" {
-  description = "The family name of the Task definition"
-  type        = string
-}
-
-variable "container_name" {
-  description = "The name of the Container specified in the Task definition"
-  type        = string
-}
-
-variable "service_port" {
-  description = "The number of the port used by the ECS Service"
-  type        = number
-}
-
-variable "ecs_exec_role_arn" {
-  description = "The Arn of the ECS Task Excecution role to specify in the Task Definition"
-  type        = string
-}
-
-variable "server_alb_url" {
-  description = "The server ALB DNS. Used to build the code for the frontend layer"
-  type        = string
-  default     = ""
-}
-
-variable "ecs_task_role_arn" {
-  description = "The Arn of the ECS Task role to specify in the Task Definition"
-  type        = string
-  default     = "null"
-}
-
-variable "dynamodb_table_name" {
-  description = "The name of Dynamodb table used by the server application"
-  type        = string
-  default     = ""
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }

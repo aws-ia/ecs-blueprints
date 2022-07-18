@@ -425,16 +425,22 @@ module "devops_role" {
 module "codebuild_server" {
   source = "../../modules/codebuild"
 
-  name                   = "codebuild-${local.name}-server"
-  iam_role               = module.devops_role.devops_role_arn
-  ecr_repo_url           = module.server_ecr.repository_url
-  folder_path            = var.folder_path_server
-  buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_service_server.task_definition_family
-  container_name         = module.ecs_service_server.container_name
-  service_port           = local.app_server_port
-  ecs_task_role_arn      = module.ecs_service_client.task_role_arn
-  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  name           = "codebuild-${local.name}-server"
+  service_role   = module.devops_role.devops_role_arn
+  buildspec_path = var.buildspec_path
+
+  environment = {
+    environment_variables = {
+      REPO_URL               = module.server_ecr.repository_url
+      DYNAMODB_TABLE         = module.assets_dynamodb_table.dynamodb_table_id
+      TASK_DEFINITION_FAMILY = module.ecs_service_server.task_definition_family
+      CONTAINER_NAME         = module.ecs_service_server.container_name
+      SERVICE_PORT           = local.app_server_port
+      FOLDER_PATH            = var.folder_path_server
+      ECS_TASK_ROLE_ARN      = module.ecs_service_server.task_role_arn
+      ECS_EXEC_ROLE_ARN      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+    }
+  }
 
   tags = local.tags
 }
@@ -442,17 +448,22 @@ module "codebuild_server" {
 module "codebuild_client" {
   source = "../../modules/codebuild"
 
-  name                   = "codebuild-${local.name}-client"
-  iam_role               = module.devops_role.devops_role_arn
-  ecr_repo_url           = module.client_ecr.repository_url
-  folder_path            = var.folder_path_client
-  buildspec_path         = var.buildspec_path
-  task_definition_family = module.ecs_service_client.task_definition_family
-  container_name         = module.ecs_service_client.container_name
-  service_port           = local.app_client_port
-  ecs_task_role_arn      = module.ecs_service_client.task_role_arn
-  ecs_exec_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  server_alb_url         = module.server_alb.lb_dns_name
+  name           = "codebuild-${local.name}-client"
+  service_role   = module.devops_role.devops_role_arn
+  buildspec_path = var.buildspec_path
+
+  environment = {
+    environment_variables = {
+      REPO_URL               = module.client_ecr.repository_url
+      TASK_DEFINITION_FAMILY = module.ecs_service_client.task_definition_family
+      CONTAINER_NAME         = module.ecs_service_client.container_name
+      SERVICE_PORT           = local.app_client_port
+      FOLDER_PATH            = var.folder_path_client
+      ECS_TASK_ROLE_ARN      = module.ecs_service_client.task_role_arn
+      ECS_EXEC_ROLE_ARN      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+      SERVER_ALB_URL         = module.server_alb.lb_dns_name
+    }
+  }
 
   tags = local.tags
 }
