@@ -57,7 +57,7 @@ resource "aws_ecs_task_definition" "this" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.cpu
   memory                   = var.memory
-  execution_role_arn       = aws_iam_role.execution.arn
+  execution_role_arn       = var.execution_role_arn
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([
@@ -93,32 +93,6 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = var.log_retention_in_days
 
   tags = var.tags
-}
-
-################################################################################
-# Task Execution Role
-################################################################################
-
-resource "aws_iam_role" "execution" {
-  name               = "${var.name}-execution"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
-
-  tags = var.tags
-}
-
-data "aws_iam_policy_document" "execution" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "execution" {
-  role       = aws_iam_role.execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 ################################################################################

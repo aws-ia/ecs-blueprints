@@ -28,11 +28,6 @@ output "task_role_arn" {
   value       = aws_iam_role.task.arn
 }
 
-output "task_execution_role_arn" {
-  description = "The ARN of the task execution role"
-  value       = aws_iam_role.execution.arn
-}
-
 output "container_name" {
   description = "The name of the container"
   value       = var.container_name # passthrough
