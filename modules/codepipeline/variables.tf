@@ -61,4 +61,3 @@ variable "app_deploy_configuration" {
   type        = map(string)
   default     = {}
 }
-
