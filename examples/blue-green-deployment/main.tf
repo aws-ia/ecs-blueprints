@@ -194,10 +194,11 @@ resource "aws_alb_listener" "server" {
 
 module "server_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-server"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
@@ -207,10 +208,11 @@ module "server_ecr" {
 
 module "client_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.0"
+  version = "~> 1.4"
 
   repository_name = "${local.name}-client"
 
+  repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
   repository_read_write_access_arns = [module.devops_role.devops_role_arn]
@@ -522,35 +524,52 @@ data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
-module "codepipeline" {
+module "codepipeline_server" {
   source = "../../modules/codepipeline"
 
-  name                     = "pipeline-${local.name}"
-  pipe_role                = module.devops_role.devops_role_arn
-  s3_bucket                = module.codepipeline_s3_bucket.s3_bucket_id
-  github_token             = data.aws_secretsmanager_secret_version.github_token.secret_string
-  repo_owner               = var.repository_owner
-  repo_name                = var.repository_name
-  branch                   = var.repository_branch
-  codebuild_project_server = module.codebuild_server.project_id
-  codebuild_project_client = module.codebuild_client.project_id
-  sns_topic                = aws_sns_topic.codestar_notification.arn
-  deploy_provider          = "CodeDeployToECS"
+  name                  = "pipeline-${module.ecs_service_server.name}"
+  pipe_role             = module.devops_role.devops_role_arn
+  s3_bucket             = module.codepipeline_s3_bucket.s3_bucket_id
+  github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
+  repo_owner            = var.repository_owner
+  repo_name             = var.repository_name
+  branch                = var.repository_branch
+  codebuild_project_app = module.codebuild_server.project_id
+  sns_topic             = aws_sns_topic.codestar_notification.arn
+  deploy_provider       = "CodeDeployToECS"
 
-  client_deploy_configuration = {
-    ApplicationName                = module.codedeploy_client.application_name
-    DeploymentGroupName            = module.codedeploy_client.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_client"
-    TaskDefinitionTemplatePath     = "taskdef.json"
-    AppSpecTemplateArtifact        = "BuildArtifact_client"
-    AppSpecTemplatePath            = "appspec.yaml"
-  }
-  server_deploy_configuration = {
+  app_deploy_configuration = {
     ApplicationName                = module.codedeploy_server.application_name
     DeploymentGroupName            = module.codedeploy_server.deployment_group_name
-    TaskDefinitionTemplateArtifact = "BuildArtifact_server"
+    TaskDefinitionTemplateArtifact = "BuildArtifact_app"
     TaskDefinitionTemplatePath     = "taskdef.json"
-    AppSpecTemplateArtifact        = "BuildArtifact_server"
+    AppSpecTemplateArtifact        = "BuildArtifact_app"
+    AppSpecTemplatePath            = "appspec.yaml"
+  }
+
+  tags = local.tags
+}
+
+module "codepipeline_client" {
+  source = "../../modules/codepipeline"
+
+  name                  = "pipeline-${module.ecs_service_client.name}"
+  pipe_role             = module.devops_role.devops_role_arn
+  s3_bucket             = module.codepipeline_s3_bucket.s3_bucket_id
+  github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
+  repo_owner            = var.repository_owner
+  repo_name             = var.repository_name
+  branch                = var.repository_branch
+  codebuild_project_app = module.codebuild_client.project_id
+  sns_topic             = aws_sns_topic.codestar_notification.arn
+  deploy_provider       = "CodeDeployToECS"
+
+  app_deploy_configuration = {
+    ApplicationName                = module.codedeploy_client.application_name
+    DeploymentGroupName            = module.codedeploy_client.deployment_group_name
+    TaskDefinitionTemplateArtifact = "BuildArtifact_app"
+    TaskDefinitionTemplatePath     = "taskdef.json"
+    AppSpecTemplateArtifact        = "BuildArtifact_app"
     AppSpecTemplatePath            = "appspec.yaml"
   }
 

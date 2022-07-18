@@ -32,7 +32,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
     name = "Build"
 
     action {
-      name             = "Build_server"
+      name             = "Build_app"
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
@@ -41,21 +41,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
       output_artifacts = ["BuildArtifact_server"]
 
       configuration = {
-        ProjectName = var.codebuild_project_server
-      }
-    }
-
-    action {
-      name             = "Build_client"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      version          = "1"
-      input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact_client"]
-
-      configuration = {
-        ProjectName = var.codebuild_project_client
+        ProjectName = var.codebuild_project_app
       }
     }
   }
@@ -64,25 +50,14 @@ resource "aws_codepipeline" "aws_codepipeline" {
     name = "Deploy"
 
     action {
-      name            = "Deploy_server"
+      name            = "Deploy_app"
       category        = "Deploy"
       owner           = "AWS"
       provider        = var.deploy_provider
       input_artifacts = ["BuildArtifact_server"]
       version         = "1"
 
-      configuration = var.server_deploy_configuration
-    }
-
-    action {
-      name            = "Deploy_client"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = var.deploy_provider
-      input_artifacts = ["BuildArtifact_client"]
-      version         = "1"
-
-      configuration = var.client_deploy_configuration
+      configuration = var.app_deploy_configuration
     }
   }
 
