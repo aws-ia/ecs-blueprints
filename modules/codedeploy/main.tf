@@ -1,18 +1,16 @@
-/*====================================================================
-      AWS CodeDeploy integration for Blue/Green deployments.
-====================================================================*/
+################################################################################
+# AWS CodeDeploy integration for Blue/Green deployments
+################################################################################
 
-# ------- AWS CodeDeploy App defintion for each module -------
-resource "aws_codedeploy_app" "main" {
+resource "aws_codedeploy_app" "this" {
   compute_platform = "ECS"
   name             = var.name
 
   tags = var.tags
 }
 
-# ------- AWS CodeDeploy Group for each CodeDeploy App created -------
-resource "aws_codedeploy_deployment_group" "main" {
-  app_name               = aws_codedeploy_app.main.name
+resource "aws_codedeploy_deployment_group" "this" {
+  app_name               = aws_codedeploy_app.this.name
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
   deployment_group_name  = "deployment-group-${var.name}"
   service_role_arn       = var.codedeploy_role
