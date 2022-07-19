@@ -15,14 +15,22 @@ Start with the architectural blueprint that most closely matches your use case. 
 - ✅ [Backend Service](./examples/backend-service/README.md)
 - [ ] Worker Service
 - [ ] Scheduled Task
-- ✅ [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling_deployment/README.md)
-- ✅ [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue_green_deployment/README.md)
+- ✅ [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
+- ✅ [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
 
 
 ## Motivation
 
 
 ## Support & Feedback
+
+ECS Blueprints for Terraform is maintained by AWS Solution Architects. It is not part of an AWS service and support is provided best-effort by the ECS Blueprints community.
+
+To post feedback, submit feature ideas, or report bugs, please use the [Issues](https://github.com/aws-ia/terraform-aws-ecs-blueprints/issues) section of this GitHub repository.
+
+For architectural details, step-by-step instructions, and customization options, see our documentation under each folder.
+
+If you are interested in contributing to ECS Blueprints, see the [Contribution guide](CONTRIBUTING.md).
 
 
 ## Contributing
