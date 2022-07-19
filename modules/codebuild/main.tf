@@ -22,9 +22,9 @@ resource "aws_codebuild_project" "this" {
         for_each = try(environment.value.environment_variables, [])
 
         content {
-          name  = environment_variable.value.name
-          value = environment_variable.value.value
-          type  = environment_variable.value.type
+          name  = environment_variable.key
+          value = environment_variable.value
+          # type  = environment_variable.value.type
         }
       }
     }

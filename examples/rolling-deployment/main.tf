@@ -430,6 +430,7 @@ module "codebuild_server" {
   buildspec_path = var.buildspec_path
 
   environment = {
+    privileged_mode = true
     environment_variables = {
       REPO_URL               = module.server_ecr.repository_url
       DYNAMODB_TABLE         = module.assets_dynamodb_table.dynamodb_table_id
@@ -453,6 +454,7 @@ module "codebuild_client" {
   buildspec_path = var.buildspec_path
 
   environment = {
+    privileged_mode = true
     environment_variables = {
       REPO_URL               = module.client_ecr.repository_url
       TASK_DEFINITION_FAMILY = module.ecs_service_client.task_definition_family
