@@ -38,7 +38,7 @@ resource "aws_codepipeline" "this" {
       provider         = "CodeBuild"
       version          = "1"
       input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact_server"]
+      output_artifacts = ["BuildArtifact_app"]
 
       configuration = {
         ProjectName = var.codebuild_project_app
@@ -54,7 +54,7 @@ resource "aws_codepipeline" "this" {
       category        = "Deploy"
       owner           = "AWS"
       provider        = var.deploy_provider
-      input_artifacts = ["BuildArtifact_server"]
+      input_artifacts = ["BuildArtifact_app"]
       version         = "1"
 
       configuration = var.app_deploy_configuration
