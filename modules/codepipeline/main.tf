@@ -1,4 +1,4 @@
-resource "aws_codepipeline" "aws_codepipeline" {
+resource "aws_codepipeline" "this" {
   name     = var.name
   role_arn = var.pipe_role
 
@@ -94,7 +94,7 @@ resource "aws_codepipeline" "aws_codepipeline" {
   tags = var.tags
 }
 
-resource "aws_codestarnotifications_notification_rule" "codepipeline" {
+resource "aws_codestarnotifications_notification_rule" "this" {
   name        = "${var.name}_pipeline_execution_status"
   detail_type = "FULL"
 
@@ -102,7 +102,7 @@ resource "aws_codestarnotifications_notification_rule" "codepipeline" {
     "codepipeline-pipeline-action-execution-succeeded",
     "codepipeline-pipeline-action-execution-failed"
   ]
-  resource = aws_codepipeline.aws_codepipeline.arn
+  resource = aws_codepipeline.this.arn
 
   target {
     address = var.sns_topic
