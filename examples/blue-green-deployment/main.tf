@@ -451,7 +451,7 @@ module "codedeploy_role" {
 module "codebuild_server" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-${local.name}-server"
+  name           = "codebuild-${module.ecs_service_server.name}"
   service_role   = module.devops_role.devops_role_arn
   buildspec_path = var.buildspec_path
 
@@ -492,7 +492,7 @@ module "codebuild_server" {
 module "codebuild_client" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-${local.name}-client"
+  name           = "codebuild-${module.ecs_service_client.name}"
   service_role   = module.devops_role.devops_role_arn
   buildspec_path = var.buildspec_path
 
