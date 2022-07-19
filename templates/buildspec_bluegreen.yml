@@ -31,7 +31,7 @@ phases:
       - sed -i "s|<ECS_EXEC_ROLE_ARN>|$ECS_EXEC_ROLE_ARN|g" artifacts/taskdef.json
       - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/taskdef.json
       - sed -i "s|<AWS_REGION>|$AWS_REGION|g" artifacts/taskdef.json
-      - cat artifacts/imagedefinition.json
+      - cat artifacts/taskdef.json
 
 artifacts:
   files:
