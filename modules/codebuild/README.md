@@ -22,27 +22,20 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [aws_codebuild_project.aws_codebuild](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/codebuild_project) | resource |
-| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
-| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+| [aws_codebuild_project.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/codebuild_project) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_build_timeout"></a> [build\_timeout](#input\_build\_timeout) | Number of minutes, from 5 to 480 (8 hours), for AWS CodeBuild to wait until timing out any related build that does not get marked as completed. The default is 10 minutes | `number` | `10` | no |
 | <a name="input_buildspec_path"></a> [buildspec\_path](#input\_buildspec\_path) | Path to for the Buildspec file | `string` | n/a | yes |
-| <a name="input_container_name"></a> [container\_name](#input\_container\_name) | The name of the Container specified in the Task definition | `string` | n/a | yes |
-| <a name="input_dynamodb_table_name"></a> [dynamodb\_table\_name](#input\_dynamodb\_table\_name) | The name of Dynamodb table used by the server application | `string` | `""` | no |
-| <a name="input_ecr_repo_url"></a> [ecr\_repo\_url](#input\_ecr\_repo\_url) | AWS ECR repository URL where docker images are being stored | `string` | n/a | yes |
-| <a name="input_ecs_exec_role_arn"></a> [ecs\_exec\_role\_arn](#input\_ecs\_exec\_role\_arn) | The Arn of the ECS Task Excecution role to specify in the Task Definition | `string` | n/a | yes |
-| <a name="input_ecs_task_role_arn"></a> [ecs\_task\_role\_arn](#input\_ecs\_task\_role\_arn) | The Arn of the ECS Task role to specify in the Task Definition | `string` | `"null"` | no |
-| <a name="input_folder_path"></a> [folder\_path](#input\_folder\_path) | Folder path to use to build the docker images/containers | `string` | n/a | yes |
-| <a name="input_iam_role"></a> [iam\_role](#input\_iam\_role) | IAM role to attach to CodeBuild | `string` | n/a | yes |
+| <a name="input_description"></a> [description](#input\_description) | Short description of the project | `string` | `null` | no |
+| <a name="input_environment"></a> [environment](#input\_environment) | CodeBuild environment configuration details. At least one attribute is required since `environment` is a required by CodeBuild | `any` | <pre>{<br>  "image": "aws/codebuild/standard:4.0"<br>}</pre> | no |
+| <a name="input_logs_config"></a> [logs\_config](#input\_logs\_config) | CodeBuild logs configuration details | `any` | `{}` | no |
 | <a name="input_name"></a> [name](#input\_name) | CodeBuild Project name | `string` | n/a | yes |
-| <a name="input_server_alb_url"></a> [server\_alb\_url](#input\_server\_alb\_url) | The server ALB DNS. Used to build the code for the frontend layer | `string` | `""` | no |
-| <a name="input_service_port"></a> [service\_port](#input\_service\_port) | The number of the port used by the ECS Service | `number` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | tags | `map(string)` | `{}` | no |
-| <a name="input_task_definition_family"></a> [task\_definition\_family](#input\_task\_definition\_family) | The family name of the Task definition | `string` | n/a | yes |
+| <a name="input_service_role"></a> [service\_role](#input\_service\_role) | Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | A map of tags to add to all resources | `map(string)` | `{}` | no |
 
 ## Outputs
 
