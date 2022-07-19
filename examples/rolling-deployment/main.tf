@@ -431,16 +431,33 @@ module "codebuild_server" {
 
   environment = {
     privileged_mode = true
-    environment_variables = {
-      REPO_URL               = module.server_ecr.repository_url
-      DYNAMODB_TABLE         = module.assets_dynamodb_table.dynamodb_table_id
-      TASK_DEFINITION_FAMILY = module.ecs_service_server.task_definition_family
-      CONTAINER_NAME         = module.ecs_service_server.container_name
-      SERVICE_PORT           = local.app_server_port
-      FOLDER_PATH            = var.folder_path_server
-      ECS_TASK_ROLE_ARN      = module.ecs_service_server.task_role_arn
-      ECS_EXEC_ROLE_ARN      = data.aws_iam_role.ecs_core_infra_exec_role.arn
-    }
+    environment_variables = [
+      {
+        name  = "REPO_URL"
+        value = module.server_ecr.repository_url
+        }, {
+        name  = "DYNAMODB_TABLE"
+        value = module.assets_dynamodb_table.dynamodb_table_id
+        }, {
+        name  = "TASK_DEFINITION_FAMILY"
+        value = module.ecs_service_server.task_definition_family
+        }, {
+        name  = "CONTAINER_NAME"
+        value = module.ecs_service_server.container_name
+        }, {
+        name  = "SERVICE_PORT"
+        value = local.app_server_port
+        }, {
+        name  = "FOLDER_PATH"
+        value = var.folder_path_server
+        }, {
+        name  = "ECS_TASK_ROLE_ARN"
+        value = module.ecs_service_server.task_role_arn
+        }, {
+        name  = "ECS_EXEC_ROLE_ARN"
+        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+      },
+    ]
   }
 
   tags = local.tags
@@ -455,16 +472,33 @@ module "codebuild_client" {
 
   environment = {
     privileged_mode = true
-    environment_variables = {
-      REPO_URL               = module.client_ecr.repository_url
-      TASK_DEFINITION_FAMILY = module.ecs_service_client.task_definition_family
-      CONTAINER_NAME         = module.ecs_service_client.container_name
-      SERVICE_PORT           = local.app_client_port
-      FOLDER_PATH            = var.folder_path_client
-      ECS_TASK_ROLE_ARN      = module.ecs_service_client.task_role_arn
-      ECS_EXEC_ROLE_ARN      = data.aws_iam_role.ecs_core_infra_exec_role.arn
-      SERVER_ALB_URL         = module.server_alb.lb_dns_name
-    }
+    environment_variables = [
+      {
+        name  = "REPO_URL"
+        value = module.client_ecr.repository_url
+        }, {
+        name  = "TASK_DEFINITION_FAMILY"
+        value = module.ecs_service_client.task_definition_family
+        }, {
+        name  = "CONTAINER_NAME"
+        value = module.ecs_service_client.container_name
+        }, {
+        name  = "SERVICE_PORT"
+        value = local.app_client_port
+        }, {
+        name  = "FOLDER_PATH"
+        value = var.folder_path_client
+        }, {
+        name  = "ECS_TASK_ROLE_ARN"
+        value = module.ecs_service_client.task_role_arn
+        }, {
+        name  = "ECS_EXEC_ROLE_ARN"
+        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        }, {
+        name  = "SERVER_ALB_URL"
+        value = module.server_alb.lb_dns_name
+      }
+    ]
   }
 
   tags = local.tags
