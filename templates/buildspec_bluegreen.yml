@@ -25,8 +25,8 @@ phases:
       - mkdir artifacts
       - cp templates/appspec.yaml artifacts/ && cp templates/taskdef.json artifacts/
       - sed -i "s|<TASK_DEFINITION_FAMILY>|$TASK_DEFINITION_FAMILY|g" artifacts/taskdef.json
-      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" appspec.yaml artifacts/taskdef.json
-      - sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" appspec.yaml artifacts/taskdef.json
+      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/appspec.yaml artifacts/taskdef.json
+      - sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" artifacts/appspec.yaml artifacts/taskdef.json
       - sed -i "s|<ECS_TASK_ROLE_ARN>|$ECS_TASK_ROLE_ARN|g" artifacts/taskdef.json
       - sed -i "s|<ECS_EXEC_ROLE_ARN>|$ECS_EXEC_ROLE_ARN|g" artifacts/taskdef.json
       - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/taskdef.json
