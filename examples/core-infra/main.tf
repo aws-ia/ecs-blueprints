@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = var.stack_name
+  name   = var.core_stack_name
   region = var.aws_region
 
   vpc_cidr = var.vpc_cidr
