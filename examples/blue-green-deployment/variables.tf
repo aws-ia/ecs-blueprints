@@ -1,4 +1,4 @@
-# Shared resources from core-infra variables
+# Shared resources from ecs-blueprint-infra variables
 variable "vpc_tag_key" {
   description = "The tag key of the VCP and subnets"
   type        = string
@@ -8,30 +8,30 @@ variable "vpc_tag_key" {
 variable "vpc_tag_value" {
   description = "The tag value of the VPC and subnets"
   type        = string
-  default     = "core-infra"
+  default     = "ecs-blueprint-infra"
 }
 
 variable "public_subnets" {
   description = "The value tag of the public subnets"
   type        = string
-  default     = "core-infra-public-"
+  default     = "ecs-blueprint-infra-public-"
 }
 variable "private_subnets" {
   description = "The value tag of the private subnets"
   type        = string
-  default     = "core-infra-private-"
+  default     = "ecs-blueprint-infra-private-"
 }
 
 variable "ecs_cluster_name" {
   description = "The ID of the ECS cluster"
   type        = string
-  default     = "core-infra"
+  default     = "ecs-blueprint-infra"
 }
 
 variable "ecs_task_execution_role_name" {
   description = "The ARN of the task execution role"
   type        = string
-  default     = "core-infra-execution"
+  default     = "ecs-blueprint-infra-execution"
 }
 
 # Application variables

@@ -18,7 +18,7 @@ locals {
 }
 
 ################################################################################
-# Data Sources from core-infra
+# Data Sources from ecs-blueprint-infra
 ################################################################################
 
 data "aws_vpc" "vpc" {
@@ -647,6 +647,10 @@ module "codepipeline_client" {
   }
 
   tags = local.tags
+
+  #depends_on = [
+  #  module.codepipeline_s3_bucket
+  #]
 }
 
 ################################################################################
