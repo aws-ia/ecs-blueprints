@@ -19,7 +19,7 @@ output "private_subnets_cidr_blocks" {
 
 output "ecs_cluster_name" {
   description = "The name of the ECS cluster"
-  value       = module.ecs.cluster_name
+  value       = local.name
 }
 
 output "ecs_cluster_id" {

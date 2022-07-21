@@ -18,7 +18,7 @@ locals {
 }
 
 ################################################################################
-# Data Sources from core-infra
+# Data Sources from ecs-blueprint-infra
 ################################################################################
 
 data "aws_vpc" "vpc" {
@@ -355,6 +355,8 @@ module "ecs_service_client" {
 module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
+
+  depends_on = [module.devops_role]
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"

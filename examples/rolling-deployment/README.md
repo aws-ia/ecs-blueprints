@@ -89,7 +89,7 @@ cd examples/two-tier-dynamodb-app/rolling_deployment/
 
 **3.** Create Github Token secret in Secret Manager
 
-Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret name `github-token` with your Plaintext github token value.
+Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret name `ecs-github-token` with your Plaintext github token value.
 
 **4.** Run Terraform init to download the providers and install the modules
 

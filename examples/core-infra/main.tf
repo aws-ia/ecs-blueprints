@@ -5,10 +5,10 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = basename(path.cwd)
-  region = "us-west-2"
+  name   = var.core_stack_name
+  region = var.aws_region
 
-  vpc_cidr = "10.0.0.0/16"
+  vpc_cidr = var.vpc_cidr
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   tags = {

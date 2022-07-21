@@ -1,0 +1,17 @@
+variable "core_stack_name" {
+  description = "The name of Core Infrastructure stack"
+  type        = string
+  default     = "ecs-blueprint-infra"
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
