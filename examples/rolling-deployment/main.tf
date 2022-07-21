@@ -304,6 +304,13 @@ module "ecs_service_server" {
   task_role_policy   = data.aws_iam_policy_document.task_role.json
   execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
+  # Autoscalnig
+  enable_autoscaling           = true
+  autoscaling_min_capacity     = 1
+  autoscaling_max_capacity     = 5
+  autoscaling_cpu_threshold    = 75
+  autoscaling_memory_threshold = 75
+
   tags = local.tags
 }
 
@@ -331,29 +338,14 @@ module "ecs_service_client" {
   task_role_policy   = data.aws_iam_policy_document.task_role.json
   execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
+  # Autoscalnig
+  enable_autoscaling           = true
+  autoscaling_min_capacity     = 1
+  autoscaling_max_capacity     = 5
+  autoscaling_cpu_threshold    = 75
+  autoscaling_memory_threshold = 75
+
   tags = local.tags
-}
-
-module "ecs_autoscaling_server" {
-  source = "../../modules/ecs-autoscaling"
-
-  cluster_name     = data.aws_ecs_cluster.core_infra.cluster_name
-  service_name     = module.ecs_service_server.name
-  min_capacity     = 1
-  max_capacity     = 5
-  cpu_threshold    = 75
-  memory_threshold = 75
-}
-
-module "ecs_autoscaling_client" {
-  source = "../../modules/ecs-autoscaling"
-
-  cluster_name     = data.aws_ecs_cluster.core_infra.cluster_name
-  service_name     = module.ecs_service_client.name
-  min_capacity     = 1
-  max_capacity     = 5
-  cpu_threshold    = 75
-  memory_threshold = 74
 }
 
 ################################################################################
