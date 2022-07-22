@@ -1,4 +1,10 @@
 # Shared resources from ecs-blueprint-infra variables
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-west-2"
+}
+
 variable "vpc_tag_key" {
   description = "The tag key of the VCP and subnets"
   type        = string

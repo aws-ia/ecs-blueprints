@@ -6,7 +6,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
-  region = "us-west-2"
+  region = var.region
 
   app_server_port = 3001
   app_client_port = 80
