@@ -1,6 +1,4 @@
-################################################################################
-# AWS CodeDeploy integration for Blue/Green deployments
-################################################################################
+data "aws_partition" "current" {}
 
 resource "aws_codedeploy_app" "this" {
   compute_platform = "ECS"
@@ -13,7 +11,7 @@ resource "aws_codedeploy_deployment_group" "this" {
   app_name               = aws_codedeploy_app.this.name
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
   deployment_group_name  = "deployment-group-${var.name}"
-  service_role_arn       = var.codedeploy_role
+  service_role_arn       = var.service_role
 
   auto_rollback_configuration {
     enabled = true
@@ -74,4 +72,38 @@ resource "aws_codedeploy_deployment_group" "this" {
   lifecycle {
     ignore_changes = [blue_green_deployment_config]
   }
+}
+
+################################################################################
+# IAM
+################################################################################
+
+data "aws_iam_policy_document" "assume_role_policy" {
+  count = var.create_iam_role ? 1 : 0
+
+  statement {
+    sid     = "CodedeployAssumeRole"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["codedeploy.${data.aws_partition.current.dns_suffix}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  name               = var.iam_role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy[0].json
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+  role       = aws_iam_role.this[0].name
 }

@@ -44,3 +44,29 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+### IAM
+
+variable "iam_role_name" {
+  description = "The name for the Role"
+  type        = string
+}
+
+variable "create_iam_role" {
+  description = "Set this variable to true if you want to create a role for AWS DevOps Tools"
+  type        = bool
+  default     = false
+}
+
+variable "ecr_repository" {
+  description = "The ECR repositories to which grant IAM access"
+  type        = string
+}
+
+variable "s3_bucket" {
+  description = "S3 bucket used for the artifact store"
+  type = object({
+    s3_bucket_id  = string
+    s3_bucket_arn = string
+  })
+}
