@@ -485,9 +485,9 @@ module "codebuild_server" {
     ]
   }
 
-  create_iam_role     = true
-  codebuild_role_name = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
-  ecr_repository      = module.server_ecr.repository_arn
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
+  ecr_repository  = module.server_ecr.repository_arn
 
   tags = local.tags
 }
@@ -531,9 +531,9 @@ module "codebuild_client" {
     ]
   }
 
-  create_iam_role     = true
-  codebuild_role_name = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
-  ecr_repository      = module.client_ecr.repository_arn
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
+  ecr_repository  = module.client_ecr.repository_arn
 
   tags = local.tags
 }
@@ -549,10 +549,10 @@ module "codedeploy_server" {
   tg_blue       = element(module.server_alb.target_group_names, 0)
   tg_green      = element(module.server_alb.target_group_names, 1)
   sns_topic_arn = aws_sns_topic.codestar_notification.arn
-  # 
+  #
 
-  create_iam_role      = true
-  codedeploy_role_name = "${module.ecs_service_server.name}-codedeploy-${random_id.server.hex}"
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_server.name}-codedeploy-${random_id.server.hex}"
 
   tags = local.tags
 }
@@ -569,8 +569,8 @@ module "codedeploy_client" {
   tg_green      = element(module.client_alb.target_group_names, 1)
   sns_topic_arn = aws_sns_topic.codestar_notification.arn
 
-  create_iam_role      = true
-  codedeploy_role_name = "${module.ecs_service_client.name}-codedeploy-${random_id.client.hex}"
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_client.name}-codedeploy-${random_id.client.hex}"
 
   tags = local.tags
 }
@@ -607,7 +607,7 @@ module "codepipeline_server" {
   }
 
   create_iam_role = true
-  pipeline_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
+  iam_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
 
   tags = local.tags
 }
@@ -636,7 +636,7 @@ module "codepipeline_client" {
   }
 
   create_iam_role = true
-  pipeline_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
+  iam_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
 
   tags = local.tags
 }
