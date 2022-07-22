@@ -1,25 +1,14 @@
-# Amazon ECS Blueprints for Terraform
+# Amazon ECS Solution Blueprints for Terraform
 
-Welcome to Amazon ECS Blueprints for Terraform!
+Welcome to Amazon ECS Solution Blueprints for Terraform!
 
-This repository contains a collection of Terraform modules that aim to make it easier and faster for customers to adopt [Amazon ECS and Fargate](https://aws.amazon.com/ecs/). It can be used by AWS customers, partners, and internal AWS teams to provision a number of architectural `blueprints` using ECS and Fargate.
-
+With ECS Solution Blueprints the motivation is that *new* customers can get a jumpstart and learn-by-doing. The blueprints aspire to codify best practices and well-established architecture patterns so that customers get a good starting point with shorter learning curve. Currently, the repository is focused on solution blueprints using [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/). 
+ 
 Start with the architectural blueprint that most closely matches your use case.  The following is a list of supported blueprints:
 
-- [ ] Load Balanced Web Service
-- [ ] Load Balanced Web Service (with NLB)
-- [ ] Load Balanced Web Service (with CI/CD Pipeline)
-- [ ] Load Balanced Web Service (with CI/CD Pipeline with Blue/Green Deployment)
-- [ ] Load Balanced Web Service (with Github Actions)
-- [ ] API Gateway Web Service
-- ✅ [Backend Service](./examples/backend-service/README.md)
-- [ ] Worker Service
-- [ ] Scheduled Task
+- ✅ [Core Infrastructure Setup](./examples/core-infra/README.md)
 - ✅ [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
 - ✅ [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
-
-
-## Motivation
 
 
 ## Support & Feedback
