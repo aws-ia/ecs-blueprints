@@ -64,3 +64,106 @@ resource "aws_codebuild_project" "this" {
 
   tags = var.tags
 }
+
+################################################################################
+# IAM
+################################################################################
+
+resource "aws_iam_role" "codebuild" {
+  count = var.create_codebuild_role ? 1 : 0
+
+  name = var.codebuild_role_name
+
+  assume_role_policy = <<-EOT
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": {
+          "Service": [
+            "codebuild.amazonaws.com"
+          ]
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }
+  EOT
+
+  tags = var.tags
+}
+
+resource "aws_iam_policy" "codebuild" {
+  count = var.create_codebuild_role ? 1 : 0
+
+  name        = "Policy-${var.codebuild_role_name}"
+  description = "IAM Policy for Role ${var.codebuild_role_name}"
+  policy      = data.aws_iam_policy_document.codebuild[0].json
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "codebuild" {
+  count = var.create_codebuild_role ? 1 : 0
+
+  policy_arn = aws_iam_policy.codebuild[0].arn
+  role       = aws_iam_role.codebuild[0].name
+}
+
+data "aws_iam_policy_document" "codebuild" {
+  count = var.create_codebuild_role ? 1 : 0
+
+  statement {
+    sid    = "AllowS3Actions"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:GetBucketAcl",
+      "s3:List*"
+    ]
+    resources = ["${var.s3_bucket.s3_bucket_arn}/*"]
+  }
+  statement {
+    sid    = "AllowECRActions"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
+    resources = [var.ecr_repository]
+  }
+  statement {
+    sid    = "AllowECRAuthorization"
+    effect = "Allow"
+    actions = [
+      "ecr:GetAuthorizationToken",
+    ]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "AllowIAMPassRole"
+    effect = "Allow"
+    actions = [
+      "iam:PassRole"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "AllowCloudWatchActions"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = ["*"]
+  }
+}

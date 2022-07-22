@@ -45,7 +45,14 @@ variable "trigger_name" {
   default     = "CodeDeploy_notification"
 }
 
-variable "codedeploy_role" {
-  description = "The role to be assumed by CodeDeploy"
+## IAM
+variable "create_codedeploy_role" {
+  description = "Set this variable to true if you want to create a role for AWS CodeDeploy"
+  type        = bool
+  default     = false
+}
+
+variable "codedeploy_role_name" {
+  description = "The name for the Role"
   type        = string
 }
