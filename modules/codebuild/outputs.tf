@@ -10,10 +10,10 @@ output "project_arn" {
 
 output "codebuild_role_arn" {
   description = "The ARN of the IAM role"
-  value       = try(aws_iam_role.codebuild[0].arn, null)
+  value       = try(aws_iam_role.this[0].arn, null)
 }
 
 output "codebuild_role_name" {
   description = "The name of the IAM role"
-  value       = try(aws_iam_role.codebuild[0].name, null)
+  value       = try(aws_iam_role.this[0].name, null)
 }

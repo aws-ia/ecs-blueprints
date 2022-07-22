@@ -228,7 +228,7 @@ module "server_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_server.pipeline_role_arn]
+  repository_read_write_access_arns = [module.codepipeline_server.codepipeline_role_arn]
 
   tags = local.tags
 }
@@ -242,7 +242,7 @@ module "client_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_client.pipeline_role_arn]
+  repository_read_write_access_arns = [module.codepipeline_client.codepipeline_role_arn]
 
   tags = local.tags
 }
@@ -485,9 +485,9 @@ module "codebuild_server" {
     ]
   }
 
-  create_codebuild_role = true
-  codebuild_role_name   = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
-  ecr_repository        = module.server_ecr.repository_arn
+  create_iam_role     = true
+  codebuild_role_name = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
+  ecr_repository      = module.server_ecr.repository_arn
 
   tags = local.tags
 }
@@ -531,9 +531,9 @@ module "codebuild_client" {
     ]
   }
 
-  create_codebuild_role = true
-  codebuild_role_name   = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
-  ecr_repository        = module.client_ecr.repository_arn
+  create_iam_role     = true
+  codebuild_role_name = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
+  ecr_repository      = module.client_ecr.repository_arn
 
   tags = local.tags
 }
@@ -542,16 +542,17 @@ module "codedeploy_server" {
   source = "../../modules/codedeploy"
 
   name          = "Deploy-${local.name}-server"
+  service_role  = module.codedeploy_server.codedeploy_role_arn
   ecs_cluster   = data.aws_ecs_cluster.core_infra.cluster_name
   ecs_service   = module.ecs_service_server.name
   alb_listener  = aws_alb_listener.server.arn
   tg_blue       = element(module.server_alb.target_group_names, 0)
   tg_green      = element(module.server_alb.target_group_names, 1)
   sns_topic_arn = aws_sns_topic.codestar_notification.arn
-  # codedeploy_role = module.codedeploy_role.codedeploy_role_arn
+  # 
 
-  create_codedeploy_role = true
-  codedeploy_role_name   = "${module.ecs_service_server.name}-codedeploy-${random_id.server.hex}"
+  create_iam_role      = true
+  codedeploy_role_name = "${module.ecs_service_server.name}-codedeploy-${random_id.server.hex}"
 
   tags = local.tags
 }
@@ -560,16 +561,16 @@ module "codedeploy_client" {
   source = "../../modules/codedeploy"
 
   name          = "Deploy-${local.name}-client"
+  service_role  = module.codedeploy_client.codedeploy_role_arn
   ecs_cluster   = data.aws_ecs_cluster.core_infra.cluster_name
   ecs_service   = module.ecs_service_client.name
   alb_listener  = aws_alb_listener.client.arn
   tg_blue       = element(module.client_alb.target_group_names, 0)
   tg_green      = element(module.client_alb.target_group_names, 1)
   sns_topic_arn = aws_sns_topic.codestar_notification.arn
-  # codedeploy_role = module.codedeploy_role.codedeploy_role_arn
 
-  create_codedeploy_role = true
-  codedeploy_role_name   = "${module.ecs_service_client.name}-codedeploy-${random_id.client.hex}"
+  create_iam_role      = true
+  codedeploy_role_name = "${module.ecs_service_client.name}-codedeploy-${random_id.client.hex}"
 
   tags = local.tags
 }
@@ -586,6 +587,7 @@ module "codepipeline_server" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_server.name}"
+  service_role          = module.codepipeline_server.codepipeline_role_arn
   s3_bucket             = module.codepipeline_s3_bucket
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
@@ -604,7 +606,7 @@ module "codepipeline_server" {
     AppSpecTemplatePath            = "appspec.yaml"
   }
 
-  create_pipeline_role = true
+  create_iam_role = true
   pipeline_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
 
   tags = local.tags
@@ -614,6 +616,7 @@ module "codepipeline_client" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_client.name}"
+  service_role          = module.codepipeline_client.codepipeline_role_arn
   s3_bucket             = module.codepipeline_s3_bucket
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
@@ -632,7 +635,7 @@ module "codepipeline_client" {
     AppSpecTemplatePath            = "appspec.yaml"
   }
 
-  create_pipeline_role = true
+  create_iam_role = true
   pipeline_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
 
   tags = local.tags

@@ -46,13 +46,18 @@ variable "trigger_name" {
 }
 
 ## IAM
-variable "create_codedeploy_role" {
+variable "create_iam_role" {
   description = "Set this variable to true if you want to create a role for AWS CodeDeploy"
   type        = bool
   default     = false
 }
 
-variable "codedeploy_role_name" {
+variable "iam_role_name" {
   description = "The name for the Role"
+  type        = string
+}
+
+variable "service_role" {
+  description = "Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account"
   type        = string
 }

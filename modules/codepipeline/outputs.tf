@@ -1,9 +1,9 @@
-output "pipeline_role_arn" {
+output "codepipeline_role_arn" {
   description = "The ARN of the IAM role"
-  value       = try(aws_iam_role.pipeline[0].arn, null)
+  value       = try(aws_iam_role.this[0].arn, null)
 }
 
-output "pipeline_role_name" {
+output "codepipeline_role_name" {
   description = "The name of the IAM role"
-  value       = try(aws_iam_role.pipeline[0].name, null)
+  value       = try(aws_iam_role.this[0].name, null)
 }

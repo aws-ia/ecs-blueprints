@@ -17,3 +17,13 @@ output "application_arn" {
   description = "The application ARN for CodeDeploy"
   value       = aws_codedeploy_app.this.arn
 }
+
+output "codedeploy_role_arn" {
+  description = "The ARN of the IAM role"
+  value       = try(aws_iam_role.this[0].arn, null)
+}
+
+output "codedeploy_role_name" {
+  description = "The name of the IAM role"
+  value       = try(aws_iam_role.this[0].name, null)
+}

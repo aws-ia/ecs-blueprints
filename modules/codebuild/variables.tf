@@ -47,12 +47,12 @@ variable "tags" {
 
 ### IAM
 
-variable "codebuild_role_name" {
+variable "iam_role_name" {
   description = "The name for the Role"
   type        = string
 }
 
-variable "create_codebuild_role" {
+variable "create_iam_role" {
   description = "Set this variable to true if you want to create a role for AWS DevOps Tools"
   type        = bool
   default     = false

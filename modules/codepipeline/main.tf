@@ -1,6 +1,8 @@
+data "aws_partition" "current" {}
+
 resource "aws_codepipeline" "this" {
   name     = var.name
-  role_arn = aws_iam_role.pipeline[0].arn
+  role_arn = var.service_role
 
   artifact_store {
     location = var.s3_bucket.s3_bucket_id
@@ -90,50 +92,48 @@ resource "aws_codestarnotifications_notification_rule" "this" {
 # IAM
 ################################################################################
 
-resource "aws_iam_role" "pipeline" {
-  count = var.create_pipeline_role ? 1 : 0
+data "aws_iam_policy_document" "assume_role_policy" {
+  count = var.create_iam_role ? 1 : 0
 
-  name = var.pipeline_role_name
+  statement {
+    sid     = "CodepipelineAssumeRole"
+    actions = ["sts:AssumeRole"]
 
-  assume_role_policy = <<-EOT
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Principal": {
-          "Service": [
-            "codepipeline.amazonaws.com"
-          ]
-        },
-        "Action": "sts:AssumeRole"
-      }
-    ]
+    principals {
+      type        = "Service"
+      identifiers = ["codepipeline.${data.aws_partition.current.dns_suffix}"]
+    }
   }
-  EOT
+}
+
+resource "aws_iam_role" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  name = var.iam_role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy[0].json
 
   tags = var.tags
 }
 
-resource "aws_iam_policy" "pipeline" {
-  count = var.create_pipeline_role ? 1 : 0
+resource "aws_iam_policy" "this" {
+  count = var.create_iam_role ? 1 : 0
 
-  name        = "Policy-${var.pipeline_role_name}"
-  description = "IAM Policy for Role ${var.pipeline_role_name}"
-  policy      = data.aws_iam_policy_document.pipeline[0].json
+  name        = var.iam_role_name
+  description = "IAM Policy for Role ${var.iam_role_name}"
+  policy      = data.aws_iam_policy_document.this[0].json
 
   tags = var.tags
 }
 
-resource "aws_iam_role_policy_attachment" "pipeline" {
-  count = var.create_pipeline_role ? 1 : 0
+resource "aws_iam_role_policy_attachment" "this" {
+  count = var.create_iam_role ? 1 : 0
 
-  policy_arn = aws_iam_policy.pipeline[0].arn
-  role       = aws_iam_role.pipeline[0].name
+  policy_arn = aws_iam_policy.this[0].arn
+  role       = aws_iam_role.this[0].name
 }
 
-data "aws_iam_policy_document" "pipeline" {
-  count = var.create_pipeline_role ? 1 : 0
+data "aws_iam_policy_document" "this" {
+  count = var.create_iam_role ? 1 : 0
 
   statement {
     sid    = "AllowS3Actions"

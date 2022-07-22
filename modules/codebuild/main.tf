@@ -1,3 +1,5 @@
+data "aws_partition" "current" {}
+
 resource "aws_codebuild_project" "this" {
   name          = var.name
   description   = var.description
@@ -69,53 +71,51 @@ resource "aws_codebuild_project" "this" {
 # IAM
 ################################################################################
 
-resource "aws_iam_role" "codebuild" {
-  count = var.create_codebuild_role ? 1 : 0
-
-  name = var.codebuild_role_name
-
-  assume_role_policy = <<-EOT
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Principal": {
-          "Service": [
-            "codebuild.amazonaws.com"
-          ]
-        },
-        "Action": "sts:AssumeRole"
-      }
-    ]
-  }
-  EOT
-
-  tags = var.tags
-}
-
-resource "aws_iam_policy" "codebuild" {
-  count = var.create_codebuild_role ? 1 : 0
-
-  name        = "Policy-${var.codebuild_role_name}"
-  description = "IAM Policy for Role ${var.codebuild_role_name}"
-  policy      = data.aws_iam_policy_document.codebuild[0].json
-
-  tags = var.tags
-}
-
-resource "aws_iam_role_policy_attachment" "codebuild" {
-  count = var.create_codebuild_role ? 1 : 0
-
-  policy_arn = aws_iam_policy.codebuild[0].arn
-  role       = aws_iam_role.codebuild[0].name
-}
-
-data "aws_iam_policy_document" "codebuild" {
-  count = var.create_codebuild_role ? 1 : 0
+data "aws_iam_policy_document" "assume_role_policy" {
+  count = var.create_iam_role ? 1 : 0
 
   statement {
-    sid    = "AllowS3Actions"
+    sid     = "CodebuildAssumeRole"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["codebuild.${data.aws_partition.current.dns_suffix}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  name = var.iam_role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy[0].json
+
+  tags = var.tags
+}
+
+resource "aws_iam_policy" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  name        = var.iam_role_name
+  description = "IAM Policy for Role ${var.iam_role_name}"
+  policy      = data.aws_iam_policy_document.this[0].json
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  policy_arn = aws_iam_policy.this[0].arn
+  role       = aws_iam_role.this[0].name
+}
+
+data "aws_iam_policy_document" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  statement {
+    sid    = "S3ReadWrite"
     effect = "Allow"
     actions = [
       "s3:PutObject",
@@ -127,7 +127,7 @@ data "aws_iam_policy_document" "codebuild" {
     resources = ["${var.s3_bucket.s3_bucket_arn}/*"]
   }
   statement {
-    sid    = "AllowECRActions"
+    sid    = "ECRReadWrite"
     effect = "Allow"
     actions = [
       "ecr:BatchCheckLayerAvailability",

@@ -13,7 +13,7 @@ resource "aws_codedeploy_deployment_group" "this" {
   app_name               = aws_codedeploy_app.this.name
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
   deployment_group_name  = "deployment-group-${var.name}"
-  service_role_arn       = aws_iam_role.codedeploy[0].arn
+  service_role_arn       = var.service_role
 
   auto_rollback_configuration {
     enabled = true
@@ -80,33 +80,32 @@ resource "aws_codedeploy_deployment_group" "this" {
 # IAM
 ################################################################################
 
-resource "aws_iam_role" "codedeploy" {
-  count = var.create_codedeploy_role ? 1 : 0
+data "aws_iam_policy_document" "assume_role_policy" {
+  count = var.create_iam_role ? 1 : 0
 
-  name = var.codedeploy_role_name
+  statement {
+    sid     = "CodedeployAssumeRole"
+    actions = ["sts:AssumeRole"]
 
-  assume_role_policy = <<-EOT
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "codedeploy.amazonaws.com"
-        },
-        "Action": "sts:AssumeRole"
-      }
-    ]
+    principals {
+      type        = "Service"
+      identifiers = ["codedeploy.${data.aws_partition.current.dns_suffix}"]
+    }
   }
-  EOT
+}
+
+resource "aws_iam_role" "this" {
+  count = var.create_iam_role ? 1 : 0
+
+  name = var.iam_role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy[0].json
 
   tags = var.tags
 }
 
-resource "aws_iam_role_policy_attachment" "codedeploy_attachment" {
-  count = var.create_codedeploy_role ? 1 : 0
+resource "aws_iam_role_policy_attachment" "this" {
+  count = var.create_iam_role ? 1 : 0
 
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
-  role       = aws_iam_role.codedeploy[0].name
+  role       = aws_iam_role.this[0].name
 }

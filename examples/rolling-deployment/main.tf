@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
 
 locals {
   name   = basename(path.cwd)
@@ -186,7 +187,7 @@ module "server_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_server.pipeline_role_arn]
+  repository_read_write_access_arns = [module.codepipeline_server.codepipeline_role_arn]
 
   tags = local.tags
 }
@@ -200,7 +201,7 @@ module "client_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_client.pipeline_role_arn]
+  repository_read_write_access_arns = [module.codepipeline_client.codepipeline_role_arn]
 
   tags = local.tags
 }
@@ -441,9 +442,9 @@ module "codebuild_server" {
     ]
   }
 
-  create_codebuild_role = true
-  codebuild_role_name   = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
-  ecr_repository        = module.server_ecr.repository_arn
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
+  ecr_repository  = module.server_ecr.repository_arn
 
   tags = local.tags
 }
@@ -487,9 +488,9 @@ module "codebuild_client" {
     ]
   }
 
-  create_codebuild_role = true
-  codebuild_role_name   = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
-  ecr_repository        = module.client_ecr.repository_arn
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
+  ecr_repository  = module.client_ecr.repository_arn
 
   tags = local.tags
 }
@@ -506,6 +507,7 @@ module "codepipeline_server" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_server.name}"
+  service_role          = module.codepipeline_server.codepipeline_role_arn
   s3_bucket             = module.codepipeline_s3_bucket
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
@@ -520,8 +522,8 @@ module "codepipeline_server" {
     FileName    = "imagedefinition.json"
   }
 
-  create_pipeline_role = true
-  pipeline_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
 
   tags = local.tags
 }
@@ -530,6 +532,7 @@ module "codepipeline_client" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_client.name}"
+  service_role          = module.codepipeline_client.codepipeline_role_arn
   s3_bucket             = module.codepipeline_s3_bucket
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
@@ -544,8 +547,8 @@ module "codepipeline_client" {
     FileName    = "imagedefinition.json"
   }
 
-  create_pipeline_role = true
-  pipeline_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
 
   tags = local.tags
 }
