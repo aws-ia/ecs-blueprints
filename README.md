@@ -2,8 +2,8 @@
 
 Welcome to Amazon ECS Solution Blueprints for Terraform!
 
-With ECS Solution Blueprints the motivation is that *new* customers can get a jumpstart and learn-by-doing. The blueprints aspire to codify best practices and well-established architecture patterns so that customers get a good starting point with shorter learning curve. Currently, the repository is focused on solution blueprints using [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/). 
- 
+With ECS Solution Blueprints the motivation is that *new* customers can get a jumpstart and learn-by-doing. The blueprints aspire to codify best practices and well-established architecture patterns so that customers get a good starting point with shorter learning curve. Currently, the repository is focused on solution blueprints using [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/).
+
 Start with the architectural blueprint that most closely matches your use case.  The following is a list of supported blueprints:
 
 - ✅ [Core Infrastructure Setup](./examples/core-infra/README.md)
