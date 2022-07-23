@@ -28,7 +28,6 @@ phases:
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" imagedefinition.json
       - sed -i "s|<REPO_URL>|$REPO_URL|g" imagedefinition.json
-      - cat artifacts/imagedefinition.json
 
 artifacts:
   files:
