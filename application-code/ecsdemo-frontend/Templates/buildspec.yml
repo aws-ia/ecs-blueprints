@@ -3,6 +3,7 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - REPOSITORY=${REPO_URL%/*}
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
@@ -16,6 +17,7 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
       - docker push $REPO_URL:$IMAGE_TAG
       - echo Changing directory to Templates directory
       - cd ./Templates
@@ -27,6 +29,7 @@ phases:
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" imagedefinition.json
       - sed -i "s|<REPO_URL>|$REPO_URL|g" imagedefinition.json
+      - cat artifacts/imagedefinition.json
 
 artifacts:
   files:
