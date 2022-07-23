@@ -27,14 +27,13 @@ This folder contains Terraform code to deploy a solution that is intended to be 
 The AWS resources created by the script are detailed bellow:
 
 - Networking
-  - 2 ALBs - public facing ones (1 for the client and 1 for the server)
+  - 2 ALBs - 1 for the client (public) and 1 for the server (private)
   - Security Groups
 - Development code
   - 2 ECR Repositories (1 for the client and 1 for the server)
   - 1 S3 Bucket (used to store assets accessible from within the application)
   - 1 Dynamodb table (used by the application)
 - ECS Infrastructure
-  - 1 ECS Cluster
   - 2 ECS Services
   - 2 Task definitions
   - IAM roles
@@ -42,8 +41,8 @@ The AWS resources created by the script are detailed bellow:
   - 2 Target groups
   - 2 Autoscaling groups + Cloudwatch rules for it
 - CI/CD
-  - 1 CodePipeline pipeline
-  - 1 GitHub integration
+  - 1 GitHub integration 
+  - 2 CodePipeline pipeline
   - 2 CodeBuild Projects
   - 2 ECS Rolling Deployment cofigurations
   - 1 S3 Bucket (used by CodePipeline to store the artifacts)
