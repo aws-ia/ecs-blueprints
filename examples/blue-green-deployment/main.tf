@@ -1,12 +1,11 @@
 provider "aws" {
-  region = local.region
+  region = var.aws_region
 }
 
 data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
-  region = var.aws_region
 
   app_server_port = 3001
   app_client_port = 80
@@ -405,7 +404,7 @@ module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "codepipeline-${local.region}-${random_id.this.hex}"
+  bucket = "codepipeline-${var.aws_region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
@@ -440,7 +439,7 @@ resource "aws_sns_topic" "codestar_notification" {
         Sid      = "WriteAccess"
         Effect   = "Allow"
         Action   = "sns:Publish"
-        Resource = "arn:aws:sns:${local.region}:${data.aws_caller_identity.current.account_id}:${local.name}"
+        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.name}"
         Principal = {
           Service = "codestar-notifications.amazonaws.com"
         }
@@ -654,7 +653,7 @@ module "assets_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "${local.name}-assets-${local.region}-${random_id.this.hex}"
+  bucket = "${local.name}-assets-${var.aws_region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
