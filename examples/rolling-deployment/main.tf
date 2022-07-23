@@ -6,7 +6,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
-  region = var.aws_region
+  region = "us-east-2"
 
   app_server_port = 3001
   app_client_port = 80
@@ -15,6 +15,11 @@ locals {
     Blueprint  = local.name
     GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
+
+  tag_val_vpc = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
+  tag_val_private_subnet = var.vpc_tag_value == "" ?  "${var.core_stack_name}-private-" : var.vpc_tag_value
+  tag_val_public_subnet = var.vpc_tag_value == "" ? "${var.core_stack_name}-public-" : var.vpc_tag_value
+  
 }
 
 ################################################################################
@@ -24,14 +29,14 @@ locals {
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = [var.vpc_tag_value]
+    values = [local.tag_val_vpc]
   }
 }
 
 data "aws_subnets" "private" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = ["${var.private_subnets}*"]
+    values = ["${local.tag_val_private_subnet}*"]
   }
 }
 
@@ -43,7 +48,7 @@ data "aws_subnet" "private_cidr" {
 data "aws_subnets" "public" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = ["${var.public_subnets}*"]
+    values = ["${local.tag_val_public_subnet}*"]
   }
 }
 
@@ -53,11 +58,11 @@ data "aws_subnet" "public_cidr" {
 }
 
 data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name
+  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
 }
 
 data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name
+  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
 }
 
 ################################################################################
@@ -186,7 +191,7 @@ module "server_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_server.codepipeline_role_arn]
+  repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
 }
@@ -200,7 +205,7 @@ module "client_ecr" {
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_client.codepipeline_role_arn]
+  repository_read_write_access_arns = [module.devops_role.devops_role_arn]
 
   tags = local.tags
 }
@@ -338,7 +343,7 @@ module "ecs_service_client" {
   task_role_policy   = data.aws_iam_policy_document.task_role.json
   execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  # Autoscaling
+  # Autoscalnig
   enable_autoscaling           = true
   autoscaling_min_capacity     = 1
   autoscaling_max_capacity     = 5
@@ -355,6 +360,8 @@ module "ecs_service_client" {
 module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
+
+  depends_on = [module.devops_role]
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"
@@ -402,13 +409,24 @@ resource "aws_sns_topic" "codestar_notification" {
   tags = local.tags
 }
 
+module "devops_role" {
+  source = "../../modules/iam"
+
+  create_devops_role = true
+
+  name                = "${local.name}-devops"
+  ecr_repositories    = [module.server_ecr.repository_arn, module.client_ecr.repository_arn]
+  code_build_projects = [module.codebuild_client.project_arn, module.codebuild_server.project_arn]
+
+  tags = local.tags
+}
+
 module "codebuild_server" {
   source = "../../modules/codebuild"
 
   name           = "codebuild-${module.ecs_service_server.name}"
-  service_role   = module.codebuild_server.codebuild_role_arn
+  service_role   = module.devops_role.devops_role_arn
   buildspec_path = var.buildspec_path
-  s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
     privileged_mode = true
@@ -441,10 +459,6 @@ module "codebuild_server" {
     ]
   }
 
-  create_iam_role = true
-  iam_role_name   = "${module.ecs_service_server.name}-codebuild-${random_id.server.hex}"
-  ecr_repository  = module.server_ecr.repository_arn
-
   tags = local.tags
 }
 
@@ -452,9 +466,8 @@ module "codebuild_client" {
   source = "../../modules/codebuild"
 
   name           = "codebuild-${module.ecs_service_client.name}"
-  service_role   = module.codebuild_client.codebuild_role_arn
+  service_role   = module.devops_role.devops_role_arn
   buildspec_path = var.buildspec_path
-  s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
     privileged_mode = true
@@ -487,10 +500,6 @@ module "codebuild_client" {
     ]
   }
 
-  create_iam_role = true
-  iam_role_name   = "${module.ecs_service_client.name}-codebuild-${random_id.client.hex}"
-  ecr_repository  = module.client_ecr.repository_arn
-
   tags = local.tags
 }
 
@@ -506,8 +515,8 @@ module "codepipeline_server" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_server.name}"
-  service_role          = module.codepipeline_server.codepipeline_role_arn
-  s3_bucket             = module.codepipeline_s3_bucket
+  pipe_role             = module.devops_role.devops_role_arn
+  s3_bucket             = module.codepipeline_s3_bucket.s3_bucket_id
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
   repo_name             = var.repository_name
@@ -521,9 +530,6 @@ module "codepipeline_server" {
     FileName    = "imagedefinition.json"
   }
 
-  create_iam_role = true
-  iam_role_name   = "${module.ecs_service_server.name}-pipeline-${random_id.server.hex}"
-
   tags = local.tags
 }
 
@@ -531,8 +537,8 @@ module "codepipeline_client" {
   source = "../../modules/codepipeline"
 
   name                  = "pipeline-${module.ecs_service_client.name}"
-  service_role          = module.codepipeline_client.codepipeline_role_arn
-  s3_bucket             = module.codepipeline_s3_bucket
+  pipe_role             = module.devops_role.devops_role_arn
+  s3_bucket             = module.codepipeline_s3_bucket.s3_bucket_id
   github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
   repo_owner            = var.repository_owner
   repo_name             = var.repository_name
@@ -545,9 +551,6 @@ module "codepipeline_client" {
     ServiceName = module.ecs_service_client.name
     FileName    = "imagedefinition.json"
   }
-
-  create_iam_role = true
-  iam_role_name   = "${module.ecs_service_client.name}-pipeline-${random_id.client.hex}"
 
   tags = local.tags
 }
@@ -607,13 +610,5 @@ module "assets_dynamodb_table" {
 ################################################################################
 
 resource "random_id" "this" {
-  byte_length = "2"
-}
-
-resource "random_id" "client" {
-  byte_length = "2"
-}
-
-resource "random_id" "server" {
   byte_length = "2"
 }
