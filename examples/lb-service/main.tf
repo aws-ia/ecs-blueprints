@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  
+
   # this will get the name of the local directory
   # name   = basename(path.cwd)
   name = var.service_name
@@ -126,7 +126,7 @@ module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.4"
 
-  repository_name = "${var.container_name}"
+  repository_name = var.container_name
 
   repository_force_delete           = true
   create_lifecycle_policy           = false
@@ -161,7 +161,7 @@ module "service_task_security_group" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name           = "${local.name}"
+  name           = local.name
   desired_count  = var.desired_count
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
@@ -175,12 +175,12 @@ module "ecs_service_definition" {
 
   # Task Definition
   attach_task_role_policy = false
-  container_name     = var.container_name
-  container_port     = var.container_port
-  cpu                = var.task_cpu
-  memory             = var.task_memory
-  image              = module.container_image_ecr.repository_url
-  execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  container_name          = var.container_name
+  container_port          = var.container_port
+  cpu                     = var.task_cpu
+  memory                  = var.task_memory
+  image                   = module.container_image_ecr.repository_url
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
 }

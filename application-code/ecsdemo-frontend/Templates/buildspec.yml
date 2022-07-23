@@ -20,13 +20,11 @@ phases:
       - echo Pushing the Docker image...
       - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
       - docker push $REPO_URL:$IMAGE_TAG
-      - echo Changing directory to Templates directory
-      - cd ./Templates
       - echo Preparing spec files in new folder
       - mkdir Artifacts
-      - cp imagedefinition.json Artifacts/imagedefinition.json
+      - cp ./application-code/ecsdemo-frontend/Templates/imagedefinition.json ./Artifacts/imagedefinition.json
       - echo Changing directory to the Artifacts directory
-      - cd Artifacts
+      - cd ./Artifacts
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" imagedefinition.json
       - sed -i "s|<REPO_URL>|$REPO_URL|g" imagedefinition.json
@@ -35,5 +33,5 @@ phases:
 artifacts:
   files:
     - '**/*'
-  base-directory: 'Templates/Artifacts'
+  base-directory: 'Artifacts'
   discard-paths: yes
