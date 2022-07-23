@@ -158,6 +158,32 @@ module "service_task_security_group" {
   tags = local.tags
 }
 
+resource "aws_service_discovery_private_dns_namespace" "sd_namespace" {
+  name        = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  description = "service discovery namespace.clustername.local"
+  vpc         = data.aws_vpc.vpc.id
+}
+
+resource "aws_service_discovery_service" "sd_service" {
+  name = local.name
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.sd_namespace.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
+
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
@@ -171,6 +197,11 @@ module "ecs_service_definition" {
   load_balancers = [{
     target_group_arn = element(module.service_alb.target_group_arns, 0)
   }]
+
+  service_registry_list = [{
+    registry_arn = "${aws_service_discovery_service.sd_service.arn}"
+  }]
+  
   deployment_controller = "ECS"
 
   # Task Definition
@@ -308,39 +339,6 @@ module "codepipeline_ci_cd" {
 
   create_iam_role = true
   iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"
-
-  tags = local.tags
-}
-
-################################################################################
-# Assets
-################################################################################
-
-module "assets_s3_bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 3.0"
-
-  bucket = "${local.name}-assets-${var.aws_region}-${random_id.this.hex}"
-  acl    = "private"
-
-  # For example only - please evaluate for your environment
-  force_destroy = true
-
-  attach_deny_insecure_transport_policy = true
-  attach_require_latest_tls_policy      = true
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
-  server_side_encryption_configuration = {
-    rule = {
-      apply_server_side_encryption_by_default = {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
 
   tags = local.tags
 }

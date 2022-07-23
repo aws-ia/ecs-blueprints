@@ -88,6 +88,12 @@ variable "service_name" {
   description = "The service name"
   type        = string
 }
+
+variable "namespace" {
+  description = "The service discovery namespace"
+  type        = string
+}
+
 variable "desired_count" {
   description = "The number of task replicas for service"
   type        = number

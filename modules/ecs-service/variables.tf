@@ -37,6 +37,14 @@ variable "load_balancers" {
   default = []
 }
 
+variable "service_registry_list" {
+  description = "A list of load balancer config objects for the ECS service"
+  type = list(object({
+    registry_arn = string
+  }))
+  default = []  
+}
+
 variable "platform_version" {
   description = "Platform version on which to run your service"
   type        = string
