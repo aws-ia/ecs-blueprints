@@ -165,7 +165,7 @@ module "ecs_service_definition" {
   desired_count  = var.desired_count
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
 
-  security_groups = [module.server_task_security_group.security_group_id]
+  security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
 
   load_balancers = [{
@@ -174,6 +174,7 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
+  attach_task_role_policy = false
   container_name     = var.container_name
   container_port     = var.container_port
   cpu                = var.task_cpu
@@ -260,7 +261,7 @@ module "codebuild_ci" {
         value = module.ecs_service_definition.container_name
         }, {
         name  = "SERVICE_PORT"
-        value = var.ecs_service_definition.container_port
+        value = var.container_port
         }, {
         name  = "FOLDER_PATH"
         value = var.folder_path
