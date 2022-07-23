@@ -1,0 +1,56 @@
+version: 0.2
+
+env:
+  parameter-store:
+    DOCKER_HUB_USERNAME: "docker_hub_username"
+    DOCKER_HUB_PASSWORD: "docker_hub_password"
+    # store with: aws ssm put-parameter --name "docker_hub_username" --value "<username value>" --type String
+phases:
+  install:
+    commands:
+      - export IMAGE_TAG=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
+      - export ACCOUNT=$(echo $CODEBUILD_BUILD_ARN |cut -f5 -d:)
+      - export PROJECT_NAME=$(basename $PWD)
+      - export CODEBUILD_GIT_BRANCH="$(git symbolic-ref HEAD --short 2>/dev/null)"
+      - if [ "$CODEBUILD_GIT_BRANCH" = "" ] ; then
+          CODEBUILD_GIT_BRANCH="$(git branch -a --contains HEAD | sed -n 2p | awk '{ printf $1 }')";
+          export CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH#remotes/origin/};
+        fi
+      - export CODEBUILD_GIT_CLEAN_BRANCH="$(echo $CODEBUILD_GIT_BRANCH | tr '/' '.')"
+      - export CODEBUILD_GIT_ESCAPED_BRANCH="$(echo $CODEBUILD_GIT_CLEAN_BRANCH | sed -e 's/[]\/$*.^[]/\\\\&/g')"
+      - if [ "$CODEBUILD_GIT_CLEAN_BRANCH" = "master" ] ; then
+          export IMAGE_WORD_TAG='latest';
+        else
+          export IMAGE_WORD_TAG=${CODEBUILD_GIT_CLEAN_BRANCH};
+        fi
+      - echo '***** This is the current env:'
+      - printenv
+  pre_build:
+    commands:
+      - echo Logging in to Docker Hub...
+      - docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - echo $IMAGE_TAG > code_hash.txt
+      - docker build -t $DOCKER_HUB_USERNAME/$PROJECT_NAME:$IMAGE_TAG .
+      - docker tag $DOCKER_HUB_USERNAME/$PROJECT_NAME:$IMAGE_TAG $DOCKER_HUB_USERNAME/$PROJECT_NAME:$IMAGE_WORD_TAG
+      - docker build -f Dockerfile.cdk -t $DOCKER_HUB_USERNAME/$PROJECT_NAME:cdk .
+      # - docker build -t myimage .
+  post_build:
+    commands:
+      - printf '[{"name":"example-backend","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $DOCKER_HUB_USERNAME/$PROJECT_NAME:$IMAGE_TAG
+      - docker push $DOCKER_HUB_USERNAME/$PROJECT_NAME:$IMAGE_WORD_TAG
+      - docker push $DOCKER_HUB_USERNAME/$PROJECT_NAME:cdk
+      # - docker pull anchore/cli
+      # - docker run -d -v $(pwd):/source-dir -v /var/run/docker.sock:/var/run/docker.sock --name anchore anchore/cli:latest
+      # - docker exec anchore anchore feeds sync
+      # - docker exec anchore anchore analyze --image myimage --dockerfile /source-dir/Dockerfile
+
+artifacts:
+  files:
+    - '**/*'

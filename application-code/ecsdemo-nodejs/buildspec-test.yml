@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - export IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - export ACCOUNT=$(echo $CODEBUILD_BUILD_ARN |cut -f5 -d:)
+      - export $(grep BASE_URL mu-env.sh)
+      - echo '***** This is the current env:'
+      - printenv
+  build:
+    commands:
+      - curl -m3 -sL -w "%{http_code}\\n" "$BASE_URL" -o /dev/null
