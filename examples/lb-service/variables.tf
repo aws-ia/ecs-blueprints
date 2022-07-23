@@ -21,14 +21,14 @@ variable "vpc_tag_value" {
   default     = ""
 }
 
-variable "public_subnets" {
+variable "public_subnets_tag_value" {
   # if left blank then {core_stack_name}-public- will be used
   description = "The value tag of the public subnets"
   type        = string
   default     = ""
 }
 
-variable "private_subnets" {
+variable "private_subnets_tag_value" {
   # if left blank then {core_stack_name}-private- will be used
   description = "The value tag of the private subnets"
   type        = string
