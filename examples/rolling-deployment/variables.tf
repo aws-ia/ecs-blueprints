@@ -1,4 +1,3 @@
-# Shared resources from ecs-blueprint-infra variables
 variable "aws_region" {
   description = "AWS region"
   type        = string

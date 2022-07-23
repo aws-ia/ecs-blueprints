@@ -15,6 +15,11 @@ locals {
     Blueprint  = local.name
     GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
   }
+
+  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
+  tag_val_private_subnet = var.vpc_tag_value == "" ? "${var.core_stack_name}-private-" : var.vpc_tag_value
+  tag_val_public_subnet  = var.vpc_tag_value == "" ? "${var.core_stack_name}-public-" : var.vpc_tag_value
+
 }
 
 ################################################################################
@@ -24,14 +29,14 @@ locals {
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = [var.vpc_tag_value]
+    values = [local.tag_val_vpc]
   }
 }
 
 data "aws_subnets" "private" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = ["${var.private_subnets}*"]
+    values = ["${local.tag_val_private_subnet}*"]
   }
 }
 
@@ -43,7 +48,7 @@ data "aws_subnet" "private_cidr" {
 data "aws_subnets" "public" {
   filter {
     name   = "tag:${var.vpc_tag_key}"
-    values = ["${var.public_subnets}*"]
+    values = ["${local.tag_val_public_subnet}*"]
   }
 }
 
@@ -53,11 +58,11 @@ data "aws_subnet" "public_cidr" {
 }
 
 data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name
+  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
 }
 
 data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name
+  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
 }
 
 ################################################################################
