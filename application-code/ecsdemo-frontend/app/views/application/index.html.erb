@@ -1,0 +1,182 @@
+<style>
+body {
+    background-color: #666666;
+}
+</style>
+
+<h2 style="color: LightSkyBlue;">
+  <center>
+    Rails frontend: Hello! from <%= @az %> running <%= @code_hash %>
+  </center>
+</h2>
+
+<% if @text != "no backend found" %>
+      <h2 style="color: LightGreen;">
+        <center>
+          <%= @text %>
+        </center>
+      </h2>
+<% end %>
+
+<% if @crystal != "no backend found" %>
+      <h2 style="color: #FFC200;">
+        <center>
+          <%= @crystal %>
+        </center>
+      </h2>
+<% end %>
+
+<% if @az =~ /AZ-unknown/ and @text =~ /no backend found/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "a-N-N.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-a/ and @text =~ /no backend found/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "a-N-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /no backend found/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "b-N-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /no backend found/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "c-N-N.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-a/ and @text =~ /AZ-a/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "a-a-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-b/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "a-b-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-c/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "a-c-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /no backend found/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "a-N-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /no backend found/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "a-N-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /no backend found/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "a-N-c.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-b/ and @text =~ /AZ-a/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "b-a-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-b/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "b-b-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-c/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "b-c-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /no backend found/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "b-N-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /no backend found/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "b-N-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /no backend found/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "b-N-c.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-c/ and @text =~ /AZ-a/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "c-a-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-b/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "c-b-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-c/ and @crystal =~ /no backend found/ %>
+  <p style="text-align:center;"><%= image_tag "c-c-N.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /no backend found/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "c-N-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /no backend found/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "c-N-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /no backend found/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "c-N-c.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-a/ and @text =~ /AZ-a/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "a-a-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-a/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "a-a-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-a/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "a-a-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-b/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "a-b-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-b/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "a-b-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-b/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "a-b-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-c/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "a-c-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-c/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "a-c-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-a/ and @text =~ /AZ-c/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "a-c-c.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-b/ and @text =~ /AZ-a/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "b-a-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-a/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "b-a-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-a/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "b-a-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-b/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "b-b-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-b/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "b-b-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-b/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "b-b-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-c/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "b-c-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-c/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "b-c-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-b/ and @text =~ /AZ-c/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "b-c-c.svg" %></p>
+<% end %>
+
+<% if @az =~ /AZ-c/ and @text =~ /AZ-a/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "c-a-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-a/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "c-a-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-a/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "c-a-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-b/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "c-b-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-b/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "c-b-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-b/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "c-b-c.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-c/ and @crystal =~ /AZ-a/ %>
+  <p style="text-align:center;"><%= image_tag "c-c-a.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-c/ and @crystal =~ /AZ-b/ %>
+  <p style="text-align:center;"><%= image_tag "c-c-b.svg" %></p>
+<% end %>
+<% if @az =~ /AZ-c/ and @text =~ /AZ-c/ and @crystal =~ /AZ-c/ %>
+  <p style="text-align:center;"><%= image_tag "c-c-c.svg" %></p>
+<% end %>
