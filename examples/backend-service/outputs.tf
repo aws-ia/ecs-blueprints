@@ -1,10 +1,14 @@
 
-output "service_discovery_url" {
+output "service_discovery_arn" {
   value       = aws_service_discovery_service.sd_service.arn
-  description = "Copy this value in your browser in order to access the deployed app"
+  description = "Service discovery arn"
 }
 output "service_discovery_name" {
   value       = aws_service_discovery_service.sd_service.name
-  description = "Copy this value in your browser in order to access the deployed app"
+  description = "Service name"
+}
+output "service_discovery_namespace" {
+  value       = aws_service_discovery_service.sd_service.namespace_id
+  description = "Service discovery namespace"
 }
 
