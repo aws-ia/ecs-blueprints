@@ -78,14 +78,7 @@ fi
 
 # Still no luck? Perhaps we're running fargate!
 if [[ -z ${zone} ]]; then
-  ip_addr=$(curl -m2 -s ${ECS_CONTAINER_METADATA_URI} | jq -r '.Networks[].IPv4Addresses[]')
-  declare -a subnets=( $(aws ec2 describe-subnets | jq -r .Subnets[].CidrBlock| sed ':a;N;$!ba;s/\n/ /g') )
-  for sub in "${subnets[@]}"; do
-    ip_match=$(echo -e "from netaddr import IPNetwork, IPAddress\nif IPAddress('$ip_addr') in IPNetwork('$sub'):\n    print('true')" | python3)
-    if [[ $ip_match == "true" ]];then
-      zone=$(aws ec2 describe-subnets | jq -r --arg sub "$sub" '.Subnets[] | select(.CidrBlock==$sub) | .AvailabilityZone' | grep -o .$)
-    fi
-  done
+  zone=$(curl -s ${ECS_CONTAINER_METADATA_URI_V4}/task | jq -r '.AvailabilityZone' | grep -o .$)
 fi
 
 export CODE_HASH="$(cat code_hash.txt)"

@@ -29,14 +29,6 @@ variable "ecs_cluster_id" {
   type        = string
 }
 
-variable "load_balancers" {
-  description = "A list of load balancer config objects for the ECS service"
-  type = list(object({
-    target_group_arn = string
-  }))
-  default = []
-}
-
 variable "service_registry_list" {
   description = "A list of service discovery registry names for the service"
   type = list(object({
@@ -72,12 +64,6 @@ variable "enable_execute_command" {
   description = "Specifies whether to enable Amazon ECS Exec for the tasks within the service."
   type        = bool
   default     = false
-}
-
-variable "health_check_grace_period_seconds" {
-  description = "Number of seconds for the task health check"
-  type        = number
-  default     = 30
 }
 
 variable "deployment_minimum_healthy_percent" {

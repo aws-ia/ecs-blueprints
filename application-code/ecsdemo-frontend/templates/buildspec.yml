@@ -22,7 +22,7 @@ phases:
       - docker push $REPO_URL:$IMAGE_TAG
       - echo Preparing spec files in new folder
       - mkdir artifacts
-      - cp application-code/ecsdemo-frontend/Templates/imagedefinition.json artifacts/imagedefinition.json
+      - cp application-code/ecsdemo-frontend/templates/imagedefinition.json artifacts/imagedefinition.json
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/imagedefinition.json
       - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json

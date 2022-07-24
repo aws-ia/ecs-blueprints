@@ -14,22 +14,12 @@ resource "aws_ecs_service" "this" {
   enable_ecs_managed_tags            = var.enable_ecs_managed_tags
   propagate_tags                     = var.propagate_tags
   enable_execute_command             = var.enable_execute_command
-  health_check_grace_period_seconds  = var.health_check_grace_period_seconds
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
   network_configuration {
     subnets         = var.subnets
     security_groups = var.security_groups
-  }
-
-  dynamic "load_balancer" {
-    for_each = var.load_balancers
-    content {
-      target_group_arn = load_balancer.value.target_group_arn
-      container_name   = var.container_name
-      container_port   = var.container_port
-    }
   }
 
   dynamic "service_registries" {

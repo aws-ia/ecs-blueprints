@@ -1,11 +1,14 @@
-output "application_s3_bucket" {
-  value       = module.assets_s3_bucket.s3_bucket_id
-  description = "Use the s3 bucket to copy the assets for the application"
-}
 
-output "application_url" {
-  value       = "http://${module.service_alb.lb_dns_name}"
-  description = "Copy this value in your browser in order to access the deployed app"
+output "service_discovery_arn" {
+  value       = aws_service_discovery_service.sd_service.arn
+  description = "Service discovery arn"
 }
-
+output "service_discovery_name" {
+  value       = aws_service_discovery_service.sd_service.name
+  description = "Service name"
+}
+output "service_discovery_namespace" {
+  value       = aws_service_discovery_service.sd_service.namespace_id
+  description = "Service discovery namespace"
+}
 
