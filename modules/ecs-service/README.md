@@ -65,6 +65,7 @@ No modules.
 | <a name="input_platform_version"></a> [platform\_version](#input\_platform\_version) | Platform version on which to run your service | `string` | `null` | no |
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Specifies whether to propagate the tags from the task definition or the service to the tasks. The valid values are SERVICE and TASK\_DEFINITION. | `string` | `"SERVICE"` | no |
 | <a name="input_security_groups"></a> [security\_groups](#input\_security\_groups) | Security groups associated with the task or service. If you do not specify a security group, the default security group for the VPC is used. | `list(string)` | n/a | yes |
+| <a name="input_service_registry_list"></a> [service\_registry\_list](#input\_service\_registry\_list) | A list of service discovery registry names for the service | <pre>list(object({<br>    registry_arn = string<br>  }))</pre> | `[]` | no |
 | <a name="input_subnets"></a> [subnets](#input\_subnets) | Subnets associated with the task or service. | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | tags | `map(string)` | `{}` | no |
 | <a name="input_task_role_policy"></a> [task\_role\_policy](#input\_task\_role\_policy) | The task's role policy | `string` | `null` | no |

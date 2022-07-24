@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  name   = basename(path.cwd)
+  name = basename(path.cwd)
 
   app_server_port = 3001
   app_client_port = 80

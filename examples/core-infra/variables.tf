@@ -18,6 +18,6 @@ variable "vpc_cidr" {
 
 variable "namespaces" {
   description = "List of service discovery namespaces for ECS services. Creates a default namespace"
-  type = list(string)
-  default = ["default", "myapp"]
+  type        = list(string)
+  default     = ["default", "myapp"]
 }

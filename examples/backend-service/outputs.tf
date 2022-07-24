@@ -11,4 +11,3 @@ output "service_discovery_namespace" {
   value       = aws_service_discovery_service.sd_service.namespace_id
   description = "Service discovery namespace"
 }
-

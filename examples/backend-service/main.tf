@@ -291,6 +291,3 @@ module "codepipeline_ci_cd" {
 resource "random_id" "this" {
   byte_length = "2"
 }
-
-
-

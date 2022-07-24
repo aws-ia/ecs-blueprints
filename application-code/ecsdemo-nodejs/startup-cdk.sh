@@ -65,11 +65,11 @@ if [[ "${orchestrator}" == 'kubernetes' ]]; then
     else
         zone=unknown
     fi
-fi 
+fi
 
 if [[ ${orchestrator} == 'unknown' ]]; then
   zone=$(curl -m2 -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.availabilityZone' | grep -o .$)
-fi 
+fi
 
 # Am I on ec2 instances?
 if [[ ${zone} == "unknown" ]]; then

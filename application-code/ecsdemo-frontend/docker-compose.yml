@@ -9,7 +9,7 @@ services:
       - "3000:3000"
     logging:
       driver: awslogs
-      options: 
+      options:
         awslogs-group: ecsdemo-frontend
         awslogs-region: ${AWS_REGION}
         awslogs-stream-prefix: ecsdemo-frontend

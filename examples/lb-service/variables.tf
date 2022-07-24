@@ -113,7 +113,7 @@ variable "listener_protocol" {
   default     = "HTTP"
 }
 
-# target health check 
+# target health check
 variable "health_check_path" {
   description = "The health check path"
   type        = string
@@ -156,5 +156,3 @@ variable "task_memory" {
   description = "The task memory size"
   type        = string
 }
-
-
