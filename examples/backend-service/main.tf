@@ -97,6 +97,15 @@ module "service_task_security_group" {
 
   ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
   egress_rules        = ["all-all"]
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = 3000
+      to_port     = 3000
+      protocol    = "tcp"
+      description = "User-service ports"
+      cidr_blocks = "0.0.0.0/0"
+    }
+  ]
 
   tags = local.tags
 }
