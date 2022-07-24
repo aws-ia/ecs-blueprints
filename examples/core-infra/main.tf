@@ -77,6 +77,18 @@ resource "aws_cloudwatch_log_group" "this" {
 }
 
 ################################################################################
+# Service discovery namespaces
+################################################################################
+
+resource "aws_service_discovery_private_dns_namespace" "sd_namespaces" {
+  for_each = toset(var.namespaces)
+
+  name        = "${each.key}.${module.ecs.cluster_name}.local"
+  description = "service discovery namespace.clustername.local"
+  vpc         = module.vpc.vpc_id
+}
+
+################################################################################
 # Task Execution Role
 ################################################################################
 

@@ -38,7 +38,7 @@ variable "load_balancers" {
 }
 
 variable "service_registry_list" {
-  description = "A list of load balancer config objects for the ECS service"
+  description = "A list of service discovery registry names for the service"
   type = list(object({
     registry_arn = string
   }))

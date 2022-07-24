@@ -64,6 +64,11 @@ data "aws_iam_role" "ecs_core_infra_exec_role" {
   name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
 }
 
+data "aws_service_discovery_dns_namespace" "sd_namespace" {
+  name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  type = "DNS_PRIVATE"
+}
+
 ################################################################################
 # ECS Blueprint
 ################################################################################
@@ -158,17 +163,12 @@ module "service_task_security_group" {
   tags = local.tags
 }
 
-resource "aws_service_discovery_private_dns_namespace" "sd_namespace" {
-  name        = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  description = "service discovery namespace.clustername.local"
-  vpc         = data.aws_vpc.vpc.id
-}
 
 resource "aws_service_discovery_service" "sd_service" {
   name = local.name
 
   dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.sd_namespace.id
+    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
 
     dns_records {
       ttl  = 10
@@ -182,7 +182,6 @@ resource "aws_service_discovery_service" "sd_service" {
     failure_threshold = 1
   }
 }
-
 
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"

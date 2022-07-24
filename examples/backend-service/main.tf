@@ -132,7 +132,7 @@ module "ecs_service_definition" {
   subnets         = data.aws_subnets.private.ids
 
   service_registry_list = [{
-    registry_arn = "${module.aws_service_discovery_service.sd_service.arn}"
+    registry_arn = "${aws_service_discovery_service.sd_service.arn}"
   }]
   deployment_controller = "ECS"
 
@@ -271,39 +271,6 @@ module "codepipeline_ci_cd" {
 
   create_iam_role = true
   iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"
-
-  tags = local.tags
-}
-
-################################################################################
-# Assets
-################################################################################
-
-module "assets_s3_bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 3.0"
-
-  bucket = "${local.name}-assets-${var.aws_region}-${random_id.this.hex}"
-  acl    = "private"
-
-  # For example only - please evaluate for your environment
-  force_destroy = true
-
-  attach_deny_insecure_transport_policy = true
-  attach_require_latest_tls_policy      = true
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
-  server_side_encryption_configuration = {
-    rule = {
-      apply_server_side_encryption_by_default = {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
 
   tags = local.tags
 }
