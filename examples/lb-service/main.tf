@@ -51,11 +51,6 @@ data "aws_subnets" "public" {
   }
 }
 
-data "aws_subnet" "public_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
 data "aws_ecs_cluster" "core_infra" {
   cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
 }
@@ -153,7 +148,7 @@ module "service_task_security_group" {
     {
       from_port                = var.container_port
       to_port                  = var.container_port
-      protocol                 = "tcp"
+      protocol                 = var.health_check_protocol
       source_security_group_id = module.service_alb_security_group.security_group_id
     },
   ]

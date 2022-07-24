@@ -17,7 +17,6 @@ locals {
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
   tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-  tag_val_public_subnet  = var.public_subnets_tag_value == "" ? "${var.core_stack_name}-public-" : var.public_subnets_tag_value
 
 }
 
@@ -37,23 +36,6 @@ data "aws_subnets" "private" {
     name   = "tag:${var.vpc_tag_key}"
     values = ["${local.tag_val_private_subnet}*"]
   }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_public_subnet}*"]
-  }
-}
-
-data "aws_subnet" "public_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
 }
 
 data "aws_ecs_cluster" "core_infra" {
@@ -99,8 +81,8 @@ module "service_task_security_group" {
   egress_rules        = ["all-all"]
   ingress_with_cidr_blocks = [
     {
-      from_port   = 3000
-      to_port     = 3000
+      from_port   = var.container_port
+      to_port     = var.container_port
       protocol    = "tcp"
       description = "User-service ports"
       cidr_blocks = "0.0.0.0/0"

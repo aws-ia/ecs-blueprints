@@ -21,13 +21,6 @@ variable "vpc_tag_value" {
   default     = ""
 }
 
-variable "public_subnets_tag_value" {
-  # if left blank then {core_stack_name}-public- will be used
-  description = "The value tag of the public subnets"
-  type        = string
-  default     = ""
-}
-
 variable "private_subnets_tag_value" {
   # if left blank then {core_stack_name}-private- will be used
   description = "The value tag of the private subnets"
@@ -100,37 +93,6 @@ variable "desired_count" {
   default     = 1
 }
 
-# listener settings for the load balanced service
-variable "listener_port" {
-  description = "The listener port"
-  type        = number
-  default     = 80
-}
-
-variable "listener_protocol" {
-  description = "The listener protocol"
-  type        = string
-  default     = "HTTP"
-}
-
-# target health check
-variable "health_check_path" {
-  description = "The health check path"
-  type        = string
-  default     = "/"
-}
-variable "health_check_protocol" {
-  description = "The health check protocol"
-  type        = string
-  default     = "http"
-}
-
-variable "health_check_matcher" {
-  description = "The health check passing codes"
-  type        = string
-  default     = "200-299"
-}
-
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
@@ -139,12 +101,6 @@ variable "container_name" {
 variable "container_port" {
   description = "The container port to serve traffic"
   type        = number
-}
-
-variable "container_protocol" {
-  description = "The container traffic protocol"
-  type        = string
-  default     = "HTTP"
 }
 
 variable "task_cpu" {
