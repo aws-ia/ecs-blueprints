@@ -96,7 +96,7 @@ module "service_task_security_group" {
   vpc_id      = data.aws_vpc.vpc.id
 
   ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
-  egress_rules = ["all-all"]
+  egress_rules        = ["all-all"]
 
   tags = local.tags
 }
@@ -144,8 +144,8 @@ module "ecs_service_definition" {
   image                   = module.container_image_ecr.repository_url
   execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  enable_execute_command  = true
-  tags = local.tags
+  enable_execute_command = true
+  tags                   = local.tags
 }
 
 ################################################################################

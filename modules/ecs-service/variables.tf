@@ -42,7 +42,7 @@ variable "service_registry_list" {
   type = list(object({
     registry_arn = string
   }))
-  default = []  
+  default = []
 }
 
 variable "platform_version" {

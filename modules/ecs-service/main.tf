@@ -36,7 +36,7 @@ resource "aws_ecs_service" "this" {
     for_each = var.service_registry_list
     content {
       registry_arn = service_registries.value.registry_arn
-    }  
+    }
   }
 
   deployment_controller {
