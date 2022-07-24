@@ -19,7 +19,6 @@ RUN chmod +x /usr/src/app/startup-cdk.sh
 # helpful when trying to update gems -> bundle update, remove the Gemfile.lock, start ruby
 # RUN bundle update
 # RUN rm -vf /usr/src/app/Gemfile.lock
-ENV NODEJS_URL http://backend.myapp.ecs-blueprint-infra.local:3000
 HEALTHCHECK --interval=10s --timeout=3s \
   CMD curl -f -s http://localhost:3000/health/ || exit 1
 EXPOSE 3000

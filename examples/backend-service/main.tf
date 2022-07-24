@@ -144,6 +144,7 @@ module "ecs_service_definition" {
   image                   = module.container_image_ecr.repository_url
   execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
+  enable_execute_command  = true
   tags = local.tags
 }
 
