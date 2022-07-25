@@ -1,5 +1,5 @@
 variable "core_stack_name" {
-  description = "The name of Core Infrastructure stack"
+  description = "The name of Core Infrastructure stack, feel free to rename it"
   type        = string
   default     = "ecs-blueprint-infra"
 }
