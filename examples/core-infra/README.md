@@ -14,11 +14,7 @@
 
 ## Folder overview
 
-This folder contains Terraform code to deploy the core infrastrcture of a containerized solution that is intended to be used to run a demo.
-
-## General information
-
-This folder contains the Terraform code to deploy a core Infratructure for a ECS workload.
+This folder contains the Terraform code to deploy a core infratructure for a ECS Fargate workload.
 
 ## Infrastructure
 
