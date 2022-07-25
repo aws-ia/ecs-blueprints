@@ -43,7 +43,7 @@ The AWS resources created by the script are detailed bellow:
     - 4 Target Groups
     - 2 Autoscaling groups + Cloudwatch rules for it
 - CI/CD
-    - 1 CodePipeline pipeline
+    - 2 CodePipeline pipeline
     - 1 GitHub integration
     - 2 CodeBuild Projects
     - 2 CodeDeploy Deployments
@@ -87,11 +87,17 @@ Before launching this solution please deploy the `core-infra` solution, which is
 cd examples/blue-green-deployment
 ```
 
-**3.** Create Github Token secret in Secret Manager. Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret named `github-token` with your Plaintext GitHub token value. 
+**3.** Create Github Token secret in Secret Manager. Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret named `ecs-github-token` with your Plaintext GitHub token value. 
 
-The value of this secret is the one generated during the Prerequisites from [this Readme](../core-infra/README.md#prerequisites) you did first.
+The value of this secret is the one generated during the Prerequisites from [this Readme](../core-infra/README.md#prerequisites) you did first. Remember to create your secret in the same region where you will deploy the rest of your infrastructure.
 
-Remember to create your secret in the same region where you will deploy the rest of your infrastructure.
+We recommend you to use this snippet for a fast creation from the cli:
+
+```bash
+aws secretsmanager create-secret \
+    --name ecs-github-token \
+    --secret-string "ghp_XXXXXXXXXXXXXXXXXXXXXXXXX"
+```
 
 **4.** Run Terraform init to download the providers and install the modules
 
@@ -156,7 +162,9 @@ Example of a Dynamodb Item:
 
 The Server folder contains the code to run the backend. This code is written in Node.js and uses the port 80 in the deployed version, but when run localy it uses port 3001.
 
-Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, you can grab the output link and access it through a browser.
+The server runs behind an internal load balancer, which avoids external access for security reasons.
+
+Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, it is an internal-facing link, so if feeling adventurous you can test the swagger documentation from within the containers.
 
 The server exposes 3 endpoints:
 - /status: serves as a dummy endpoint to know if the server is up and running. This one is used as the health check endpoint by the AWS ECS resources

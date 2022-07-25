@@ -25,7 +25,7 @@ variable "vpc_tag_value" {
 variable "secret_github" {
   description = "The name of the Secret Manager secret with your GitHub token as value"
   type        = string
-  default     = "github-token"
+  default     = "ecs-github-token"
 }
 
 variable "ecs_cluster_name" {

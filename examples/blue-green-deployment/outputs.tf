@@ -15,5 +15,5 @@ output "application_url" {
 
 output "swagger_endpoint" {
   value       = "http://${module.server_alb.lb_dns_name}/api/docs"
-  description = "Copy this value in your browser in order to access the swagger documentation"
+  description = "Internal facing link, if feeling adventurous you can test the swagger documentation from within the containers"
 }
