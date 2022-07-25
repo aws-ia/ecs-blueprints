@@ -148,7 +148,7 @@ module "service_task_security_group" {
     {
       from_port                = var.container_port
       to_port                  = var.container_port
-      protocol                 = var.health_check_protocol
+      protocol                 = "tcp"
       source_security_group_id = module.service_alb_security_group.security_group_id
     },
   ]
