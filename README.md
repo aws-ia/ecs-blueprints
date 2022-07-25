@@ -20,7 +20,7 @@ The ECS solution blueprints with Terraform assumes you have:
 * Intermediate level of Terraform knowledge, that is, you have used Terraform to create and manage AWS resources before. If you are not familiar with Terraform, new to infra-as-code, or familiar with AWS CloudFormation, then we would recommend trying AWS CDK based ECS Solution Blueprints.
 
 ### Prerequisites for your laptop
-* Mac (strongly recommended) - Most of the AWS folks testing and developing these modules are using Mac. We have tested using AWS Cloud9 Linux machines as well. We have not *tested* at all with Windows laptops. 
+* Mac (strongly recommended) - We have tested using Mac (tested version 12.4) and AWS Cloud9 Linux machines. We have **not tested** at all with Windows laptops. 
 * Terraform (tested version v1.2.5 on darwin_amd64)
 * Git (tested version 2.27.0)
 * AWS account access setup on laptop - We are working on documenting the least privilege user roles that are needed but for now Administrator access on Test (strictly non-production) accounts is recommended. 
