@@ -32,7 +32,7 @@ The ECS solution blueprints with Terraform assumes you have:
 * Deploy the [lb-service](./example/lb-service/README.md). This will create a load-balanced ECS service along with CI/CD pipeline.
 * Deploy the [backend-service](./example/backend-service/README.md). This will create a backend ECS service **without** a load balancer.
 
-The above will give you a good understanding for the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository and CI/CD pipeline but gets deployed in a common ECS cluster such as dev, test, or production.  
+The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production.
 
 Another common pattern is to deploy both frontend (client) and backend (server) services with load balancers along with a database service (such as DynamoDB). This would be like a 2-Tier DynamoDB application which can be deployed using below examples. 
 * [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
