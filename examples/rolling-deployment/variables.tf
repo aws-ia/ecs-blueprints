@@ -63,9 +63,8 @@ variable "folder_path_client" {
 }
 
 variable "repository_owner" {
-  description = "The name of the owner of the Github repository"
+  description = "The name of the owner of the forked Github repository"
   type        = string
-  default     = "aws-ia"
 }
 
 variable "repository_name" {
