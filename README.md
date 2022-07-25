@@ -21,7 +21,7 @@ The ECS solution blueprints with Terraform assumes you have:
 
 ### Prerequisites for your laptop
 * Mac (strongly recommended) - Most of the AWS folks testing and developing these modules are using Mac. We have tested using AWS Cloud9 Linux machines as well. We have not *tested* at all with Windows laptops. 
-* Terraform (we have tested with v1.2.5 on darwin_amd64)
+* Terraform (tested version v1.2.5 on darwin_amd64)
 * Git (tested version 2.27.0)
 * AWS account access setup on laptop - We are working on documenting the least privilege user roles that are needed but for now Administrator access on Test (strictly non-production) accounts is recommended. 
 
