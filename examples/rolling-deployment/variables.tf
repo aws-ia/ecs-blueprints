@@ -21,20 +21,6 @@ variable "vpc_tag_value" {
   default     = ""
 }
 
-variable "public_subnets" {
-  # if left blank then {core_stack_name}-public- will be used
-  description = "The value tag of the public subnets"
-  type        = string
-  default     = ""
-}
-
-variable "private_subnets" {
-  # if left blank then {core_stack_name}-private- will be used
-  description = "The value tag of the private subnets"
-  type        = string
-  default     = ""
-}
-
 variable "ecs_cluster_name" {
   # if left blank then {core_stack_name} will be used
   description = "The ID of the ECS cluster"

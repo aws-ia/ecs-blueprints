@@ -1,0 +1,15 @@
+version: '3'
+services:
+  ecsdemo-frontend:
+    environment:
+      - CRYSTAL_URL=http://ecsdemo-crystal.service:3000/crystal
+      - NODEJS_URL=http://ecsdemo-nodejs.service:3000
+    image: brentley/ecsdemo-frontend
+    ports:
+      - "3000:3000"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: ecsdemo-frontend
+        awslogs-region: ${AWS_REGION}
+        awslogs-stream-prefix: ecsdemo-frontend

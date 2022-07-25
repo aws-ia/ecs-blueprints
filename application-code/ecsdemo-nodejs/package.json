@@ -1,0 +1,20 @@
+{
+	"name": "example-nodejs",
+	"version": "1.0.0",
+	"license": "ISC",
+	"main": "server.js",
+	"scripts": {
+		"test": "mocha"
+	},
+	"dependencies": {
+		"express": "^4.16.2",
+		"express-healthcheck": "^0.1.0",
+		"internal-ip": "^3.0.1",
+		"ip": "^1.1.5",
+		"morgan": "^1.9.0"
+	},
+	"devDependencies": {
+		"mocha": "^4.1.0",
+		"supertest": "^3.0.0"
+	}
+}

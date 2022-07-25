@@ -36,3 +36,8 @@ output "ecs_task_execution_role_arn" {
   description = "The ARN of the task execution role"
   value       = aws_iam_role.execution.arn
 }
+
+output "sd_namespaces" {
+  description = "Service discovery namespaces already available"
+  value       = aws_service_discovery_private_dns_namespace.sd_namespaces
+}

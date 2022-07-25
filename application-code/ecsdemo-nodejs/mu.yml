@@ -1,0 +1,6 @@
+---
+service:
+  desiredCount: 3
+  maxSize: 6
+  port: 3000
+  discoveryTTL: 5

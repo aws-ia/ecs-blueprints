@@ -1,0 +1,22 @@
+version: 1
+task_definition:
+  task_execution_role: ecsTaskExecutionRole
+  ecs_network_mode: awsvpc
+  task_size:
+    mem_limit: 0.5GB
+    cpu_limit: 256
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - "subnet-0412684667a7a5147"
+        - "subnet-08467586f86110cea"
+        - "subnet-0afe24995d24d9e0f"
+      security_groups:
+        - "sg-03eef5d8f0eefa149"
+      assign_public_ip: DISABLED
+  service_discovery:
+    container_name: ecsdemo-nodejs
+    service_discovery_service:
+        name: ecsdemo-nodejs
+        description: string

@@ -37,6 +37,14 @@ variable "load_balancers" {
   default = []
 }
 
+variable "service_registry_list" {
+  description = "A list of service discovery registry names for the service"
+  type = list(object({
+    registry_arn = string
+  }))
+  default = []
+}
+
 variable "platform_version" {
   description = "Platform version on which to run your service"
   type        = string

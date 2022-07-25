@@ -1,0 +1,22 @@
+aws_region      = "us-west-2"
+core_stack_name = "ecs-blueprint-infra"
+
+# Application requirements
+service_name  = "frontend"
+desired_count = 3
+namespace = "myapp"
+
+# target container, port, and protocol
+container_name     = "frontend"
+container_port     = 3000
+container_protocol = "HTTP"
+
+task_cpu    = 256
+task_memory = "512"
+
+github_token_secret_name = "ecs-github-token"
+repository_branch        = "lbsvcexample"
+repository_owner         = "aws-ia"
+repository_name          = "terraform-aws-ecs-blueprints"
+folder_path              = "./application-code/ecsdemo-frontend/."
+buildspec_path           = "./application-code/ecsdemo-frontend/Templates/buildspec.yml"
