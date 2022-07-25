@@ -3,3 +3,5 @@ This folder contains solution blueprints that are meant to address end-to-end re
 For first time users, [core-infra](./core-infra/README.md) is the recommended blueprint example to start because it will setup the required ECS Fargate infrastructure used in other examples.
 
 If you are looking to contribute a new solution, then you will add your Terraform code in a new folder here. You can also contribute by improving existing solutions across many aspects of CI/CD, observability, security, and cost optimization. 
+
+Please consult documentation in specific example folder to learn more and try them!
