@@ -6,12 +6,13 @@ When **new users** want to adopt containers to build, deploy, and run their appl
 
 With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**! The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. The blueprints aspire to codify best practices and well-established architecture patterns so that customers get a good starting point with shorter learning curve. We also aspire that the ECS Solution Blueprints will be end-to-end solutions covering aspects such as CI/CD automation, observability, security, and cost efficiency. Currently, the repository is focused on solution blueprints using [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/).
 
-Note that the ECS Solution Blueprints are meant to give a new user a jump start. We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your challenges and solutions will help other users, we encourage you to contribute your solutions.  
+Note that the ECS Solution Blueprints are meant to give a new user a jump start. We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
 
-There are 3 main folders 
-* [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs in a container workflow. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder. 
+# Repository overview
+This repository has 3 main folders 
+* [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs in a container workflow. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
 * [examples](./examples): Examples provide scenario specific solution blueprints and are meant to address end-to-end requirements. The [lb-service](./examples/lb-service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
-* [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments. 
+* [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
 # Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
@@ -19,10 +20,10 @@ The ECS solution blueprints with Terraform assumes you have:
 * Intermediate level of Terraform knowledge, that is, you have used Terraform to create and manage AWS resources before. If you are not familiar with Terraform, new to infra-as-code, or familiar with AWS CloudFormation, then we would recommend trying AWS CDK based ECS Solution Blueprints.
 
 ## Prerequisites for your laptop
-* Mac (strongly recommended) - Most of the AWS folks testing and developing these modules are using Mac. We have tested using Cloud9 Linux machines as well. We have not *tested* at all with Windows laptops. 
-* Terraform (latest)
-* Git
-* AWS account access setup on laptop - Most of the AWS folks use their test accounts and have "Administrator" access. We are working on documenting the least privilege user roles that are needed but for now Administrator on Test accounts is recommended. 
+* Mac (strongly recommended) - Most of the AWS folks testing and developing these modules are using Mac. We have tested using AWS Cloud9 Linux machines as well. We have not *tested* at all with Windows laptops. 
+* Terraform (we have tested with v1.2.5 on darwin_amd64)
+* Git (tested version 2.27.0)
+* AWS account access setup on laptop - We are working on documenting the least privilege user roles that are needed but for now Administrator access on Test (strictly non-production) accounts is recommended. 
 
 # Getting Started
 
