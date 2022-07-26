@@ -23,7 +23,7 @@ variable "vpc_tag_value" {
   default     = ""
 }
 
-variable "secret_github" {
+variable "github_token_secret_name" {
   description = "The name of the Secret Manager secret with your GitHub token as value"
   type        = string
   default     = "ecs-github-token"
