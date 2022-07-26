@@ -125,11 +125,12 @@ variable "health_check_path" {
   type        = string
   default     = "/"
 }
-variable "health_check_protocol" {
-  description = "The health check protocol"
-  type        = string
-  default     = "http"
-}
+
+# variable "health_check_protocol" {
+#   description = "The health check protocol"
+#   type        = string
+#   default     = "http"
+# }
 
 variable "health_check_matcher" {
   description = "The health check passing codes"

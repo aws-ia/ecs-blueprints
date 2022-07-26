@@ -14,6 +14,28 @@ This repository has 3 main folders
 * [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. The [lb-service](./examples/lb-service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
 * [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
+
+```
+├── application-code            # Application source code for CI/CD
+│   ├── client
+│   ├── ecsdemo-frontend
+│   ├── ecsdemo-nodejs
+│   └── server
+├── docs
+├── examples                    # Terraform Deployment Patterns
+│   ├── backend-service
+│   ├── blue-green-deployment
+│   ├── core-infra
+│   ├── lb-service
+│   └── rolling-deployment
+├── modules                     # Terraform Modules used in examples
+│   ├── codebuild
+│   ├── codedeploy
+│   ├── codepipeline
+│   ├── ecs-backend-service
+│   └── ecs-service
+└── templates                   # Application Config files (Buildspec)
+```
 ## Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
 * Basic understanding of Docker containers, and how to create them using Dockerfiles.
