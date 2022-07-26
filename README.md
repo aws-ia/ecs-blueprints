@@ -29,12 +29,11 @@ This repository has 3 main folders
 │   ├── lb-service
 │   └── rolling-deployment
 ├── modules                     # Terraform Modules used in examples
-│   ├── codebuild
-│   ├── codedeploy
-│   ├── codepipeline
-│   ├── ecs-backend-service
-│   └── ecs-service
-└── templates                   # Application Config files (Buildspec)
+    ├── codebuild
+    ├── codedeploy
+    ├── codepipeline
+    ├── ecs-backend-service
+    └── ecs-service
 ```
 
 ## Prerequisites
