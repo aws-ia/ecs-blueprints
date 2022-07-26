@@ -4,11 +4,11 @@
 
    * [Folder overview](#folder-overview)
    * [Infrastructure](#infrastructure)
-    * [Infrastructure Architecture](#infrastructure-architecture)
-      * [Infrastructure considerations due to demo proposals](#infrastructure-considerations-due-to-demo-proposals)
-    * [CI/CD Architecture](#ci/cd-architecture)
-    * [Prerequisites](#prerequisites)
-    * [Usage](#usage)
+      * [Infrastructure Architecture](#infrastructure-architecture)
+        * [Infrastructure considerations due to demo proposals](#infrastructure-considerations-due-to-demo-proposals)
+   * [CI/CD Architecture](#ci/cd-architecture)
+   * [Prerequisites](#prerequisites)
+   * [Usage](#usage)
       * [Notifications](#notifications)
    * [Application Code](#application-code)
      * [Client app](#client-app)
@@ -43,7 +43,7 @@ The AWS resources created by the script are detailed bellow:
     - 4 Target Groups
     - 2 Autoscaling groups + Cloudwatch rules for it
 - CI/CD
-    - 1 CodePipeline pipeline
+    - 2 CodePipeline pipeline
     - 1 GitHub integration
     - 2 CodeBuild Projects
     - 2 CodeDeploy Deployments
@@ -75,7 +75,7 @@ The following diagram represents the CI/CD architecture being deployed with this
 </p>
 
 ## Prerequisites
-Before launching this solution please deploy the `core_infra` solution, which is provided in the *examples* folder of this repository.
+Before launching this solution please deploy the `core-infra` solution, which is provided in the *examples* folder of this repository.
 
 ## Usage
 
@@ -84,12 +84,20 @@ Before launching this solution please deploy the `core_infra` solution, which is
 **2.** Clone that recently forked repository from your account (not the one from the aws-sample organization) and change the directory to the appropriate one as shown below:
 
 ```bash
-cd examples/two-tier-dynamodb-app/blue_green_deployment
+cd examples/blue-green-deployment
 ```
 
-**3.** Create Github Token secret in Secret Manager
+**3.** Create Github Token secret in Secret Manager. Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret named `ecs-github-token` with your Plaintext GitHub token value.
 
-Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret name `github-token` with your Plaintext github token value.
+The value of this secret is the one generated during the Prerequisites from [this Readme](../core-infra/README.md#prerequisites) you did first. Remember to create your secret in the same region where you will deploy the rest of your infrastructure.
+
+We recommend you to use this snippet for a fast creation from the cli:
+
+```bash
+aws secretsmanager create-secret \
+    --name ecs-github-token \
+    --secret-string "ghp_XXXXXXXXXXXXXXXXXXXXXXXXX"
+```
 
 **4.** Run Terraform init to download the providers and install the modules
 
@@ -154,7 +162,9 @@ Example of a Dynamodb Item:
 
 The Server folder contains the code to run the backend. This code is written in Node.js and uses the port 80 in the deployed version, but when run localy it uses port 3001.
 
-Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, you can grab the output link and access it through a browser.
+The server runs behind an internal load balancer, which avoids external access for security reasons.
+
+Swagger was also implemented in order to document the APIs. The Swagger endpoint is provided as part of the Terraform output, it is an internal-facing link, so if feeling adventurous you can test the swagger documentation from within the containers.
 
 The server exposes 3 endpoints:
 - /status: serves as a dummy endpoint to know if the server is up and running. This one is used as the health check endpoint by the AWS ECS resources

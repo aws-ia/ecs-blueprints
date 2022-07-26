@@ -580,7 +580,7 @@ module "codedeploy_client" {
 }
 
 data "aws_secretsmanager_secret" "github_token" {
-  name = "ecs-github-token"
+  name = var.github_token_secret_name
 }
 
 data "aws_secretsmanager_secret_version" "github_token" {

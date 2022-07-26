@@ -100,6 +100,12 @@ variable "desired_count" {
   default     = 1
 }
 
+variable "backend_svc_endpoint" {
+  description = "The FQDN DNS name of the backend service"
+  type        = string
+  default     = ""
+}
+
 # listener settings for the load balanced service
 variable "listener_port" {
   description = "The listener port"
@@ -119,11 +125,12 @@ variable "health_check_path" {
   type        = string
   default     = "/"
 }
-variable "health_check_protocol" {
-  description = "The health check protocol"
-  type        = string
-  default     = "http"
-}
+
+# variable "health_check_protocol" {
+#   description = "The health check protocol"
+#   type        = string
+#   default     = "http"
+# }
 
 variable "health_check_matcher" {
   description = "The health check passing codes"

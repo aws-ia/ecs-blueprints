@@ -18,7 +18,7 @@ output "private_subnets_cidr_blocks" {
 }
 
 output "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
+  description = "The name of the ECS cluster and the name of the core stack"
   value       = local.name
 }
 

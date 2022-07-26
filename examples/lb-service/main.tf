@@ -148,7 +148,7 @@ module "service_task_security_group" {
     {
       from_port                = var.container_port
       to_port                  = var.container_port
-      protocol                 = var.health_check_protocol
+      protocol                 = "tcp"
       source_security_group_id = module.service_alb_security_group.security_group_id
     },
   ]
@@ -293,6 +293,9 @@ module "codebuild_ci" {
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        }, {
+        name  = "BACKEND_SVC_ENDPOINT"
+        value = var.backend_svc_endpoint
       },
     ]
   }

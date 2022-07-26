@@ -1,10 +1,12 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
+  default     = "us-west-2"
 }
 variable "core_stack_name" {
   description = "The name of core infrastructure stack that you created using core-infra module"
   type        = string
+  default     = "ecs-blueprint-infra"
 }
 
 variable "vpc_tag_key" {
@@ -18,6 +20,12 @@ variable "vpc_tag_value" {
   description = "The tag value of the VPC and subnets"
   type        = string
   default     = ""
+}
+
+variable "github_token_secret_name" {
+  description = "The name of the Secret Manager secret with your GitHub token as value"
+  type        = string
+  default     = "ecs-github-token"
 }
 
 variable "ecs_cluster_name" {
@@ -55,9 +63,8 @@ variable "folder_path_client" {
 }
 
 variable "repository_owner" {
-  description = "The name of the owner of the Github repository"
+  description = "The name of the owner of the forked Github repository"
   type        = string
-  default     = "aws-ia"
 }
 
 variable "repository_name" {

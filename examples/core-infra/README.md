@@ -37,7 +37,7 @@ There are general steps that you must follow in order to launch the infrastructu
 
 Before launching the solution please follow the next steps:
 
-1) Install Terraform, use Terraform v0.13 or above. You can visit [this](https://releases.hashicorp.com/terraform/) Terraform official webpage to download it.
+1) Install Terraform, use Terraform v1.0 or above. You can visit [this](https://releases.hashicorp.com/terraform/) Terraform official webpage to download it.
 2) Configure the AWS credentials into your machine (~/.aws/credentials). You need to use the following format:
 
 ```shell
@@ -45,8 +45,12 @@ Before launching the solution please follow the next steps:
     aws_access_key_id = Replace_with_the_correct_access_Key
     aws_secret_access_key = Replace_with_the_correct_secret_Key
 ```
+3) Export your AWS credentials in order to use the rest of the commands:
+```shell
+export AWS_PROFILE=Replace_with_the_correct_profile_name
+```
 
-3) Generate a GitHub token. You can follow [this](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) steps to generate it.
+4) Generate a GitHub token. You can follow [this](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) steps to generate it. Save the value, you will use it later on for other steps.
 
 ## Usage
 
@@ -55,7 +59,7 @@ Before launching the solution please follow the next steps:
 **2.** Clone that recently forked repository from your account (not the one from the aws-sample organization) and change the directory to the appropriate one as shown below:
 
 ```bash
-cd examples/core_infra/
+cd examples/core-infra/
 ```
 
 **3.** Run Terraform init to download the providers and install the modules
