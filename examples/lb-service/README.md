@@ -22,7 +22,7 @@ The solution has following key components:
     * Task security group: allows ingress for TCP from the ALB security group to the container service port (3000 for this example). And allows all egress.
     * Service discovery: You can register the service to AWS Cloud Map registry. You just need to provide the `namespace` but make sure the namespace is created in the `core-infra` step.
     * Tasks for this service will be deployed in private subnet
-    * Service definition takes the load balancer target group created above as input. 
+    * Service definition takes the load balancer target group created above as input.
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
     * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
@@ -39,7 +39,7 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
 * CodePipeline to listen for changes to the repository and trigger build and deployment.
     * Needs the S3 bucket created above
     * Github token from AWS Secrets Manager to access the repository with *application-code* folder
-    * Repository owner 
+    * Repository owner
     * Repository name
     * Repository branch
     * SNS topic for notifications created above
@@ -47,11 +47,4 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
     * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
     * IAM role
 
-Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder. 
-
-
-
-
-
-
-
+Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.

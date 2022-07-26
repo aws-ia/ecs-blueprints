@@ -1,11 +1,11 @@
 # You should update the below variables
 
-# aws_region and core_stack_name from teh core-infra example 
+# aws_region and core_stack_name from teh core-infra example
 # core_stack_name is also same as cluster_name
 aws_region      = "us-west-2"
 core_stack_name = "ecs-blueprint-infra"
 
-#The AWS Secrets Manager secret name containing the plaintext Github access token 
+#The AWS Secrets Manager secret name containing the plaintext Github access token
 github_token_secret_name = "ecs-github-token"
 repository_owner         = "aws-ia"
 

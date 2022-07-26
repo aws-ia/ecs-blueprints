@@ -4,8 +4,8 @@ This solution blueprint creates a backend servie that **does not** sit behind a 
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
-* Deploy the terraform templates in this repository using `terraform apply`. 
-* To test the backend service access using service discovery, deploy the [lb-service](../lb-service/README.md) along with providing the name of this backend service. 
+* Deploy the terraform templates in this repository using `terraform apply`.
+* To test the backend service access using service discovery, deploy the [lb-service](../lb-service/README.md) along with providing the name of this backend service.
 
 <p align="center">
   <img src="../../docs/backend-service.png"/>
@@ -19,7 +19,7 @@ The solution has following key components:
     * The `aws_service_discovery_service` resource is used to register the service to the namespace. You see the record type, TTL, and health check setting in this resource.
 * ECR registery for the container image. We are using only one container image for the task in this example.
 * ECS service definition:
-    * Task security group: allows ingress for TCP from all IP address in the VPC CIDR block to the container port (3000 in this example). And allows all egress. 
+    * Task security group: allows ingress for TCP from all IP address in the VPC CIDR block to the container port (3000 in this example). And allows all egress.
     * Service discovery ARN is used in the service definition. ECS will automatically manage the registration and deregistration of tasks to this service discovery registry.
     * Tasks for this service will be deployed in private subnet
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
@@ -38,7 +38,7 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
 * CodePipeline to listen for changes to the repository and trigger build and deployment.
     * Needs the S3 bucket created above
     * Github token from AWS Secrets Manager to access the repository with *application-code* folder
-    * Repository owner 
+    * Repository owner
     * Repository name
     * Repository branch
     * SNS topic for notifications created above
@@ -46,11 +46,4 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
     * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
     * IAM role
 
-Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-nodejs* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder. 
-
-
-
-
-
-
-
+Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-nodejs* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.
