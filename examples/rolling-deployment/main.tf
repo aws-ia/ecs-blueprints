@@ -133,12 +133,12 @@ module "server_alb_security_group" {
   ingress_with_source_security_group_id = [
     {
       rule                     = "http-80-tcp"
-      source_security_group_id = module.client_alb_security_group.security_group_id
+      source_security_group_id = module.client_task_security_group.security_group_id
     },
   ]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.public_cidr : s.cidr_block]
+  egress_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
 
   tags = local.tags
 }
