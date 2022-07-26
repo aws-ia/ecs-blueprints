@@ -1,7 +1,6 @@
 # You should update the below variables
 
 # aws_region from the core-infra example
-# core_stack_name is also same as ecs_cluster_name
 aws_region      = "us-west-2"
 
 
