@@ -1,15 +1,17 @@
 # ECS load-balanced service
 
-This solution blueprint creates a web-facing load balanced ECS service. 
-<p align="center">
-  <img src="../../docs/lb-service.png"/>
-</p>
-There are two steps to deploying this service:
+This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
+
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * Deploy the terraform templates in this repository using `terraform apply`
 
+<p align="center">
+  <img src="../../docs/lb-service.png"/>
+</p>
+
 The solution has following key components:
-* ALB: We are using Application Load Balancer for this service. 
+
+* ALB: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
     * ALB security group - allows ingress from any IP address to port 80 and allows all egress
     * ALB subnet - ALB is created in a public subnet
     * Listener - listens on port 80 for protocol HTTP
@@ -20,10 +22,11 @@ The solution has following key components:
     * Service discovery: You can register the service to AWS Cloud Map registry. You just need to provide the `namespace` but make sure the namespace is created in the `core-infra` step.
     * Tasks for this service will be deployed in private subnet
     * Service definition takes the load balancer target group created above as input. 
-    * Task definition consisting of basic task vCPU size, task memory, and container information including the above created ECR repository URL.
+    * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
 
 The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
-* **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret. (Not key-value pair). This token is used to access the application-code repository and build images.**
+
+* **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret (not as key-value pair secret). This token is used to access the *application-code* repository and build images.**
 * S3 bucket to store CodePipeline assets. The bucket is encrypted with AWS managed key.
 * SNS topic for notifications from the pipeline
 * CodeBuild for building container images
