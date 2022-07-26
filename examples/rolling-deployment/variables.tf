@@ -47,7 +47,7 @@ variable "ecs_task_execution_role_name" {
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
-  default     = "./templates/buildspec_rolling.yml"
+  default     = "./application-code/client/templates/buildspec_rolling.yml"
 }
 
 variable "folder_path_server" {
