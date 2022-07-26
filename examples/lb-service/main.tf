@@ -211,7 +211,7 @@ module "ecs_service_definition" {
 }
 
 ################################################################################
-# CodePipeline
+# CodePipeline and CodeBuild for CI/CD
 ################################################################################
 
 module "codepipeline_s3_bucket" {

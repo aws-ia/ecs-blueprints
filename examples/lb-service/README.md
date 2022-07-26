@@ -23,6 +23,7 @@ The solution has following key components:
     * Tasks for this service will be deployed in private subnet
     * Service definition takes the load balancer target group created above as input. 
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
+    * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
 The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
 
@@ -45,7 +46,7 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
     * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
     * IAM role
 
-Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the Dockerfile and templates/* files from that application folder. 
+Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder. 
 
 
 
