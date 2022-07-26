@@ -1,7 +1,6 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-2"
 }
 variable "core_stack_name" {
   description = "The name of core infrastructure stack that you created using core-infra module"

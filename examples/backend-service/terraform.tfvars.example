@@ -1,22 +1,22 @@
 # You should update the below variables
 
-# aws_region and core_stack_name from teh core-infra example
-# core_stack_name is also same as cluster_name
+# aws_region from the core-infra example
 aws_region      = "us-west-2"
-core_stack_name = "ecs-blueprint-infra"
+
 
 #The AWS Secrets Manager secret name containing the plaintext Github access token
 github_token_secret_name = "ecs-github-token"
-repository_owner         = "aws-ia"
+# repository_owner         = ""
 
 # It is optional to change the below variables
-
-service_name   = "ecsdemo-nodejs"
-namespace      = "default"
-desired_count  = 3
-task_cpu       = 256
-task_memory    = "512"
-container_name = "ecsdemo-nodejs"
+# core_stack_name is also same as ecs_cluster_name
+core_stack_name = "ecs-blueprint-infra"
+service_name    = "ecsdemo-nodejs"
+namespace       = "default"
+desired_count   = 3
+task_cpu        = 256
+task_memory     = 512
+container_name  = "ecsdemo-nodejs"
 
 #Don't change the container port as it is specific to this app example
 
