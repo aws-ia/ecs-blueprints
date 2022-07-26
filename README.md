@@ -36,6 +36,7 @@ This repository has 3 main folders
 │   └── ecs-service
 └── templates                   # Application Config files (Buildspec)
 ```
+
 ## Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
 * Basic understanding of Docker containers, and how to create them using Dockerfiles.
