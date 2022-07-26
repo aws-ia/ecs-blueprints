@@ -87,7 +87,7 @@ Before launching this solution please deploy the `core-infra` solution, which is
 cd examples/blue-green-deployment
 ```
 
-**3.** Create Github Token secret in Secret Manager. Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret named `ecs-github-token` with your Plaintext GitHub token value. 
+**3.** Create Github Token secret in Secret Manager. Go to [Secret Manager](https://console.aws.amazon.com/secretsmanager/secret) and create a secret named `ecs-github-token` with your Plaintext GitHub token value.
 
 The value of this secret is the one generated during the Prerequisites from [this Readme](../core-infra/README.md#prerequisites) you did first. Remember to create your secret in the same region where you will deploy the rest of your infrastructure.
 
