@@ -71,22 +71,23 @@ resource "aws_codepipeline" "this" {
   tags = var.tags
 }
 
-resource "aws_codestarnotifications_notification_rule" "this" {
-  name        = "${var.name}_pipeline_execution_status"
-  detail_type = "FULL"
+# Commenting out for AWS Event Engine
+# resource "aws_codestarnotifications_notification_rule" "this" {
+#   name        = "${var.name}_pipeline_execution_status"
+#   detail_type = "FULL"
 
-  event_type_ids = [
-    "codepipeline-pipeline-action-execution-succeeded",
-    "codepipeline-pipeline-action-execution-failed"
-  ]
-  resource = aws_codepipeline.this.arn
+#   event_type_ids = [
+#     "codepipeline-pipeline-action-execution-succeeded",
+#     "codepipeline-pipeline-action-execution-failed"
+#   ]
+#   resource = aws_codepipeline.this.arn
 
-  target {
-    address = var.sns_topic
-  }
+#   target {
+#     address = var.sns_topic
+#   }
 
-  tags = var.tags
-}
+#   tags = var.tags
+# }
 
 ################################################################################
 # IAM
