@@ -46,17 +46,18 @@ variable "ecs_task_execution_role_name" {
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
+  default     = "./application-code/ecsdemo-nodejs/templates/buildspec.yml"
 }
 
 variable "folder_path" {
   description = "The location of the application code and Dockerfile files"
   type        = string
+  default     = "./application-code/ecsdemo-nodejs/."
 }
 
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
-  default     = "aws-ia"
 }
 
 variable "repository_name" {
@@ -80,11 +81,13 @@ variable "github_token_secret_name" {
 variable "service_name" {
   description = "The service name"
   type        = string
+  default     = "ecsdemo-backend"
 }
 
 variable "namespace" {
   description = "The service discovery namespace"
   type        = string
+  default     = "default"
 }
 
 variable "desired_count" {
@@ -96,11 +99,13 @@ variable "desired_count" {
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
+  default     = "ecsdemo-nodejs"
 }
 
 variable "container_port" {
   description = "The container port to serve traffic"
   type        = number
+  default     = 3000
 }
 
 variable "task_cpu" {

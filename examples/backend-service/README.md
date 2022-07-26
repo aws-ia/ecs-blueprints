@@ -1,9 +1,11 @@
 # ECS backend service with service discovery
 
-This solution blueprint creates a backend servie that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. There are two steps to deploying this service:
+This solution blueprint creates a backend servie that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. Below are steps for deploying this service:
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-* Deploy the terraform templates in this repository using `terraform apply`
+* In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
+* Deploy the terraform templates in this repository using `terraform apply`. 
+* To test the backend service access using service discovery, deploy the [lb-service](../lb-service/README.md) along with providing the name of this backend service. 
 
 <p align="center">
   <img src="../../docs/backend-service.png"/>

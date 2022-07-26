@@ -11,15 +11,13 @@ repository_owner         = "aws-ia"
 
 # It is optional to change the below variables
 
-service_name         = "ecsdemo-frontend"
-namespace            = "default"
-backend_svc_endpoint = "ecsdemo-nodejs"
-desired_count        = 3
-task_cpu             = 256
-task_memory          = "512"
-container_name       = "ecsdemo-frontend"
+service_name   = "ecsdemo-nodejs"
+namespace      = "default"
+desired_count  = 3
+task_cpu       = 256
+task_memory    = "512"
+container_name = "ecsdemo-nodejs"
 
 #Don't change the container port as it is specific to this app example
 
 container_port = 3000
-

@@ -3,7 +3,9 @@
 This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
+* In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
 * Deploy the terraform templates in this repository using `terraform apply`
+* You can also deploy the [backend-service](../backend-service/README.md) without an ALB and test the service discovery aspect. 
 
 <p align="center">
   <img src="../../docs/lb-service.png"/>
