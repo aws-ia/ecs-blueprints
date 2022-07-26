@@ -9,7 +9,8 @@ locals {
   region = var.aws_region
 
   vpc_cidr = var.vpc_cidr
-  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  num_of_subnets = min(length(data.aws_availability_zones.available.names),3)
+  azs      = slice(data.aws_availability_zones.available.names, 0, local.num_of_subnets)
 
   tags = {
     Blueprint  = local.name
