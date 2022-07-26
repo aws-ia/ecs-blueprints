@@ -20,11 +20,11 @@ The AWS resources created by the script are detailed bellow:
     - 1 Internet Gateway
     - 1 NAT gateway (and 1 EIP)
     - 2 Routing tables (and needed routes)
-    - 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs. 
+    - 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
     - 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
 - ECS
     - 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
-- IAM 
+- IAM
     - 1 task-execution-iam-role  
 
 ## Prerequisites
@@ -64,8 +64,12 @@ cd examples/core-infra/
 ```shell
 terraform init
 ```
+**3.** Copy the `terraform.tfvars.example` to `terraform.tfvars` and change as needed
+```shell
+cp terraform.tfvars.example terraform.tfvars
+```
 
-**3.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
+**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
