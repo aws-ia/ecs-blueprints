@@ -1,9 +1,7 @@
 # Core Infrastructure
+This folder contains the Terraform code to deploy the core infratructure for an ECS Fargate workload.
 
 ## Table of content
-
-   * [Folder overview](#folder-overview)
-   * [General information](#general-information)
    * [Infrastructure](#infrastructure)
       * [Prerequisites](#prerequisites)
       * [Usage](#usage)
@@ -12,9 +10,6 @@
    * [Security](#security)
    * [License](#license)
 
-## Folder overview
-
-This folder contains the Terraform code to deploy a core infratructure for a ECS Fargate workload.
 
 ## Infrastructure
 
@@ -25,12 +20,12 @@ The AWS resources created by the script are detailed bellow:
     - 1 Internet Gateway
     - 1 NAT gateway (and 1 EIP)
     - 2 Routing tables (and needed routes)
-    - 6 Subnets
-        - 2 public subnets
-        - 2 private subnets for the client side
-        - 2 private subnets for the server side
+    - 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs. 
+    - 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
 - ECS
-    - 1 ECS Cluster
+    - 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
+- IAM 
+    - 1 task-execution-iam-role  
 
 ## Prerequisites
 There are general steps that you must follow in order to launch the infrastructure resources.
@@ -39,7 +34,6 @@ Before launching the solution please follow the next steps:
 
 1) Install Terraform, use Terraform v1.0 or above. You can visit [this](https://releases.hashicorp.com/terraform/) Terraform official webpage to download it.
 2) Configure the AWS credentials into your machine (~/.aws/credentials). You need to use the following format:
-
 ```shell
     [AWS_PROFILE_NAME]
     aws_access_key_id = Replace_with_the_correct_access_Key
@@ -49,26 +43,29 @@ Before launching the solution please follow the next steps:
 ```shell
 export AWS_PROFILE=Replace_with_the_correct_profile_name
 ```
+4) Install aws cli from https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
-4) Generate a GitHub token. You can follow [this](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) steps to generate it. Save the value, you will use it later on for other steps.
+5) Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account. Store this secret in AWS secrets manager using the aws cli.
+```shell
+aws secretsmanager create-secret --name ecs-github-token --secret-string "<github-token-created-above>"
+```
+Note you should create the secret in an AWS region where you plan to deploy the various examples. You can also set the default region by exporting the environment variable `export AWS_DEFAULT_REGION=<default-region>`.
 
 ## Usage
 
-**1.** Fork this repository and create the GitHub token granting access to this new repository in your account.
-
-**2.** Clone that recently forked repository from your account (not the one from the aws-sample organization) and change the directory to the appropriate one as shown below:
+**1.** Clone that recently forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 
 ```bash
 cd examples/core-infra/
 ```
 
-**3.** Run Terraform init to download the providers and install the modules
+**2.** Run Terraform init to download the providers and install the modules
 
 ```shell
 terraform init
 ```
 
-**4.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
+**3.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
@@ -77,7 +74,7 @@ terraform apply
 
 ## Outputs
 
-After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies.
+After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies. You can use this infrastructure to run other example blueprints, all you need is the `cluster_name`.
 
 ## Cleanup
 
