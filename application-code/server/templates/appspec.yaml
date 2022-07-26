@@ -1,0 +1,10 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION> # Do not change this, the value is updated when your pipeline runs
+        LoadBalancerInfo:
+          ContainerName: "<CONTAINER_NAME>"
+          ContainerPort: <SERVICE_PORT>
+        PlatformVersion: "LATEST"

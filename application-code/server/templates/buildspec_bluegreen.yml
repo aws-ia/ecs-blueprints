@@ -1,0 +1,40 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - REPOSITORY=${REPO_URL%/*}
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
+      - |
+        if expr "${FOLDER_PATH}" : ".*client*" ; then
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/client/src/services/RestServices.js
+        else
+          sed -i "s|DYNAMODB_TABLE|$DYNAMODB_TABLE|g" ./application-code/server/src/app.js
+          sed -i "s|<SERVER_ALB_URL>|$SERVER_ALB_URL|g" ./application-code/server/src/swagger/swagger.js
+        fi
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - docker build -t $REPO_URL $FOLDER_PATH
+  post_build:
+    commands:
+      - docker push $REPO_URL || true # chicken & egg problem : ecr immutable this push will only works one time, but required for first deployment from terraform
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG || true # use for debugging
+      - mkdir artifacts
+      - cp templates/appspec.yaml artifacts/ && cp templates/taskdef.json artifacts/
+      - sed -i "s|<TASK_DEFINITION_FAMILY>|$TASK_DEFINITION_FAMILY|g" artifacts/taskdef.json
+      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/appspec.yaml artifacts/taskdef.json
+      - sed -i "s|<SERVICE_PORT>|$SERVICE_PORT|g" artifacts/appspec.yaml artifacts/taskdef.json
+      - sed -i "s|<ECS_TASK_ROLE_ARN>|$ECS_TASK_ROLE_ARN|g" artifacts/taskdef.json
+      - sed -i "s|<ECS_EXEC_ROLE_ARN>|$ECS_EXEC_ROLE_ARN|g" artifacts/taskdef.json
+      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/taskdef.json
+      - sed -i "s|<AWS_REGION>|$AWS_REGION|g" artifacts/taskdef.json
+      - cat artifacts/taskdef.json
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'artifacts'
+  discard-paths: yes
