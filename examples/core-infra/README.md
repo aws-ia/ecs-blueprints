@@ -21,7 +21,7 @@ The AWS resources created by the script are detailed bellow:
     - 1 NAT gateway (and 1 EIP)
     - 2 Routing tables (and needed routes)
     - 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
-    - 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
+    - 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of private subnets as AZs.
 - ECS
     - 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
 - IAM
