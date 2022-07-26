@@ -293,6 +293,9 @@ module "codebuild_ci" {
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        }, {
+        name  = "BACKEND_SVC_ENDPOINT"
+        value = var.backend_svc_endpoint
       },
     ]
   }
