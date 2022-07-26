@@ -1,4 +1,12 @@
-aws_region        = "us-west-1"
-core_stack_name   = "ecs-blueprint-infra"
-repository_owner  = "aws-ia"
+# You should update the below variables
 
+# aws_region and core_stack_name
+aws_region      = "us-west-2"
+
+# The AWS Secrets Manager secret name containing the plaintext Github access token
+github_token_secret_name = "ecs-github-token"
+# repository_owner         = ""
+
+# It is optional to change the below variables
+# core_stack_name is also same as ecs_cluster_name from core-infra
+core_stack_name = "ecs-blueprint-infra"

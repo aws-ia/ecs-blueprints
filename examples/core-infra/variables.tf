@@ -7,7 +7,6 @@ variable "core_stack_name" {
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-1"
 }
 
 variable "vpc_cidr" {
