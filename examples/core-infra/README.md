@@ -29,18 +29,18 @@ There are general steps that you must follow in order to launch the infrastructu
 
 Before launching the solution please follow the next steps:
 
-1) Install Terraform, use Terraform v1.0 or above. You can visit [this](https://releases.hashicorp.com/terraform/) Terraform official webpage to download it.
+1) Install Terraform, use Terraform v1.0 or above. You can visit [Terraform official webpage](https://releases.hashicorp.com/terraform/) to download it.
 2) Configure the AWS credentials into your machine (~/.aws/credentials). You need to use the following format:
 ```shell
     [AWS_PROFILE_NAME]
     aws_access_key_id = Replace_with_the_correct_access_Key
     aws_secret_access_key = Replace_with_the_correct_secret_Key
 ```
-3) Export your AWS credentials in order to use the rest of the commands:
+3) Export your AWS credentials in order to use the rest of the commands (see [AWS Profile documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)):
 ```shell
 export AWS_PROFILE=Replace_with_the_correct_profile_name
 ```
-4) Install aws cli from https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+4) [Install aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
 5) Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account. Store this secret in AWS secrets manager using the aws cli.
 ```shell
