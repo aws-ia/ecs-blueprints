@@ -1,9 +1,7 @@
 # Core Infrastructure
+This folder contains the Terraform code to deploy the core infratructure for an ECS Fargate workload.
 
 ## Table of content
-
-   * [Folder overview](#folder-overview)
-   * [General information](#general-information)
    * [Infrastructure](#infrastructure)
       * [Prerequisites](#prerequisites)
       * [Usage](#usage)
@@ -12,9 +10,6 @@
    * [Security](#security)
    * [License](#license)
 
-## Folder overview
-
-This folder contains the Terraform code to deploy a core infratructure for a ECS Fargate workload.
 
 ## Infrastructure
 
@@ -53,7 +48,10 @@ export AWS_PROFILE=Replace_with_the_correct_profile_name
 
 ## Usage
 
-**1.** Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account.
+**1.** Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account. Store this secret in AWS secrets manager using the aws cli.
+```shell
+aws secretsmanager create-secret --name ecs-github-token --secret-string "<github-token-created-above>"
+```
 
 **2.** Clone that recently forked repository from your account (not the one from the aws-sample organization) and change the directory to the appropriate one as shown below:
 
