@@ -1,0 +1,4 @@
+aws_region        = "us-west-1"
+core_stack_name   = "ecs-blueprint-infra"
+repository_owner  = "aws-ia"
+
