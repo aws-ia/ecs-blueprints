@@ -126,8 +126,8 @@ module "server_alb_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
 
-  name        = "${local.name}-client"
-  description = "Security group for client application"
+  name        = "${local.name}-server"
+  description = "Security group for server application"
   vpc_id      = data.aws_vpc.vpc.id
 
   ingress_with_source_security_group_id = [
