@@ -24,7 +24,7 @@ aws_secret_access_key = Replace_with_the_correct_secret_Key
 ```bash
 export AWS_PROFILE=your_profile_name
 ```
-* You can also set the default region and output format in `~/.aws/config`. Something like
+* You can also set the default region and output format in `~/.aws/config`. Something like:
 ```shell
 [default]
 output = json
