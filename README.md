@@ -1,5 +1,4 @@
 # Amazon ECS Solution Blueprints for Terraform
-
 Welcome to Amazon ECS Solution Blueprints for Terraform!
 
 When **new users** want to adopt containers to build, deploy, and run their applications, it often takes them several months to  learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or and host OS. With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**! 
@@ -8,33 +7,7 @@ The blueprints are meant to give new users a jumpstart, and enable them to learn
 
 We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
 
-## Repository overview
-This repository has 3 main folders
-* [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs in a container workflow. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
-* [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. The [lb-service](./examples/lb-service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
-* [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
-
-```
-├── application-code            # Application source code for CI/CD
-│   ├── client
-│   ├── ecsdemo-frontend
-│   ├── ecsdemo-nodejs
-│   └── server
-├── docs
-├── examples                    # Terraform Deployment Patterns
-│   ├── backend-service
-│   ├── blue-green-deployment
-│   ├── core-infra
-│   ├── lb-service
-│   └── rolling-deployment
-├── modules                     # Terraform Modules used in examples
-    ├── codebuild
-    ├── codedeploy
-    ├── codepipeline
-    ├── ecs-backend-service
-    └── ecs-service
-```
 
 ## Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
@@ -60,6 +33,43 @@ Another common pattern is to deploy both frontend (client) and backend (server) 
 * [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
 * [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
 
+## Fast Getting Started
+If you have a Mac or Linux laptop (or AWS Cloud9 VM) with Terraform, Git, and Administrator access to a test AWS account. Start by forking this repository to your Github. Create a Github access token. 
+```
+# store github token in the AWS Secrets Manager in the same region where you will deploy the infra
+aws secretsmanager create-secret --name ecs-github-token --secret-string <gh-token-to-access-where-you-cloned-this-repo>
+
+git clone https://github.com/<your-repo>/terraform-aws-ecs-blueprints.git
+
+cd terraform-aws-ecs-blueprints/examples/core-infra/
+
+terraform init
+
+cp terraform.tfvars.example terraform.tfvars
+ 
+terraform plan
+
+terraform apply --auto-approve
+
+cd ../lb-service
+
+cp terraform.tfvars.example terraform.tfvars
+
+vim terraform.tfvars 
+# change the repository owner to your repo owner name 
+
+terraform init
+
+terraform plan
+
+terraform apply --auto-approve
+```
+
+## Repository overview
+This repository has 3 main folders
+* [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
+* [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. The [lb-service](./examples/lb-service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
+* [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
 ## Support & Feedback
 
@@ -71,11 +81,9 @@ For architectural details, step-by-step instructions, and customization options,
 
 If you are interested in contributing to ECS Blueprints, see the [Contribution guide](CONTRIBUTING.md).
 
-
 ## Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for more information.
-
 
 ## Security
 
