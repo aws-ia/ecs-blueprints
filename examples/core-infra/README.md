@@ -10,6 +10,7 @@ This folder contains the Terraform code to deploy the core infratructure for an 
 * 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
 * Task execution IAM role
 * CloudWatch log groups
+* CloudMap service discovery namespace `default`
 
 ## Getting Started 
 Make sure you have all the [prerequisites](../../README.md) for your laptop.
