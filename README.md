@@ -39,7 +39,7 @@ This repository has 3 main folders
 ## Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
 * Basic understanding of Docker containers, and how to create them using Dockerfiles.
-* Intermediate level of Terraform knowledge, that is, you have used Terraform to create and manage AWS resources before. If you are not familiar with Terraform, new to infra-as-code, or familiar with AWS CloudFormation, then we would recommend trying AWS CDK based ECS Solution Blueprints.
+* Intermediate level of Terraform knowledge, that is, you have used Terraform to create and manage AWS resources before. 
 
 ### Prerequisites for your laptop
 * Mac (strongly recommended) - We have tested using Mac (tested version 12.4) and AWS Cloud9 Linux machines. We have **not tested** at all with Windows laptops.
