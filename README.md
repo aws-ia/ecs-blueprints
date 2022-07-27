@@ -10,13 +10,13 @@ We fully expect you to get started by copying the modules and examples but we **
 ## Getting Started 
 The ECS Solution Blueprints with Terraform assumes have basic understanding of Docker containers, building containers using Dockerfiles, and basic knoweldge of Terraform to create and manage AWS resources.
 ### Prerequisites 
-* You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which all the prerequisites preinstalled and you can skip to (getting-started)
+* You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and you can skip to (getting-started)
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
 * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
 * [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
 * AWS test account with administrator role access
-* Configure the AWS credentials into your machine `~/.aws/credentials`. You need to use the following format:
+* Configure the AWS credentials on your machine `~/.aws/credentials`. You need to use the following format:
 ```shell
     [AWS_PROFILE_NAME]
     aws_access_key_id = Replace_with_the_correct_access_Key
