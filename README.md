@@ -9,14 +9,14 @@ We fully expect you to get started by copying the modules and examples but we **
 
 ## Getting Started 
 ### Prerequisites
-The ECS solution blueprints with Terraform assumes you have:
+The ECS Solution Blueprints with Terraform assumes you have:
 * Basic understanding of Docker containers, and how to create them using Dockerfiles.
 * Basic level of Terraform knowledge to create and manage AWS resources. 
 
 ### Prerequisites for your laptop (or you can use [AWS Cloud9](https://aws.amazon.com/cloud9/))
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines.
-* Terraform (tested version v1.2.5 on darwin_amd64)
-* Git (tested version 2.27.0)
+* [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64).
+* [Git](https://github.com/git-guides/install-git) (tested version 2.27.0).
 * AWS test account with administrator role access.
 
 ## Getting Started
