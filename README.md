@@ -16,9 +16,13 @@ We fully expect you to get started by copying the modules and examples but we **
 * AWS test account with administrator role access
 * Configure the AWS credentials on your machine `~/.aws/credentials`. You need to use the following format:
 ```shell
-    [AWS_PROFILE_NAME]
-    aws_access_key_id = Replace_with_the_correct_access_Key
-    aws_secret_access_key = Replace_with_the_correct_secret_Key
+[AWS_PROFILE_NAME]
+aws_access_key_id = Replace_with_the_correct_access_Key
+aws_secret_access_key = Replace_with_the_correct_secret_Key
+```
+* Export the AWS profile name
+```bash
+export AWS_PROFILE=your_profile_name
 ```
 * You can also set the default region and output format in `~/.aws/config`. Something like
 ```shell
