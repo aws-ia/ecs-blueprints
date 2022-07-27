@@ -19,6 +19,18 @@ The ECS Solution Blueprints with Terraform assumes you have:
 * [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
 * AWS test account with administrator role access
+* Configure the AWS credentials into your machine `~/.aws/credentials`. You need to use the following format:
+```shell
+    [AWS_PROFILE_NAME]
+    aws_access_key_id = Replace_with_the_correct_access_Key
+    aws_secret_access_key = Replace_with_the_correct_secret_Key
+```
+* You can also set the default region and output format in `~/.aws/config`. Something like
+```shell
+[default]
+output = json
+region = us-west-2
+```
 
 ## Getting Started
 
