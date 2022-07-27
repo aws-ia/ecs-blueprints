@@ -53,7 +53,7 @@ terraform apply --auto-approve
 cd ../lb-service
 cp terraform.tfvars.example terraform.tfvars
 vim terraform.tfvars 
-# change the repository owner to your repo owner name 
+# change the repository owner to your repo owner name and set aws region to ECS cluster region
 ```
 * Deploy the load balanced service and CI/CD pipeline
 ```shell
