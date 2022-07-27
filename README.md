@@ -7,63 +7,63 @@ The blueprints are meant to give new users a jumpstart, and enable them to learn
 
 We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
 
-
-
-## Prerequisites
+## Getting Started 
+### Prerequisites
 The ECS solution blueprints with Terraform assumes you have:
 * Basic understanding of Docker containers, and how to create them using Dockerfiles.
-* Intermediate level of Terraform knowledge, that is, you have used Terraform to create and manage AWS resources before. 
+* Basic level of Terraform knowledge to create and manage AWS resources. 
 
-### Prerequisites for your laptop
-* Mac (strongly recommended) - We have tested using Mac (tested version 12.4) and AWS Cloud9 Linux machines. We have **not tested** at all with Windows laptops.
+### Prerequisites for your laptop (or you can use [AWS Cloud9](https://aws.amazon.com/cloud9/))
+* Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines.
 * Terraform (tested version v1.2.5 on darwin_amd64)
 * Git (tested version 2.27.0)
-* AWS account access setup on laptop - We are working on documenting the least privilege user roles that are needed but for now Administrator access on Test (strictly non-production) accounts is recommended.
+* AWS test account with administrator role access.
 
 ## Getting Started
 
-* Clone this repository
-* Start with the [core-infra](./examples/core-infra/README.md). This will create the ECS cluster, VPC, subnets, and IAM roles required to run you containers.
-* Deploy the [lb-service](./example/lb-service/README.md). This will create a load-balanced ECS service along with CI/CD pipeline.
-* Deploy the [backend-service](./example/backend-service/README.md). This will create a backend ECS service **without** a load balancer.
-
-The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production.
-
-Another common pattern is to deploy both frontend (client) and backend (server) services with load balancers along with a database service (such as DynamoDB). This would be like a 2-Tier DynamoDB application which can be deployed using below examples.
-* [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
-* [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
-
-## Fast Getting Started
-If you have a Mac or Linux laptop (or AWS Cloud9 VM) with Terraform, Git, and Administrator access to a test AWS account. Start by forking this repository to your Github. Create a Github access token. 
+* Fork this repository. 
+* Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
+* Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
+```shell
+aws secretsmanager create-secret --name ecs-github-token --secret-string <your-github-access-token>
 ```
-# store github token in the AWS Secrets Manager in the same region where you will deploy the infra
-aws secretsmanager create-secret --name ecs-github-token --secret-string <gh-token-to-access-where-you-cloned-this-repo>
-
+* Clone your forked repository to your laptop/Cloud9 VM.
+```shell
 git clone https://github.com/<your-repo>/terraform-aws-ecs-blueprints.git
-
+```
+* Start with `core-infra` to create cluster, VPC, and require IAM
+```shell
 cd terraform-aws-ecs-blueprints/examples/core-infra/
 
 terraform init
 
 cp terraform.tfvars.example terraform.tfvars
- 
+
+vim terraform.tfvars
+# edit the region name in the terraform.tfvars to your region where you created the secret 
+```
+* Run terraform commands to deploy infrastructure
+```shell
 terraform plan
-
-terraform apply --auto-approve
-
-cd ../lb-service
-
-cp terraform.tfvars.example terraform.tfvars
-
-vim terraform.tfvars 
-# change the repository owner to your repo owner name 
-
-terraform init
-
-terraform plan
-
 terraform apply --auto-approve
 ```
+* Now we can deploy a load balanced service along with CI/CD pipeline to the above cluster
+```shell
+cd ../lb-service
+cp terraform.tfvars.example terraform.tfvars
+vim terraform.tfvars 
+# change the repository owner to your repo owner name 
+```
+* Deploy the load balanced service and CI/CD pipeline
+```shell
+terraform init
+terraform plan
+terraform apply --auto-approve
+```
+You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
+* [Backend Service](./examples/backend-service/README.md)
+* [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
+* [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
 
 ## Repository overview
 This repository has 3 main folders
