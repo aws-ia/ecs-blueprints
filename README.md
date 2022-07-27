@@ -9,7 +9,8 @@ We fully expect you to get started by copying the modules and examples but we **
 
 ## Getting Started 
 The ECS Solution Blueprints with Terraform assumes have basic understanding of Docker containers, building containers using Dockerfiles, and basic knoweldge of Terraform to create and manage AWS resources.
-### Prerequisites for your laptop (or you can use [AWS Cloud9](https://aws.amazon.com/cloud9/))
+### Prerequisites 
+* You can use [AWS Cloud9](https://aws.amazon.com/cloud9/)) which all the prerequisites preinstalled and you can skip to (getting-started)
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
 * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
 * [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
@@ -27,9 +28,7 @@ The ECS Solution Blueprints with Terraform assumes have basic understanding of D
 output = json
 region = us-west-2
 ```
-
 ## Getting Started
-
 * Fork this repository. 
 * Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
 * Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
