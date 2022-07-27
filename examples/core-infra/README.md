@@ -12,7 +12,7 @@ This folder contains the Terraform code to deploy the core infratructure for an 
 * CloudWatch log groups
 
 ## Getting Started 
-Make sure you have all the [prerequisites](../../README.md#prerequisites) for your laptop.
+Make sure you have all the [prerequisites](../../README.md) for your laptop.
 
 Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account. Store this secret in AWS secrets manager using the aws cli.
 ```shell
