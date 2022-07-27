@@ -14,10 +14,11 @@ The ECS Solution Blueprints with Terraform assumes you have:
 * Basic level of Terraform knowledge to create and manage AWS resources. 
 
 ### Prerequisites for your laptop (or you can use [AWS Cloud9](https://aws.amazon.com/cloud9/))
-* Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines.
-* [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64).
-* [Git](https://github.com/git-guides/install-git) (tested version 2.27.0).
-* AWS test account with administrator role access.
+* Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
+* [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
+* [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
+* [aws cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
+* AWS test account with administrator role access
 
 ## Getting Started
 
