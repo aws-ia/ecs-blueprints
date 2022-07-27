@@ -26,7 +26,7 @@ We fully expect you to get started by copying the modules and examples but we **
 output = json
 region = us-west-2
 ```
-### Quick Start
+## Quick Start
 * Fork this repository. 
 * Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
 * Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
