@@ -13,6 +13,7 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
+      - sed -i "s|<BACKEND_SVC_ENDPOINT>|$BACKEND_SVC_ENDPOINT|g" application-code/ecsdemo-frontend/Dockerfile
       - docker build -t $REPO_URL $FOLDER_PATH
   post_build:
     commands:

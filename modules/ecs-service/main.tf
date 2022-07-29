@@ -5,9 +5,9 @@ data "aws_region" "current" {}
 ################################################################################
 
 resource "aws_ecs_service" "this" {
-  name                               = var.name
-  cluster                            = var.ecs_cluster_id
-  launch_type                        = "FARGATE"
+  name    = var.name
+  cluster = var.ecs_cluster_id
+  # launch_type                        = "FARGATE"
   platform_version                   = var.platform_version
   task_definition                    = aws_ecs_task_definition.this.arn
   desired_count                      = var.desired_count
@@ -18,6 +18,17 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
+  capacity_provider_strategy {
+    base              = var.cp_strategy_base
+    capacity_provider = "FARGATE"
+    weight            = var.cp_strategy_fg_weight
+  }
+  capacity_provider_strategy {
+    base              = 0
+    capacity_provider = "FARGATE_SPOT"
+    weight            = var.cp_strategy_fg_spot_weight
+
+  }
   network_configuration {
     subnets         = var.subnets
     security_groups = var.security_groups

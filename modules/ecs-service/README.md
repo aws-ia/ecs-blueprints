@@ -46,6 +46,9 @@ No modules.
 | <a name="input_autoscaling_min_capacity"></a> [autoscaling\_min\_capacity](#input\_autoscaling\_min\_capacity) | The minimum number of tasks to provision | `number` | `1` | no |
 | <a name="input_container_name"></a> [container\_name](#input\_container\_name) | The name of the Container specified in the Task definition | `string` | `"app"` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | The port that the container will use to listen to requests | `number` | `8080` | no |
+| <a name="input_cp_strategy_base"></a> [cp\_strategy\_base](#input\_cp\_strategy\_base) | Base number of tasks to create on Fargate on-demand | `number` | `1` | no |
+| <a name="input_cp_strategy_fg_spot_weight"></a> [cp\_strategy\_fg\_spot\_weight](#input\_cp\_strategy\_fg\_spot\_weight) | Relative number of tasks to put in Fargate Spot | `number` | `0` | no |
+| <a name="input_cp_strategy_fg_weight"></a> [cp\_strategy\_fg\_weight](#input\_cp\_strategy\_fg\_weight) | Relative number of tasks to put in Fargate | `number` | `1` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | The number of cpu units used by the task. | `number` | `256` | no |
 | <a name="input_deployment_controller"></a> [deployment\_controller](#input\_deployment\_controller) | Specifies which deployment controller to use for the service. | `string` | `"ECS"` | no |
 | <a name="input_deployment_maximum_percent"></a> [deployment\_maximum\_percent](#input\_deployment\_maximum\_percent) | Maximum percentage of task able to be deployed | `number` | `200` | no |

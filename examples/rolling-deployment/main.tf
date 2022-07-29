@@ -138,7 +138,7 @@ module "server_alb_security_group" {
   ]
 
   egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+  egress_cidr_blocks = [for s in data.aws_subnet.public_cidr : s.cidr_block]
 
   tags = local.tags
 }

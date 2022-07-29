@@ -181,9 +181,12 @@ resource "aws_service_discovery_service" "sd_service" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name           = local.name
-  desired_count  = var.desired_count
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
+  name                       = local.name
+  desired_count              = var.desired_count
+  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  cp_strategy_base           = var.cp_strategy_base
+  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
+  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
 
   security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
@@ -193,7 +196,7 @@ module "ecs_service_definition" {
   }]
 
   service_registry_list = [{
-    registry_arn = "${aws_service_discovery_service.sd_service.arn}"
+    registry_arn = aws_service_discovery_service.sd_service.arn
   }]
 
   deployment_controller = "ECS"
