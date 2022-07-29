@@ -196,7 +196,7 @@ module "ecs_service_definition" {
   }]
 
   service_registry_list = [{
-    registry_arn = "${aws_service_discovery_service.sd_service.arn}"
+    registry_arn = aws_service_discovery_service.sd_service.arn
   }]
 
   deployment_controller = "ECS"

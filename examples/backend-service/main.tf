@@ -125,7 +125,7 @@ module "ecs_service_definition" {
   subnets         = data.aws_subnets.private.ids
 
   service_registry_list = [{
-    registry_arn = "${aws_service_discovery_service.sd_service.arn}"
+    registry_arn = aws_service_discovery_service.sd_service.arn
   }]
   deployment_controller = "ECS"
 
