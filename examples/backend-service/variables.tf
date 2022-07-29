@@ -119,3 +119,25 @@ variable "task_memory" {
   description = "The task memory size"
   type        = string
 }
+
+# Capacity provider strategy setting
+# to distribute tasks between Fargate
+# Fargate Spot
+
+variable "cp_strategy_base" {
+  description = "Base number of tasks to create on Fargate on-demand"
+  type        = number
+  default     = 1
+}
+
+variable "cp_strategy_fg_weight" {
+  description = "Relative number of tasks to put in Fargate"
+  type        = number
+  default     = 1
+}
+
+variable "cp_strategy_fg_spot_weight" {
+  description = "Relative number of tasks to put in Fargate Spot"
+  type        = number
+  default     = 0
+}

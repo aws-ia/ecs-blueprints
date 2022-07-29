@@ -90,6 +90,24 @@ variable "log_retention_in_days" {
   default     = 7
 }
 
+variable "cp_strategy_base" {
+  description = "Base number of tasks to create on Fargate on-demand"
+  type        = number
+  default     = 1
+}
+
+variable "cp_strategy_fg_weight" {
+  description = "Relative number of tasks to put in Fargate"
+  type        = number
+  default     = 1
+}
+
+variable "cp_strategy_fg_spot_weight" {
+  description = "Relative number of tasks to put in Fargate Spot"
+  type        = number
+  default     = 0
+}
+
 ################################################################################
 # Task Definition
 ################################################################################
