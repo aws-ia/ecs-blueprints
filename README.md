@@ -1,13 +1,13 @@
 # Amazon ECS Solution Blueprints for Terraform
 Welcome to Amazon ECS Solution Blueprints for Terraform!
 
-When **new users** want to adopt containers to build, deploy, and run their applications, it often takes them several months to  learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or and host OS. With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**! 
+When **new users** want to adopt containers to build, deploy, and run their applications, it often takes them several months to  learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or and host OS. With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**!
 
-The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. With blueprints we aspire to codify best practices, well-designed architecture patterns, and provide end-to-end solutions addressing CI/CD, observability, security, and cost efficiency. 
+The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. With blueprints we aspire to codify best practices, well-designed architecture patterns, and provide end-to-end solutions addressing CI/CD, observability, security, and cost efficiency.
 
 We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
 
-## Prerequisites 
+## Prerequisites
 * You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to [Getting Started](#getting-started)
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
 * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
@@ -31,7 +31,7 @@ output = json
 region = us-west-2
 ```
 ## Quick Start
-* Fork this repository. 
+* Fork this repository.
 * Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
 * Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
 ```shell
@@ -50,7 +50,7 @@ terraform init
 cp terraform.tfvars.example terraform.tfvars
 
 vim terraform.tfvars
-# edit the region name in the terraform.tfvars to your region where you created the secret 
+# edit the region name in the terraform.tfvars to your region where you created the secret
 ```
 * Run terraform commands to deploy infrastructure
 ```shell
@@ -61,7 +61,7 @@ terraform apply --auto-approve
 ```shell
 cd ../lb-service
 cp terraform.tfvars.example terraform.tfvars
-vim terraform.tfvars 
+vim terraform.tfvars
 # change the repository owner to your repo owner name and set aws region to ECS cluster region
 ```
 * Deploy the load balanced service and CI/CD pipeline
