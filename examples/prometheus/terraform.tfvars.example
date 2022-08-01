@@ -24,9 +24,7 @@ sidecar_container_definitions = [
     {
         container_name = "aws-otel-collector",
         container_image = "public.ecr.aws/aws-observability/aws-otel-collector:latest",
-        "map_secrets": [{
-            "name":"AOT_CONFIG_CONTENT",
-            "valueFrom": "otel-collector-config"
-        }]
+        map_secrets = { "AOT_CONFIG_CONTENT":"otel-collector-config"},
+        map_environment = {"PROMETHEUS_SAMPLE_APP":"prometheus-sample-app:8080"}
     }
 ]
