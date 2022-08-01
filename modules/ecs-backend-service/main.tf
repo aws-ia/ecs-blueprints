@@ -1,3 +1,17 @@
+locals {
+  main_app_container = {
+    image : var.image,
+    name : var.container_name,
+    networkMode : "awsvpc",
+    portMappings : [
+      {
+        protocol : "tcp",
+        containerPort : var.container_port,
+        hostPort : var.container_port
+      }
+    ]
+  }
+}
 data "aws_region" "current" {}
 
 ################################################################################
@@ -58,6 +72,30 @@ resource "aws_ecs_service" "this" {
 ################################################################################
 # Task Definition
 ################################################################################
+module "task_sidecar_containers" {
+  source = "../ecs-container-definition"
+  count  = length(var.sidecar_container_definitions)
+
+  container_name  = var.sidecar_container_definitions[count.index]["container_name"]
+  container_image = var.sidecar_container_definitions[count.index]["container_image"]
+  essential              = lookup(var.sidecar_container_definitions[count.index], "essential", true)
+  port_mappings          = lookup(var.sidecar_container_definitions[count.index], "port_mappings", []) 
+  healthcheck            = lookup(var.sidecar_container_definitions[count.index], "healthcheck", null)
+  container_memory       = lookup(var.sidecar_container_definitions[count.index], "container_memory", null)
+  container_memory_reservation =  lookup(var.sidecar_container_definitions[count.index], "container_memory_reservation", null)
+  container_cpu = lookup(var.sidecar_container_definitions[count.index], "container_cpu", 0)
+  environment_files = lookup(var.sidecar_container_definitions[count.index], "environment_files", null)
+  map_secrets = lookup(var.sidecar_container_definitions[count.index], "map_secrets", null)
+  map_environment = lookup(var.sidecar_container_definitions[count.index], "map_environment", null)
+  log_configuration = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : aws_cloudwatch_log_group.this.name,
+      awslogs-stream-prefix : "ecs"
+    }
+  }
+}
 
 resource "aws_ecs_task_definition" "this" {
   family                   = var.name
@@ -68,30 +106,38 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = aws_iam_role.task.arn
 
-  container_definitions = jsonencode([
-    {
-      cpu : var.cpu,
-      memory : var.memory,
-      image : var.image,
-      name : var.container_name,
-      networkMode : "awsvpc",
-      portMappings : [
-        {
-          protocol : "tcp",
-          containerPort : var.container_port,
-          hostPort : var.container_port
+  container_definitions = jsonencode(
+    concat(
+      [{
+        # below would set reservation to be same
+        # as task cpu and memory which is not what we want
+        # since it can potentially starve other containers in the task
+        # the container level reservations should be sent in the container definition
+        # no reservations for now 
+        #      cpu : var.cpu,
+        #      memory : var.memory,
+
+        image : var.image,
+        name : var.container_name,
+        portMappings : [
+          {
+            protocol : "tcp",
+            containerPort : var.container_port,
+            hostPort : var.container_port
+          }
+        ],
+        logConfiguration : {
+          logDriver : "awslogs",
+          options : {
+            awslogs-region : data.aws_region.current.name,
+            awslogs-group : aws_cloudwatch_log_group.this.name,
+            awslogs-stream-prefix : "ecs"
+          }
         }
-      ],
-      logConfiguration : {
-        logDriver : "awslogs",
-        options : {
-          awslogs-region : data.aws_region.current.name,
-          awslogs-group : aws_cloudwatch_log_group.this.name,
-          awslogs-stream-prefix : "ecs"
-        }
-      }
-    }
-  ])
+      }],
+      [for sc in module.task_sidecar_containers: sc.json_map_object]
+    )
+  )
 
   tags = var.tags
 }

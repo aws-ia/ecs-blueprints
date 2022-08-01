@@ -130,16 +130,16 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy = false
-  container_name          = var.container_name
-  container_port          = var.container_port
-  cpu                     = var.task_cpu
-  memory                  = var.task_memory
-  image                   = module.container_image_ecr.repository_url
-  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
-
-  enable_execute_command = true
-  tags                   = local.tags
+  attach_task_role_policy       = false
+  container_name                = var.container_name
+  container_port                = var.container_port
+  cpu                           = var.task_cpu
+  memory                        = var.task_memory
+  image                         = module.container_image_ecr.repository_url
+  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  sidecar_container_definitions = var.sidecar_container_definitions
+  enable_execute_command        = true
+  tags                          = local.tags
 }
 
 ################################################################################

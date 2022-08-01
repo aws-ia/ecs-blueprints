@@ -23,7 +23,7 @@ variable "vpc_tag_value" {
 }
 
 variable "private_subnets_tag_value" {
-  # if left blank then {core_stack_name}-private- will be used
+  # if left blank then {core_stack_name}-public- will be used
   description = "The value tag of the private subnets"
   type        = string
   default     = ""
@@ -38,46 +38,11 @@ variable "ecs_cluster_name" {
 
 variable "ecs_task_execution_role_name" {
   # if left blank then {core_stack_name}-execution will be used
-  description = "The ARN of the task execution role"
+  description = "The name of the task execution role"
   type        = string
   default     = ""
 }
 
-# Application variables
-variable "buildspec_path" {
-  description = "The location of the buildspec file"
-  type        = string
-  default     = "./application-code/ecsdemo-nodejs/templates/buildspec.yml"
-}
-
-variable "folder_path" {
-  description = "The location of the application code and Dockerfile files"
-  type        = string
-  default     = "./application-code/ecsdemo-nodejs/."
-}
-
-variable "repository_owner" {
-  description = "The name of the owner of the Github repository"
-  type        = string
-}
-
-variable "repository_name" {
-  description = "The name of the Github repository"
-  type        = string
-  default     = "terraform-aws-ecs-blueprints"
-}
-
-variable "repository_branch" {
-  description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
-  type        = string
-  default     = "main"
-}
-
-variable "github_token_secret_name" {
-  description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
-  type        = string
-  default     = "ecs-github-token"
-}
 
 ################################################################################
 # Servie definition parameters
@@ -115,6 +80,11 @@ variable "task_memory" {
   type        = string
 }
 
+variable "ecs_task_role" {
+  description = "The name of the task IAM role"
+  type        = string
+  default     = ""
+}
 
 ################################################################################
 # Container definition used in task
@@ -123,13 +93,16 @@ variable "task_memory" {
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
-  default     = "ecsdemo-nodejs"
 }
 
 variable "container_port" {
   description = "The container port to serve traffic"
   type        = number
-  default     = 3000
+}
+
+variable "container_image" {
+  description = "The image repository url"
+  type        = string
 }
 
 # Provide a list of map objects 
