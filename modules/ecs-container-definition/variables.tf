@@ -170,21 +170,21 @@ variable "log_configuration" {
 }
 
 # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html
-variable "firelens_configuration" {
-  type = object({
-    type    = string
-    options = map(string)
-  })
-  description = "The FireLens configuration for the container. This is used to specify and configure a log router for container logs. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html"
-  default     = null
-}
+# variable "firelens_configuration" {
+#   type = object({
+#     type    = string
+#     options = map(string)
+#   })
+#   description = "The FireLens configuration for the container. This is used to specify and configure a log router for container logs. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html"
+#   default     = null
+# }
 
-variable "mount_points" {
-  type = list(any)
+# variable "mount_points" {
+#   type = list(any)
 
-  description = "Container mount points. This is a list of maps, where each map should contain a `containerPath` and `sourceVolume`. The `readOnly` key is optional."
-  default     = []
-}
+#   description = "Container mount points. This is a list of maps, where each map should contain a `containerPath` and `sourceVolume`. The `readOnly` key is optional."
+#   default     = []
+# }
 
 variable "dns_servers" {
   type        = list(string)
@@ -229,11 +229,11 @@ variable "links" {
   default     = null
 }
 
-variable "user" {
-  type        = string
-  description = "The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set."
-  default     = null
-}
+# variable "user" {
+#   type        = string
+#   description = "The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set."
+#   default     = null
+# }
 
 variable "container_depends_on" {
   type = list(object({

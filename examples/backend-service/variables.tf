@@ -132,20 +132,21 @@ variable "container_port" {
   default     = 3000
 }
 
-# Provide a list of map objects 
+# Provide a list of map objects
 # Each map object has container definition parameters
 # The required parameters are container_name, container_image, port_mappings
-# [ 
+# [
 #  {
-#    "container_name":"monitoring-agent", 
+#    "container_name":"monitoring-agent",
 #    "container_image": "img-repo-url"},
-#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}] 
+#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
 #  }
 # ]
 # see modules/ecs-container-definition for full set of parameters
 # map_environment and map_secrets are common to add in container definition
 variable "sidecar_container_definitions" {
   description = "List of container definitions to add to the task"
+  type        = list(any)
   default     = []
 }
 

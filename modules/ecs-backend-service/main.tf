@@ -1,17 +1,3 @@
-locals {
-  main_app_container = {
-    image : var.image,
-    name : var.container_name,
-    networkMode : "awsvpc",
-    portMappings : [
-      {
-        protocol : "tcp",
-        containerPort : var.container_port,
-        hostPort : var.container_port
-      }
-    ]
-  }
-}
 data "aws_region" "current" {}
 
 ################################################################################
@@ -76,17 +62,17 @@ module "task_sidecar_containers" {
   source = "../ecs-container-definition"
   count  = length(var.sidecar_container_definitions)
 
-  container_name  = var.sidecar_container_definitions[count.index]["container_name"]
-  container_image = var.sidecar_container_definitions[count.index]["container_image"]
-  essential              = lookup(var.sidecar_container_definitions[count.index], "essential", true)
-  port_mappings          = lookup(var.sidecar_container_definitions[count.index], "port_mappings", []) 
-  healthcheck            = lookup(var.sidecar_container_definitions[count.index], "healthcheck", null)
-  container_memory       = lookup(var.sidecar_container_definitions[count.index], "container_memory", null)
-  container_memory_reservation =  lookup(var.sidecar_container_definitions[count.index], "container_memory_reservation", null)
-  container_cpu = lookup(var.sidecar_container_definitions[count.index], "container_cpu", 0)
-  environment_files = lookup(var.sidecar_container_definitions[count.index], "environment_files", null)
-  map_secrets = lookup(var.sidecar_container_definitions[count.index], "map_secrets", null)
-  map_environment = lookup(var.sidecar_container_definitions[count.index], "map_environment", null)
+  container_name               = var.sidecar_container_definitions[count.index]["container_name"]
+  container_image              = var.sidecar_container_definitions[count.index]["container_image"]
+  essential                    = lookup(var.sidecar_container_definitions[count.index], "essential", true)
+  port_mappings                = lookup(var.sidecar_container_definitions[count.index], "port_mappings", [])
+  healthcheck                  = lookup(var.sidecar_container_definitions[count.index], "healthcheck", null)
+  container_memory             = lookup(var.sidecar_container_definitions[count.index], "container_memory", null)
+  container_memory_reservation = lookup(var.sidecar_container_definitions[count.index], "container_memory_reservation", null)
+  container_cpu                = lookup(var.sidecar_container_definitions[count.index], "container_cpu", 0)
+  environment_files            = lookup(var.sidecar_container_definitions[count.index], "environment_files", null)
+  map_secrets                  = lookup(var.sidecar_container_definitions[count.index], "map_secrets", null)
+  map_environment              = lookup(var.sidecar_container_definitions[count.index], "map_environment", null)
   log_configuration = {
     logDriver : "awslogs",
     options : {
@@ -113,7 +99,7 @@ resource "aws_ecs_task_definition" "this" {
         # as task cpu and memory which is not what we want
         # since it can potentially starve other containers in the task
         # the container level reservations should be sent in the container definition
-        # no reservations for now 
+        # no reservations for now
         #      cpu : var.cpu,
         #      memory : var.memory,
 
@@ -135,7 +121,7 @@ resource "aws_ecs_task_definition" "this" {
           }
         }
       }],
-      [for sc in module.task_sidecar_containers: sc.json_map_object]
+      [for sc in module.task_sidecar_containers : sc.json_map_object]
     )
   )
 

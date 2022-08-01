@@ -2,7 +2,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-data "aws_caller_identity" "current" {}
+# data "aws_caller_identity" "current" {}
 
 locals {
 
@@ -11,7 +11,7 @@ locals {
   name = var.service_name
 
   tags = {
-    Blueprint  = local.name
+    Blueprint = local.name
   }
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value

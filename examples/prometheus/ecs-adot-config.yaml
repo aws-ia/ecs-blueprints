@@ -40,7 +40,7 @@ extensions:
     endpoint: :1888
   zpages:
     endpoint: :55679
-    
+
 service:
   extensions: [pprof, zpages, health_check]
   pipelines:

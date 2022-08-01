@@ -27,13 +27,13 @@ locals {
     }
   ]
 
-  mount_points = length(var.mount_points) > 0 ? [
-    for mount_point in var.mount_points : {
-      containerPath = lookup(mount_point, "containerPath")
-      sourceVolume  = lookup(mount_point, "sourceVolume")
-      readOnly      = tobool(lookup(mount_point, "readOnly", false))
-    }
-  ] : var.mount_points
+  # mount_points = length(var.mount_points) > 0 ? [
+  #   for mount_point in var.mount_points : {
+  #     containerPath = lookup(mount_point, "containerPath")
+  #     sourceVolume  = lookup(mount_point, "sourceVolume")
+  #     readOnly      = tobool(lookup(mount_point, "readOnly", false))
+  #   }
+  # ] : var.mount_points
 
   # https://www.terraform.io/docs/configuration/expressions.html#null
   final_environment_vars = length(local.sorted_environment_vars) > 0 ? local.sorted_environment_vars : null
