@@ -133,7 +133,7 @@ resource "aws_ecs_task_definition" "this" {
       }],
       [for sc in module.task_sidecar_containers : sc.json_map_object]
     )
-  ) 
+  )
 
   tags = var.tags
 }
