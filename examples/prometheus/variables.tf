@@ -145,3 +145,13 @@ variable "cp_strategy_fg_spot_weight" {
   type        = number
   default     = 0
 }
+
+################################################################################
+# SSM Parameter name to store ADOT config yaml
+################################################################################
+
+variable "adot_config_ssm_parameter" {
+  description = "SSM Parameter name to store adot config yaml"
+  type = string
+  default = "otel-collector-config"
+}

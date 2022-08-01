@@ -159,3 +159,13 @@ data "aws_iam_policy_document" "task_role" {
     resources = ["*"]
   }
 }
+
+################################################################################
+# SSM Paramter Store for ADOT Config YAML
+################################################################################
+
+resource "aws_ssm_parameter" "adot_config_ssm_parameter" {
+  name  = var.adot_config_ssm_parameter
+  type  = "String"
+  value = file("./ecs-adot-config.yaml")
+}
