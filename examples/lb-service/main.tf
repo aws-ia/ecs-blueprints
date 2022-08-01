@@ -208,6 +208,7 @@ module "ecs_service_definition" {
   cpu                     = var.task_cpu
   memory                  = var.task_memory
   image                   = module.container_image_ecr.repository_url
+  sidecar_container_definitions = var.sidecar_container_definitions
   execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
   tags = local.tags
