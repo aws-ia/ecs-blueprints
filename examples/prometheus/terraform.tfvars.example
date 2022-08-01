@@ -18,7 +18,7 @@ ecs_task_role = "AWSOTaskRole"
 container_name  = "prometheus-sample-app"
 container_image = "public.ecr.aws/aws-otel-test/prometheus-sample-app:latest"
 container_port = 8080
-
+adot_config_ssm_parameter = "otel-collector-config"
 
 sidecar_container_definitions = [ 
     {
