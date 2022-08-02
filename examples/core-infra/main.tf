@@ -111,9 +111,3 @@ data "aws_iam_policy_document" "execution" {
     }
   }
 }
-
-# resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
-#    count = length(local.task_execution_role_managed_policy_arn)
-#    role       = aws_iam_role.execution.name
-#    policy_arn = local.task_execution_role_managed_policy_arn[count.index]
-# }
