@@ -28,7 +28,7 @@ In the left panel, find the `+` icon and create a `Dashboard`. In the create das
 
 ### Solution Details
 The following are important aspects to note in the solution:
-* The OpenTelemetry agent is running as sidecar along with the application container. That is they are both part of the same Fargate task.
+* The OpenTelemetry agent is running as sidecar along with the application container. They are both part of the same Fargate task.
 * The OpenTelemetry agent configuration has two aspects
     * The configuration YAML which has all the details for scraping and sending the metrics including the AMP workspace and region that was set above. This YAML is stored in the AWS Systems Manager Parameter Store (`adot_config_ssm_parameter = "otel-collector-config"`). When OpenTelemetry container is started, ECS fetches the value from the parameter store and assigns to the environment variable `AOT_CONFIG_CONTENT` (defined in the `map_secrets` input variable in `terraform.tfvars`).
     * The application container name and port to scrape for custom metrics are provided in the `map_environment={"PROMETHEUS_SAMPLE_APP":"prometheus-sample-app:8080"}` input variable instructing OpenTelemetry agent to scrape from port 8080 for the `prometheus-sample-app` container.
