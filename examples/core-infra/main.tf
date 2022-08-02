@@ -16,6 +16,8 @@ locals {
     Blueprint  = local.name
     GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
   }
+  task_execution_role_managed_policy_arn = ["arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
+  "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
 }
 
 ################################################################################
@@ -94,10 +96,10 @@ resource "aws_service_discovery_private_dns_namespace" "sd_namespaces" {
 ################################################################################
 
 resource "aws_iam_role" "execution" {
-  name               = "${local.name}-execution"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
-
-  tags = local.tags
+  name                = "${local.name}-execution"
+  assume_role_policy  = data.aws_iam_policy_document.execution.json
+  managed_policy_arns = local.task_execution_role_managed_policy_arn
+  tags                = local.tags
 }
 
 data "aws_iam_policy_document" "execution" {
@@ -110,7 +112,8 @@ data "aws_iam_policy_document" "execution" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "execution" {
-  role       = aws_iam_role.execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
+# resource "aws_iam_role_policy_attachment" "ecs_task_execution" {
+#    count = length(local.task_execution_role_managed_policy_arn)
+#    role       = aws_iam_role.execution.name
+#    policy_arn = local.task_execution_role_managed_policy_arn[count.index]
+# }

@@ -4,7 +4,7 @@
 In this ECS Solution Blueprint, we will use AWS OpenTelemetry agent to collect both custom application metrics and infrastructure metrics (CPU, memory, etc.), send them to Amazon Managed Prometheus, and visualize them using Amazon Managed Grafana. This solution is based on the [Getting Started Guide for OTEL and AMP for ECS](https://aws-otel.github.io/docs/getting-started/prometheus-remote-write-exporter/ecs).
 
 ### Prerequisites
-Follow the [AMP](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-getting-started.html) and [AMG] (https://docs.aws.amazon.com/grafana/latest/userguide/getting-started-with-AMG.html) documentation to setup prometheus and grafana workspace respectively. The AMP workspace creation is a simple one step process. The AMG workspace requires a mechanism to authenticate users for accessing Grafana dashboard. You can set this up using AWS SSO or SAML based federated authentication.
+Follow the [AMP](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-getting-started.html) and [AMG](https://docs.aws.amazon.com/grafana/latest/userguide/getting-started-with-AMG.html) documentation to setup prometheus and grafana workspace respectively. The AMP workspace creation is a simple one step process. The AMG workspace requires a mechanism to authenticate users for accessing Grafana dashboard. You can set this up using AWS SSO or SAML based federated authentication.
 
 ### Getting Started
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
