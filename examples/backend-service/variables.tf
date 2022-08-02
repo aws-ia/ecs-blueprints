@@ -79,6 +79,10 @@ variable "github_token_secret_name" {
   default     = "ecs-github-token"
 }
 
+################################################################################
+# Servie definition parameters
+################################################################################
+
 # application related input parameters
 variable "service_name" {
   description = "The service name"
@@ -98,6 +102,24 @@ variable "desired_count" {
   default     = 1
 }
 
+################################################################################
+# Task definition parameters
+################################################################################
+variable "task_cpu" {
+  description = "The task vCPU size"
+  type        = number
+}
+
+variable "task_memory" {
+  description = "The task memory size"
+  type        = string
+}
+
+
+################################################################################
+# Container definition used in task
+################################################################################
+
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
@@ -110,19 +132,29 @@ variable "container_port" {
   default     = 3000
 }
 
-variable "task_cpu" {
-  description = "The task vCPU size"
-  type        = number
+# Provide a list of map objects
+# Each map object has container definition parameters
+# The required parameters are container_name, container_image, port_mappings
+# [
+#  {
+#    "container_name":"monitoring-agent",
+#    "container_image": "img-repo-url"},
+#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
+#  }
+# ]
+# see modules/ecs-container-definition for full set of parameters
+# map_environment and map_secrets are common to add in container definition
+variable "sidecar_container_definitions" {
+  description = "List of container definitions to add to the task"
+  type        = list(any)
+  default     = []
 }
 
-variable "task_memory" {
-  description = "The task memory size"
-  type        = string
-}
-
+################################################################################
 # Capacity provider strategy setting
 # to distribute tasks between Fargate
 # Fargate Spot
+################################################################################
 
 variable "cp_strategy_base" {
   description = "Base number of tasks to create on Fargate on-demand"
