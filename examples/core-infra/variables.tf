@@ -20,3 +20,10 @@ variable "namespaces" {
   type        = list(string)
   default     = ["default", "myapp"]
 }
+
+variable "enable_nat_gw" {
+  description = "Provision a NAT Gateway in the VPC"
+  type        = bool
+  default     = true
+
+}
