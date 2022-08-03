@@ -7,9 +7,7 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 
-    ```shell
-    An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.
-    ```
+    ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
   * Again, once this is created, you will not have to complete these steps for the other examples.  
