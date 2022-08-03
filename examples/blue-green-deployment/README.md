@@ -35,7 +35,6 @@ The AWS resources created by the script are detailed bellow:
     - 1 S3 Bucket (used to store assets accessible from within the application)
     - 1 Dynamodb table (used by the application)
 - ECS Infrastructure
-    - 1 ECS Cluster
     - 2 ECS Services
     - 2 Task definitions
     - IAM roles
@@ -99,22 +98,30 @@ aws secretsmanager create-secret \
     --secret-string "ghp_XXXXXXXXXXXXXXXXXXXXXXXXX"
 ```
 
-**4.** Run Terraform init to download the providers and install the modules
+**4.** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
+  * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
+
+    ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
+  *  If you receive the error above, please create the service-linked role with the `aws cli` below.
+  * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
+  * Again, once this is created, you will not have to complete these steps for the other examples. 
+  
+**5.** Run Terraform init to download the providers and install the modules
 
 ```shell
 terraform init
 ```
 
-**5.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
+**6.** Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 
 ```shell
 terraform plan
 terraform apply
 ```
 
-**6.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
+**7.** Once Terraform finishes the deployment open the AWS Management Console and go to the AWS CodePipeline service. You will see that the pipeline, which was created by this Terraform code, is in progress. Add some files and Dynamodb items as mentioned [here](#client-considerations-due-to-demo-proposals). Once the pipeline finished successfully and the before assets were added, go back to the console where Terraform was executed, copy the *application_url* value from the output and open it in a browser.
 
-**7.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
+**8.** In order to access the also implemented Swagger endpoint copy the *swagger_endpoint* value from the Terraform output and open it in a browser.
 
 ### Notifications
 

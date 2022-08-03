@@ -9,6 +9,13 @@ Follow the [AMP](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-get
 ### Getting Started
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
+* **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
+  * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
+
+    ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
+  *  If you receive the error above, please create the service-linked role with the `aws cli` below.
+  * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
+  * Again, once this is created, you will not have to complete these steps for the other examples. 
 * From the previously created AMP workspace, copy the remote-write endpoint. It will have this form, `https://aps-workspaces.<region>.amazonaws.com/workspaces/<workspace-id>/api/v1/remote_write`.
 * Open the `ecs-adot-config.yaml` in this folder, and change the `AMP_REMOTE_WRITE_ENDPOINT` with above URL and change the REGION to region of AMP workspace.
 * Now you can deploy this blueprint

@@ -11,7 +11,12 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
   * Again, once this is created, you will not have to complete these steps for the other examples.  
-* Deploy the terraform templates in this repository using `terraform init` and `terraform apply`
+* Now you can deploy this blueprint
+```shell
+terraform init
+terraform plan
+terraform apply -auto-approve
+```
 
 <p align="center">
   <img src="../../docs/lb-service.png"/>
