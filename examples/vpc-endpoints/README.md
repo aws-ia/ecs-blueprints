@@ -1,6 +1,6 @@
 # VPC Endpoints
 
-This solution blueprint creates VPC Endpoints for S3, ECS, ECR, Secrets Manager, Systems Manager, There are two steps to deploying this blueprint:
+This solution blueprint creates VPC Endpoints for S3, ECS, ECR, Secrets Manager, and Systems Manager, CloudWatch. There are two steps to deploying this blueprint:
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
   * **NOTE:** If you would like to disable the NAT Gateway, change `enable_nat_gw = true` in `core-infra` [variables.tf](../core-infra/variables.tf). Please ensure that this solution blueprint deploys successfuly prior to disabling the NAT Gateway in `core-infra`.
