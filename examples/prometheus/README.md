@@ -15,7 +15,7 @@ Follow the [AMP](https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-get
     ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
-  * Again, once this is created, you will not have to complete these steps for the other examples. 
+  * Again, once this is created, you will not have to complete these steps for the other examples.
 * From the previously created AMP workspace, copy the remote-write endpoint. It will have this form, `https://aps-workspaces.<region>.amazonaws.com/workspaces/<workspace-id>/api/v1/remote_write`.
 * Open the `ecs-adot-config.yaml` in this folder, and change the `AMP_REMOTE_WRITE_ENDPOINT` with above URL and change the REGION to region of AMP workspace.
 * Now you can deploy this blueprint

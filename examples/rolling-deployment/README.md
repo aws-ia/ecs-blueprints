@@ -105,7 +105,7 @@ aws secretsmanager create-secret \
     ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
-  * Again, once this is created, you will not have to complete these steps for the other examples. 
+  * Again, once this is created, you will not have to complete these steps for the other examples.
 
 **5.** Run Terraform init to download the providers and install the modules
 

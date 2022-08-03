@@ -10,7 +10,7 @@ This solution blueprint creates a backend servie that **does not** sit behind a 
     ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
-  * Again, once this is created, you will not have to complete these steps for the other examples. 
+  * Again, once this is created, you will not have to complete these steps for the other examples.
 * Now you can deploy this blueprint
 ```shell
 terraform init
