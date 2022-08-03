@@ -1,5 +1,14 @@
 # VPC Endpoints
 
+This solution blueprint creates VPC Endpoints for S3, ECS, ECR, Secrets Manager, Systems Manager, There are two steps to deploying this blueprint:
+
+* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
+  * **NOTE:** If you would like to disable the NAT Gateway, change `enable_nat_gw = true` in `core-infra` [variables.tf](../core-infra/variables.tf). Please ensure that this solution blueprint deploys successfuly prior to disabling the NAT Gateway in `core-infra`.
+* Deploy the terraform templates in this repository using `terraform init` and `terraform apply`
+
+
+VPC Endpoints optimize the network path by avoiding traffic to internet gateways and incurring cost associated with NAT gateways, NAT instances, or maintaining firewalls. VPC Endpoints also provide you with much finer control over how users and applications access AWS services. VPC Endpoints prevent sensitive data from traversing the Internet, which helps you maintain compliance with regulations such as HIPAA, EU/US Privacy Shield, and PCI.
+
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
