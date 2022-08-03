@@ -35,7 +35,6 @@ The AWS resources created by the script are detailed bellow:
     - 1 S3 Bucket (used to store assets accessible from within the application)
     - 1 Dynamodb table (used by the application)
 - ECS Infrastructure
-    - 1 ECS Cluster
     - 2 ECS Services
     - 2 Task definitions
     - IAM roles
