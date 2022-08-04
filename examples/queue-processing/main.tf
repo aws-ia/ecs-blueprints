@@ -156,7 +156,7 @@ module "lambda_function" {
   publish       = true
 
   # create_package         = false
-  source_path = "./src/lambda-function-trigger"
+  source_path = "./application-code/lambda-function-trigger/"
 
   environment_variables = {
 

@@ -70,7 +70,7 @@ variable "repository_name" {
 variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
-  default     = "main"
+  default     = "queue-example"
 }
 
 variable "github_token_secret_name" {
@@ -87,7 +87,7 @@ variable "github_token_secret_name" {
 variable "service_name" {
   description = "The service name"
   type        = string
-  default     = "ecsdemo-backend"
+  default     = "ecs-queue-proc"
 }
 
 variable "namespace" {
@@ -123,7 +123,7 @@ variable "task_memory" {
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
-  default     = "ecsdemo-nodejs"
+  default     = "ecs-queue-proc"
 }
 
 variable "container_port" {
