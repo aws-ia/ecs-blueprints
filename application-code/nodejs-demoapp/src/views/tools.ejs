@@ -1,0 +1,44 @@
+<%- include('_head.ejs') %>
+
+<div class="card text-white bg-secondary">
+  <div class="card-header bg-info h3">
+    <i class="fa fa-tools"></i>
+    &nbsp; Tools & Debug
+  </div>
+
+  <% if(typeof message !== "undefined" && message) { %>
+  <div
+    class="alert alert-light alert-dismissible text-dark m-2"
+    role="alert"
+    data-bs-dismiss="alert"
+    aria-label="Close"
+  >
+    <h4><%= message %></h4>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <% } %>
+
+  <div class="card-body h5">
+    <div class="m-2">
+      <a class="btn btn-primary btn-lg w-25" href="/tools/load">CPU Load</a>
+      &nbsp; Generate forced CPU load
+    </div>
+
+    <div class="m-2">
+      <a class="btn btn-primary btn-lg w-25" href="/tools/error">Exception</a>
+      &nbsp; Will trigger a runtime exception
+    </div>
+
+    <div class="m-2">
+      <a class="btn btn-primary btn-lg w-25" href="/pagemissing">404 Page</a>
+      &nbsp; Trigger a 404
+    </div>
+
+    <div class="m-2">
+      <a class="btn btn-primary btn-lg w-25" href="/tools/gc">Garbage Collect</a>
+      &nbsp; Force garbage collector to run
+    </div>
+  </div>
+</div>
+
+<%- include('_foot.ejs') %>

@@ -1,0 +1,99 @@
+<%- include('_head.ejs') %>
+
+<div class="card text-white bg-secondary">
+  <div class="card-header bg-info h3"><i class="fas fa-question-circle"></i> &nbsp; System Runtime Information</div>
+  <div class="card-body">
+    <table class="table table-striped h5">
+      <tr>
+        <td><i class="fa fa-cube"></i></td>
+        <td>Containerized</td>
+        <% if (isContainer) { %>
+          <td>Looks like we're running in a container! 😁</td>
+        <% } else { %>
+          <td>Not running as a container 😢</td>
+        <% } %>
+      </tr>
+
+      <tr>
+        <td><i class="fa fa-project-diagram"></i></td>
+        <td>Kubernetes</td>
+        <% if (isKube) { %>
+          <td>We're also running in a Kubernetes pod! 😃</td>
+        <% } else { %>
+          <td>Not running in Kubernetes 😢</td>
+        <% } %>
+      </tr>
+
+      <tr>
+        <td><i class="fa fa-home"></i></td>
+        <td>Hostname</td>
+        <td><%= info.hostname %></td>
+      </tr>
+      <tr>
+        <td><i class="fa fa-clock"></i></td>
+        <td>System Uptime</td>
+        <td><%= info.uptime %></td>
+      </tr>
+      <tr>
+        <td><i class="fas fa-laptop"></i></td>
+        <td>OS Version</td>
+        <td><%= info.type %> - <%= info.release %></td>
+      </tr>
+      <tr>
+        <td><i class="fa fa-wrench"></i></td>
+        <td>Architecture</td>
+        <td><%= info.arch %></td>
+      </tr>
+      <tr>
+        <td><i class="fa fa-microchip"></i></td>
+        <td>Processors</td>
+        <td><%= info.cpus.length%> &times; <%= info.cpus[0].model %></td>
+      </tr>
+      <tr>
+        <td><i class="fas fa-memory"></i></td>
+        <td>Memory</td>
+        <td><%= info.mem %> MB</td>
+      </tr>
+      <tr>
+        <td><i class="fab fa-codepen"></i></td>
+        <td>Node Version</td>
+        <td><%= info.nodever %></td>
+      </tr>
+      <% if (process.env.RELEASE_INFO) { %>
+        <tr>
+          <td><i class="fa fa-window-restore"></i></td>
+          <td>Release Info</td>
+          <td><%= process.env.RELEASE_INFO %></td>
+        </tr>
+      <% } %>
+    </table>
+  </div>
+</div>
+
+<br />
+
+<div class="card text-white bg-secondary">
+  <div class="card-header bg-info h3"><i class="fa fa-sitemap"></i> &nbsp; Server Environmental Variables</div>
+  <div class="card-body">
+    <div class="envtable">
+      <table class="table table-hover">
+        <% for(let envVar in process.env) { %> 
+          <% if (envVar.toUpperCase().includes('SECRET')) continue %> 
+          <% if (envVar.toUpperCase().includes('PWD')) continue %> 
+          <% if (envVar.toUpperCase().includes('PASSWORD')) continue %>
+          <% if (envVar.toUpperCase().includes('KEY')) continue %> 
+          <% if (envVar.toUpperCase().includes('CONNSTR')) continue %> 
+          <% if (envVar.toUpperCase().includes('PATH')) continue %> 
+          <% if (envVar.toUpperCase().includes('NPM_')) continue %> 
+          <% if (envVar.toUpperCase().includes('NPM_')) continue %>
+          <tr>
+            <td><%= envVar %></td>
+            <td class="envvars"><%= process.env[envVar] %></td>
+          </tr>
+        <% } %>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('_foot.ejs') %>

@@ -1,0 +1,79 @@
+<%- include('_head.ejs') %>
+
+<div class="card text-white bg-secondary">
+  <div class="card-header bg-info h3">
+    <i class="fa fa-user-cog"></i>
+    &nbsp; User Account
+  </div>
+  <div class="card-body h5">
+    <div class="d-flex float-end">
+      <a class="btn btn-info btn-lg mx-1" data-bs-toggle="modal" data-bs-target="#detailsModal">
+        <i class="fas fa-code"></i>
+        Debug
+      </a>
+      <a class="btn btn-danger btn-lg mx-1" href="/logout">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+    </div>
+
+    <h4 class="text-success">Basic Info</h4>
+    <table class="table table-striped">
+      <tr>
+        <td><b>Display Name: &nbsp;</b></td>
+        <td><%= user.account.name %></td>
+      </tr>
+      <tr>
+        <td><b>Username:</b></td>
+        <td><%= user.account.username %></td>
+      </tr>
+      <tr>
+        <td><b>Tenant ID:</b></td>
+        <td><%= user.account.tenantId %></td>
+      </tr>
+    </table>
+
+    <% if(photo) { %>
+    <hr />
+    <h4 class="text-success">Photo</h4>
+    <img src="data:image/png;base64,<%- photo %>" class="profile-photo" />
+    <% } %> <% if(details) { %>
+    <hr />
+    <h4 class="text-success">Microsoft Graph Details</h4>
+    <table class="table table-striped">
+      <!-- prettier-ignore -->
+      <% Object.keys(details).forEach(key => { 
+        if(!key.startsWith("@")) { 
+          let displayKey = key.replace(/([A-Z])/g, '$1') 
+          displayKey = displayKey.replace(/^./, str => { return str.toUpperCase() }) %>
+      <tr>
+        <td><b><%= displayKey %>: &nbsp;</b></td>
+        <td><%= details[key] %></td>
+      </tr>
+      <% } } ) %>
+    </table>
+    <% } %>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Raw JWT / Profile Object</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre class="code">
+<%- JSON.stringify(user, null, 2) %>
+        </pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('_foot.ejs') %>

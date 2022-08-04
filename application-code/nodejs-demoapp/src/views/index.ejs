@@ -1,0 +1,67 @@
+<%- include('_head.ejs') %>
+
+<div class="p-3 m-3 dark-translucent">
+  <h2 class="bg-primary p-3 rounded shadow">
+    <img src="images/node-icon.svg" height="90px" />
+    Node.js Demo App
+  </h2>
+
+  <div class="lead mt-4">
+    This is a simple Node.js web app using the Express framework and EJS templates. It has been designed with cloud
+    demos & containers in mind. Demonstrating capabilities such as auto scaling, deployment to AWS or Kubernetes, or
+    anytime you want something quick and lightweight to run & deploy 😄
+    <br />
+    <br />
+    Basic features:
+    <ul class="my-4 small">
+      <li>System status / information view</li>
+      <li>AWS X-Ray Support</li>
+      <li>Geolocated weather info (from OpenWeather API)</li>
+      <li>Tools for triggering errors and high CPU load</li>
+      <li>Mini todo app using MongoDB data store</li>
+      <li>Support for user authentication with Amazon Cognito</li>
+    </ul>
+  </div>
+
+  <div class="row">
+    <div class="col-md d-flex flex-column align-items-center pb-4">
+      <img src="images/octocat.png" height="80px" />
+      <a target="_blank" href="https://github.com/benc-uk/nodejs-demoapp" class="btn btn-info btn-lg mt-2">
+        Github Project
+      </a>
+    </div>
+    <div class="col-md d-flex flex-column align-items-center pb-4">
+      <img src="images/container.png" height="80px" />
+      <a
+        target="_blank"
+        href="https://github.com/benc-uk/nodejs-demoapp/pkgs/container/nodejs-demoapp"
+        class="btn btn-info btn-lg mt-2"
+      >
+        Container Images
+      </a>
+    </div>
+    <div class="col-md d-flex flex-column align-items-center pb-4">
+      <img src="images/get-started.svg" height="80px" />
+      <a
+        target="_blank"
+        href="https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html"
+        class="btn btn-info btn-lg mt-2"
+      >
+        Get Started
+      </a>
+    </div>
+
+    <div class="pt-5 h5">
+      <a
+        class="btn btn-sm btn-primary"
+        href="https://github.com/benc-uk/nodejs-demoapp/wiki/Containerized-Demo-Web-Apps"
+        target="_blank"
+      >
+        🚀 Demo Apps Collection
+      </a>
+      &mdash; For more demo apps in different languages &amp; frameworks
+    </div>
+  </div>
+</div>
+
+<%- include('_foot.ejs') %>

@@ -1,0 +1,30 @@
+<%- include('_head.ejs') %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js" integrity="sha256-R4pqcOYV8lt7snxMQO/HSbVCFRPMdrhAFMH+vr9giYI=" crossorigin="anonymous"></script>
+<script>
+  var chartCssLink = document.createElement("link");
+  chartCssLink.rel = "stylesheet";
+  chartCssLink.href = "https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.css";
+  document.head.appendChild(chartCssLink);
+</script>
+
+<div class="card mb-3">
+  <div class="card-header bg-info text-white h3"> <i class="fas fa-chart-line"></i> Realtime Monitor</div>
+  <div class="card-body">
+    <p class="card-text">
+      <!-- Used by chart.js -->
+      <canvas id="memChart" width="500" height="200"></canvas>
+      <hr/>
+      <!-- Used by chart.js -->
+      <canvas id="cpuChart" width="500" height="200"></canvas>
+    </p> 
+  </div>
+</div>
+
+<!-- Our main monitoring script for calling the API and displaying results -->
+<script src='js/monitoring.js'></script>
+<script>
+  window.addEventListener('load', startMonitoring);
+</script>
+
+<%- include('_foot.ejs') %>

@@ -1,0 +1,66 @@
+<%- include('_head.ejs') %>
+
+<div class="card text-white bg-secondary">
+  <div class="card-header h3 bg-info">
+    <i class="fas fa-clipboard-check"></i>
+    &nbsp; MongoDB - Todo
+  </div>
+  <div class="card-body">
+    <a class="btn btn-md btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#newModal" onClick="clearForm()">
+      <i class="fa fa-edit"></i>
+      NEW
+    </a>
+    <hr />
+    <table class="table table-dark table-striped table-hover todo">
+      <tbody id="todo-table">
+        <tr>
+          <th>Done</th>
+          <th>Title</th>
+          <th>Type</th>
+          <th>&nbsp;</th>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- new todo dialog -->
+<div class="modal fade" id="newModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content bg-primary text-white">
+      <div class="modal-header bg-info">
+        <h5 class="modal-title" id="exampleModalLabel">Create Todo Item</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="newTitle">Todo message:</label>
+          <textarea type="text" class="form-control" id="newTitle"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="newType">Todo type:</label>
+          <select class="form-control" id="newType">
+            <option>Reminder</option>
+            <option>Todo</option>
+            <option>Meeting</option>
+            <option>Idea</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer bg-primary">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal" onClick="addNewTodo()">Add Todo</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ##################################################################################### -->
+
+<script src="js/todo-client.js"></script>
+
+<script>
+  loadAllTodos()
+</script>
+
+<%- include('_foot.ejs') %>

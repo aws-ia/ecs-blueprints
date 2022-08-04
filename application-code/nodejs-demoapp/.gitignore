@@ -1,0 +1,11 @@
+node_modules/
+*.log
+.env
+src/test-*.xml
+src/test-*.json
+mochawesome-report/
+myvalues.yaml
+secrets.sh
+.secrets
+myparams.json
+.vscode/
