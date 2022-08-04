@@ -1,6 +1,6 @@
 # VPC Endpoints
 
-**CAUTION:** Do not use this VPC Endpoint Blueprint if you intend to pull container images from Public ECR repositories. This is not supported and is currently blocked by this [PR](https://github.com/aws/containers-roadmap/issues/1160).
+**CAUTION:** You will need to keep `enable_nat_gw = true` in `core-infra` [variables.tf](../core-infra/variables.tf) if you intend to pull container images from Public ECR repositories. This is not supported and is currently blocked by this [PR](https://github.com/aws/containers-roadmap/issues/1160).
 
 This solution blueprint creates VPC Endpoints for S3, ECS, ECR(Private Repositories only), Secrets Manager, and Systems Manager, CloudWatch. There are two steps to deploying this blueprint:
 
