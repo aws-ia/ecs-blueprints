@@ -13,6 +13,7 @@ phases:
       - IMAGE_TAG_FULL=$REPO_URL:$IMAGE_TAG
       - echo $IMAGE_TAG_FULL
       - MACHINE_TYPE=`uname -m`
+      - echo $MACHINE_TYPE
   build:
     commands:
       - echo Build started on `date`
