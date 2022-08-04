@@ -12,6 +12,7 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:=latest}
       - IMAGE_TAG_FULL=$REPO_URL:$IMAGE_TAG
       - echo $IMAGE_TAG_FULL
+      - MACHINE_TYPE=`uname -m`
   build:
     commands:
       - echo Build started on `date`
