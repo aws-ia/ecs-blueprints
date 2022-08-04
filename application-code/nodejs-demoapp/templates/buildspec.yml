@@ -14,6 +14,7 @@ phases:
       - echo $IMAGE_TAG_FULL
       - MACHINE_TYPE=`uname -m`
       - echo $MACHINE_TYPE
+      - touch $HOME/.docker/cli-plugins/docker-buildx
       - wget -O $HOME/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-amd64
       - chmod +x $HOME/.docker/cli-plugins/docker-buildx
   build:
