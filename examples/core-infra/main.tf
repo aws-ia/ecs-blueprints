@@ -98,7 +98,7 @@ resource "aws_service_discovery_private_dns_namespace" "sd_namespaces" {
 resource "aws_iam_role" "execution" {
   name                = "${local.name}-execution"
   assume_role_policy  = data.aws_iam_policy_document.execution.json
-  managed_policy_arns = local.task_execution_role_managed_policy_arn
+  # managed_policy_arns = local.task_execution_role_managed_policy_arn
   tags                = local.tags
 }
 
@@ -110,4 +110,11 @@ data "aws_iam_policy_document" "execution" {
       identifiers = ["ecs-tasks.amazonaws.com"]
     }
   }
+}
+
+resource "aws_iam_policy_attachment" "execution" {
+    count = length(local.task_execution_role_managed_policy_arn)
+    name = "${local.name}-execution-policy"
+    roles = [aws_iam_role.execution.name] 
+    policy_arn = local.task_execution_role_managed_policy_arn[count.index]
 }
