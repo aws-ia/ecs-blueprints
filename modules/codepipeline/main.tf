@@ -9,57 +9,25 @@ resource "aws_codepipeline" "this" {
     type     = "S3"
   }
 
-  stage {
-    name = "Source"
+  dynamic "stage" {
+    for_each = try(var.stage, [])
 
-    action {
-      name             = "Source"
-      category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
-      version          = "1"
-      output_artifacts = ["SourceArtifact"]
+    content {
+      name = stage.value.name
+      dynamic "action" {
+        for_each = try(stage.value.action, [])
 
-      configuration = {
-        OAuthToken           = var.github_token
-        Owner                = var.repo_owner
-        Repo                 = var.repo_name
-        Branch               = var.branch
-        PollForSourceChanges = true
+        content {
+          name             = action.value.name
+          category         = action.value.category
+          owner            = action.value.owner
+          provider         = action.value.provider
+          version          = try(action.value.version)
+          input_artifacts  = try(action.value.input_artifacts, [])
+          output_artifacts = try(action.value.output_artifacts, [])
+          configuration    = try(action.value.configuration, {})
+        }
       }
-    }
-  }
-
-  stage {
-    name = "Build"
-
-    action {
-      name             = "Build_app"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      version          = "1"
-      input_artifacts  = ["SourceArtifact"]
-      output_artifacts = ["BuildArtifact_app"]
-
-      configuration = {
-        ProjectName = var.codebuild_project_app
-      }
-    }
-  }
-
-  stage {
-    name = "Deploy"
-
-    action {
-      name            = "Deploy_app"
-      category        = "Deploy"
-      owner           = "AWS"
-      provider        = var.deploy_provider
-      input_artifacts = ["BuildArtifact_app"]
-      version         = "1"
-
-      configuration = var.app_deploy_configuration
     }
   }
 
