@@ -16,9 +16,9 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker buildx build -t $REPO_URL $FOLDER_PATH --file build/Dockerfile \
+      - docker buildx build --file build/Dockerfile \
 	      --platform $(PLATFORMS) \
-        --tag $(IMAGE_TAG_FULL)
+        --tag $(IMAGE_TAG_FULL) -t $REPO_URL $FOLDER_PATH 
   post_build:
     commands:
       - echo Build completed on `date`

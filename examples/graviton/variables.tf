@@ -53,13 +53,13 @@ variable "ecs_task_execution_role_name" {
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
-  default     = "./application-code/ecsdemo-frontend/templates/buildspec.yml"
+  default     = "./application-code/nodejs-demoapp/templates/buildspec.yml"
 }
 
 variable "folder_path" {
   description = "The location of the application code and Dockerfile files"
   type        = string
-  default     = "./application-code/ecsdemo-frontend/."
+  default     = "./application-code/nodejs-demoapp/."
 }
 
 variable "repository_owner" {
@@ -88,7 +88,7 @@ variable "github_token_secret_name" {
 variable "service_name" {
   description = "The service name"
   type        = string
-  default     = "ecsdemo-frontend"
+  default     = "nodejs-multi-arch"
 }
 
 variable "namespace" {
