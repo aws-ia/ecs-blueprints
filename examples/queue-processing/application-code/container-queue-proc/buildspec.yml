@@ -10,6 +10,7 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:=latest}
   build:
     commands:
+      - grep -n "queue =" ./examples/queue-processing/application-code/container-queue-proc/src/app.py
       - docker build -t $REPO_URL $FOLDER_PATH
   post_build:
     commands:
