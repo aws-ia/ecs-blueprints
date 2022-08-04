@@ -368,7 +368,7 @@ module "codebuild_ci" {
         value = var.folder_path
         }, {
         name  = "QUEUE_URL"
-        value = module.processing_queue.this_sqs_queue_arn
+        value = module.processing_queue.this_sqs_queue_name
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
