@@ -16,17 +16,14 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker buildx build --file build/Dockerfile \
-	      --platform $(PLATFORMS) \
-        --tag $(IMAGE_TAG_FULL) -t $REPO_URL $FOLDER_PATH 
+      - docker buildx build --file build/Dockerfile --platform $(PLATFORMS) --tag $(IMAGE_TAG_FULL) -t $REPO_URL $FOLDER_PATH 
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push $IMAGE_TAG_FULL
-      - docker manifest create $(IMAGE_TAG_FULL) \
-		    $(foreach suffix,$(IMAGE_SUFFIXES),$(IMAGE_TAG_FULL)-$(suffix))
-	    - docker manifest push $(IMAGE_TAG_FULL)
+      - docker manifest create $(IMAGE_TAG_FULL) $(foreach suffix,$(IMAGE_SUFFIXES),$(IMAGE_TAG_FULL)-$(suffix))
+      - docker manifest push $(IMAGE_TAG_FULL)
       - echo Preparing spec files in new folder
       - mkdir artifacts
       - cp application-code/ecsdemo-frontend/templates/imagedefinition.json artifacts/imagedefinition.json
