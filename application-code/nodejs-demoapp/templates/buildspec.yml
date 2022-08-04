@@ -3,7 +3,7 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - PLATFORMS ?= linux/arm64,linux/amd64
+      - PLATFORMS=linux/arm64,linux/amd64
       - echo $REPO_URL
       - REPOSITORY=${REPO_URL%/*}
       - echo Logging in to Amazon ECR...
