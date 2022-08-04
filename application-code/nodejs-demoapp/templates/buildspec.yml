@@ -10,24 +10,24 @@ phases:
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - IMAGE_TAG_FULL=$(REPO_URL):$(IMAGE_TAG)
+      - IMAGE_TAG_FULL=$REPO_URL:$IMAGE_TAG
       - echo $IMAGE_TAG_FULL
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker buildx build --file build/Dockerfile --platform $(PLATFORMS) --tag $(IMAGE_TAG_FULL) -t $REPO_URL $FOLDER_PATH
+      - docker buildx build --file build/Dockerfile --platform $PLATFORMS --tag $IMAGE_TAG_FULL -t $REPO_URL $FOLDER_PATH
       - export DOCKER_CLI_EXPERIMENTAL=enabled 
-      - docker manifest create $(IMAGE_TAG_FULL) $(IMAGE_TAG_FULL)-arm64v8 $(IMAGE_TAG_FULL)-amd64
-      - docker manifest annotate --arch arm64 $(IMAGE_TAG_FULL)-arm64v8
-      - docker manifest annotate --arch amd64 $(IMAGE_TAG_FULL)-amd64
+      - docker manifest create $IMAGE_TAG_FULL $IMAGE_TAG_FULL-arm64v8 $IMAGE_TAG_FULL-amd64
+      - docker manifest annotate --arch arm64 $IMAGE_TAG_FULL-arm64v8
+      - docker manifest annotate --arch amd64 $IMAGE_TAG_FULL-amd64
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
       - docker push $IMAGE_TAG_FULL
-      - docker manifest push $(IMAGE_TAG_FULL)
-      - docker manifest inspect $(IMAGE_TAG_FULL)
+      - docker manifest push $IMAGE_TAG_FULL
+      - docker manifest inspect $IMAGE_TAG_FULL
       - echo Preparing spec files in new folder
       - mkdir artifacts
       - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
