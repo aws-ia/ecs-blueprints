@@ -17,7 +17,7 @@ phases:
       - echo Build started on `date`
       - echo Building the Docker image...
       - export DOCKER_CLI_EXPERIMENTAL=enabled 
-      - docker buildx build $FOLDER_PATH --file build/Dockerfile --platform $PLATFORMS --tag $IMAGE_TAG_FULL 
+      - docker buildx build $FOLDER_PATH --platform $PLATFORMS --tag $IMAGE_TAG_FULL 
       - docker manifest create $IMAGE_TAG_FULL $IMAGE_TAG_FULL-arm64v8 $IMAGE_TAG_FULL-amd64
       - docker manifest annotate --arch arm64 $IMAGE_TAG_FULL-arm64v8
       - docker manifest annotate --arch amd64 $IMAGE_TAG_FULL-amd64
