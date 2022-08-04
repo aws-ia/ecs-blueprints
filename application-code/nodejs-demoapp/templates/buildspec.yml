@@ -3,42 +3,29 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - PLATFORMS=linux/arm64,linux/amd64
       - echo $REPO_URL
       - REPOSITORY=${REPO_URL%/*}
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - IMAGE_TAG_FULL=$REPO_URL:$IMAGE_TAG
-      - echo $IMAGE_TAG_FULL
-      - MACHINE_TYPE=`uname -m`
-      - echo $MACHINE_TYPE
-      - touch $HOME/.docker/cli-plugins/docker-buildx
-      - wget -O $HOME/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-amd64
-      - chmod +x $HOME/.docker/cli-plugins/docker-buildx
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - export DOCKER_CLI_EXPERIMENTAL=enabled 
-      - docker buildx build $FOLDER_PATH --file build/Dockerfile --platform $PLATFORMS --tag $IMAGE_TAG_FULL 
-      - docker manifest create $IMAGE_TAG_FULL $IMAGE_TAG_FULL-arm64v8 $IMAGE_TAG_FULL-amd64
-      - docker manifest annotate --arch arm64 $IMAGE_TAG_FULL-arm64v8
-      - docker manifest annotate --arch amd64 $IMAGE_TAG_FULL-amd64
+      - docker build -t $REPO_URL $FOLDER_PATH
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $IMAGE_TAG_FULL
-      - docker manifest push $IMAGE_TAG_FULL
-      - docker manifest inspect $IMAGE_TAG_FULL
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG
       - echo Preparing spec files in new folder
       - mkdir artifacts
       - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
       - echo Preparating artifacts
       - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/imagedefinition.json
-      - sed -i "s|<REPO_URL>|$IMAGE_TAG_FULL|g" artifacts/imagedefinition.json
+      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json
       - cat artifacts/imagedefinition.json
 
 artifacts:
