@@ -264,7 +264,7 @@ module "processing_queue" {
         Sid      = "SQSSendMessageS3"
         Effect   = "Allow"
         Action   = "SQS:SendMessage"
-        Resource = "arn:aws:sqs:*:*:${local.name}-processing-queue"
+        Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.name}-processing-queue"
         Principal = {
           Service = "s3.amazonaws.com"
         }
@@ -366,6 +366,9 @@ module "codebuild_ci" {
         }, {
         name  = "FOLDER_PATH"
         value = var.folder_path
+        }, {
+        name  = "QUEUE_URL"
+        value = module.processing_queue.this_sqs_queue_arn
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn

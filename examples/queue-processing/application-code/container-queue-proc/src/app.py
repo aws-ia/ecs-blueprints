@@ -13,7 +13,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
-QUEUE_URL = None
+queue = '<QUEUE_URL>'
 
 logger = logging.getLogger(__name__)
 sqs = boto3.resource('sqs')
