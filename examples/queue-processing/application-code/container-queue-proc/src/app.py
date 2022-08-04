@@ -221,7 +221,6 @@ def usage_demo():
     else:
         print(f"Uh oh, some lines were missed!")
 
-    queue.delete()
 
     print("Thanks for watching!")
     print('-'*88)
