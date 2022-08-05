@@ -17,6 +17,7 @@ phases:
   build:
     commands:
       - echo Build started on `date`
+      - echo $REPO_URL:$IMAGE_TAG
       - echo Building the Docker manifest...   
       - export DOCKER_CLI_EXPERIMENTAL=enabled       
       - docker manifest create $REPO_URL $REPO_URL:$IMAGE_TAG-arm64v8 $REPO_URL:$IMAGE_TAG-amd64    
@@ -32,9 +33,9 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing the Docker image...
-      - docker manifest push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
-      - docker manifest inspect $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - echo Pushing the Docker manifest...
+      - docker manifest push $REPO_URL
+      - docker manifest inspect $REPO_URL
 artifacts:
   files:
     - '**/*'
