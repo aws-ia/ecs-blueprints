@@ -42,9 +42,9 @@
     <h4 class="text-success">Microsoft Graph Details</h4>
     <table class="table table-striped">
       <!-- prettier-ignore -->
-      <% Object.keys(details).forEach(key => { 
-        if(!key.startsWith("@")) { 
-          let displayKey = key.replace(/([A-Z])/g, '$1') 
+      <% Object.keys(details).forEach(key => {
+        if(!key.startsWith("@")) {
+          let displayKey = key.replace(/([A-Z])/g, '$1')
           displayKey = displayKey.replace(/^./, str => { return str.toUpperCase() }) %>
       <tr>
         <td><b><%= displayKey %>: &nbsp;</b></td>

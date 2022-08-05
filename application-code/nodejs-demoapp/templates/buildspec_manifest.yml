@@ -1,6 +1,6 @@
 version: 0.2
 # Based on the Docker documentation, must include the DOCKER_CLI_EXPERIMENTAL environment variable
-# https://docs.docker.com/engine/reference/commandline/manifest/    
+# https://docs.docker.com/engine/reference/commandline/manifest/
 
 phases:
   install:
@@ -18,8 +18,8 @@ phases:
     commands:
       - echo Build started on `date`
       - echo $REPO_URL:$IMAGE_TAG
-      - echo Building the Docker manifest...   
-      - export DOCKER_CLI_EXPERIMENTAL=enabled       
+      - echo Building the Docker manifest...
+      - export DOCKER_CLI_EXPERIMENTAL=enabled
       - docker manifest create $REPO_URL:$IMAGE_TAG $REPO_URL:$IMAGE_TAG-arm64v8 $REPO_URL:$IMAGE_TAG-amd64
       - echo Preparing spec files in new folder
       - mkdir artifacts

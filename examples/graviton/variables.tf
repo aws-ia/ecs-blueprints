@@ -109,12 +109,6 @@ variable "desired_count" {
   default     = 1
 }
 
-variable "backend_svc_endpoint" {
-  description = "The FQDN DNS name of the backend service"
-  type        = string
-  default     = ""
-}
-
 # listener settings for the load balanced service
 variable "listener_port" {
   description = "The listener port"
@@ -193,24 +187,4 @@ variable "sidecar_container_definitions" {
   default     = []
 }
 
-# Capacity provider strategy setting
-# to distribute tasks between Fargate
-# Fargate Spot
 
-variable "cp_strategy_base" {
-  description = "Base number of tasks to create on Fargate on-demand"
-  type        = number
-  default     = 1
-}
-
-variable "cp_strategy_fg_weight" {
-  description = "Relative number of tasks to put in Fargate"
-  type        = number
-  default     = 1
-}
-
-variable "cp_strategy_fg_spot_weight" {
-  description = "Relative number of tasks to put in Fargate Spot"
-  type        = number
-  default     = 0
-}

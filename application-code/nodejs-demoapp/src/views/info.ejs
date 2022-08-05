@@ -77,14 +77,14 @@
   <div class="card-body">
     <div class="envtable">
       <table class="table table-hover">
-        <% for(let envVar in process.env) { %> 
-          <% if (envVar.toUpperCase().includes('SECRET')) continue %> 
-          <% if (envVar.toUpperCase().includes('PWD')) continue %> 
+        <% for(let envVar in process.env) { %>
+          <% if (envVar.toUpperCase().includes('SECRET')) continue %>
+          <% if (envVar.toUpperCase().includes('PWD')) continue %>
           <% if (envVar.toUpperCase().includes('PASSWORD')) continue %>
-          <% if (envVar.toUpperCase().includes('KEY')) continue %> 
-          <% if (envVar.toUpperCase().includes('CONNSTR')) continue %> 
-          <% if (envVar.toUpperCase().includes('PATH')) continue %> 
-          <% if (envVar.toUpperCase().includes('NPM_')) continue %> 
+          <% if (envVar.toUpperCase().includes('KEY')) continue %>
+          <% if (envVar.toUpperCase().includes('CONNSTR')) continue %>
+          <% if (envVar.toUpperCase().includes('PATH')) continue %>
+          <% if (envVar.toUpperCase().includes('NPM_')) continue %>
           <% if (envVar.toUpperCase().includes('NPM_')) continue %>
           <tr>
             <td><%= envVar %></td>

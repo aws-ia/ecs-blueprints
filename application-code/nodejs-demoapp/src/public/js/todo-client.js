@@ -59,7 +59,7 @@ function addTodoToTable(todo) {
       <i class="todo-check far ${todo.done ? 'fa-check-square' : 'fa-square'}" onclick="clickTodoDone('${todo._id}')"></i>
     </td>
     <td>
-      <div contentEditable="${todo.done ? 'false' : 'true'}" onkeydown="keyFilter(event)" 
+      <div contentEditable="${todo.done ? 'false' : 'true'}" onkeydown="keyFilter(event)"
         class="todo-title ${todo.done ? 'todo-done' : ''}" onfocusout="editTodo('${todo._id}', this)">
         ${todo.title}
       </div>

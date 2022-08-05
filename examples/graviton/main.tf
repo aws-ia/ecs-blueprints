@@ -237,9 +237,9 @@ resource "aws_service_discovery_service" "sd_service_arm" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name                       = local.name
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  name           = local.name
+  desired_count  = var.desired_count
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
   # cp_strategy_base           = var.cp_strategy_base
   # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
@@ -273,9 +273,9 @@ module "ecs_service_definition" {
 module "ecs_service_definition_arm" {
   source = "../../modules/ecs-service"
 
-  name                       = "${local.name}-arm"
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  name           = "${local.name}-arm"
+  desired_count  = var.desired_count
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
   # cp_strategy_base           = var.cp_strategy_base
   # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
@@ -372,7 +372,7 @@ module "codebuild_ci_x86" {
 
   environment = {
     privileged_mode = true
-    image = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    image           = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
@@ -393,9 +393,9 @@ module "codebuild_ci_x86" {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
         }, {
-        name = "IMG_SUFFIX_ARCH"
-        value = "amd64"  
-        }
+        name  = "IMG_SUFFIX_ARCH"
+        value = "amd64"
+      }
     ]
   }
 
@@ -416,9 +416,9 @@ module "codebuild_ci_arm" {
 
   environment = {
     privileged_mode = true
-    compute_type = "BUILD_GENERAL1_LARGE"
-    image = "aws/codebuild/amazonlinux2-aarch64-standard:2.0"
-    type  = "ARM_CONTAINER"
+    compute_type    = "BUILD_GENERAL1_LARGE"
+    image           = "aws/codebuild/amazonlinux2-aarch64-standard:2.0"
+    type            = "ARM_CONTAINER"
     environment_variables = [
       {
         name  = "REPO_URL"
@@ -439,9 +439,9 @@ module "codebuild_ci_arm" {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
         }, {
-        name = "IMG_SUFFIX_ARCH"
-        value = "arm64v8"  
-        }
+        name  = "IMG_SUFFIX_ARCH"
+        value = "arm64v8"
+      }
     ]
   }
 
@@ -462,7 +462,7 @@ module "codebuild_ci_manifest" {
 
   environment = {
     privileged_mode = true
-    image = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    image           = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
@@ -482,7 +482,7 @@ module "codebuild_ci_manifest" {
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
-        }
+      }
     ]
   }
 
@@ -528,32 +528,32 @@ module "codepipeline_ci_cd" {
         PollForSourceChanges = true
       }
     }],
-    },{
+    }, {
     name = "Build_amd"
     action = [{
-      name             = "Build_app_amd"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      version          = "1"
-      input_artifacts  = ["SourceArtifact"]
-#      output_artifacts = ["BuildArtifact_app"]
+      name            = "Build_app_amd"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["SourceArtifact"]
+      #      output_artifacts = ["BuildArtifact_app"]
       configuration = {
         ProjectName = module.codebuild_ci_x86.project_id
       }
-    },{
-      name             = "Build_app_arm"
-      category         = "Build"
-      owner            = "AWS"
-      provider         = "CodeBuild"
-      version          = "1"
-      input_artifacts  = ["SourceArtifact"]
-#      output_artifacts = ["BuildArtifact_app"]
+      }, {
+      name            = "Build_app_arm"
+      category        = "Build"
+      owner           = "AWS"
+      provider        = "CodeBuild"
+      version         = "1"
+      input_artifacts = ["SourceArtifact"]
+      #      output_artifacts = ["BuildArtifact_app"]
       configuration = {
         ProjectName = module.codebuild_ci_arm.project_id
       }
     }],
-    },{
+    }, {
     name = "Build_manifest"
     action = [{
       name             = "Build_manifest"
