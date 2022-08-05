@@ -186,5 +186,3 @@ variable "sidecar_container_definitions" {
   type        = list(any)
   default     = []
 }
-
-
