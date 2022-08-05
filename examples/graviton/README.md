@@ -28,12 +28,12 @@ The solution has following key components:
     * Build_image : This has two actions, one to build amd64(x86) image and the other for arm64 image. Those images have a suffix `amd64` and `arm64v8` respectively. Both the build image actions use the same [buildspec.yml](../../application-code/nodejs-demoapp/templates/buildspec.yml)
     * Build_manifest : This is to create a manifest file. From [docker manifest](https://docs.docker.com/engine/reference/commandline/manifest/) - A single manifest is information about an image, such as layers, size, and digest. The docker manifest command also gives users additional information such as the os and architecture an image was built for. The [build_manifest.yml](../../application-code/nodejs-demoapp/templates/buildspec_manifest.yml) creates and pushed the manifest file. This file also copys the image url, without any architecture suffix, to update the task definition and deploy tasks for service.
 <p align="center">
-  <img src="../../docs/multi-arch-pipeline.png" width="300" height="300" />
+  <img src="../../docs/multi-arch-pipeline.png"/>
 </p>
 
 * The ECR repository looks like below with the manifest along with the image tag, and the two actual images with respective architecture tags.
  <p align="center">
-  <img src="../../docs/multi-arch-ecr.png" width="300" height="300" />
+  <img src="../../docs/multi-arch-ecr.png"/>
 </p>
 
 * Two ECS services are created one with x86 Fargate tasks (nodejs-multi-arch) and the other with arm64 Fargate tasks (nodejs-multi-arch-arm). You can check the task definition that each of them have the same image `"image": "xxx.dkr.ecr.us-west-2.amazonaws.com/nodejs-multi-arch:14f28fe"` **without the architecture suffix**. The ECS agent running in Fargate task will leverage the manifest to fetch the right image!
