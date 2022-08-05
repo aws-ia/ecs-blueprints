@@ -184,9 +184,9 @@ module "ecs_service_definition" {
   name                       = local.name
   desired_count              = var.desired_count
   ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
-  cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+  # cp_strategy_base           = var.cp_strategy_base
+  # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
+  # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
 
   security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids

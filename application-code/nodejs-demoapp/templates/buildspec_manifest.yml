@@ -20,9 +20,7 @@ phases:
       - echo $REPO_URL:$IMAGE_TAG
       - echo Building the Docker manifest...   
       - export DOCKER_CLI_EXPERIMENTAL=enabled       
-      - docker manifest create $REPO_URL $REPO_URL:$IMAGE_TAG-arm64v8 $REPO_URL:$IMAGE_TAG-amd64    
-      - docker manifest annotate --arch arm64 $REPO_URL $REPO_URL:$IMAGE_TAG-arm64v8
-      - docker manifest annotate --arch amd64 $REPO_URL $REPO_URL:$IMAGE_TAG-amd64
+      - docker manifest create $REPO_URL:$IMAGE_TAG $REPO_URL:$IMAGE_TAG-arm64v8 $REPO_URL:$IMAGE_TAG-amd64
       - echo Preparing spec files in new folder
       - mkdir artifacts
       - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
@@ -34,8 +32,8 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker manifest...
-      - docker manifest push $REPO_URL
-      - docker manifest inspect $REPO_URL
+      - docker manifest push $REPO_URL:$IMAGE_TAG
+      - docker manifest inspect $REPO_URL:$IMAGE_TAG
 artifacts:
   files:
     - '**/*'
