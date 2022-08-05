@@ -122,6 +122,43 @@ module "service_alb" {
   tags = local.tags
 }
 
+module "service_alb_arm" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 7.0"
+
+  name = "${local.name}-arm-alb"
+
+  load_balancer_type = "application"
+
+  vpc_id          = data.aws_vpc.vpc.id
+  subnets         = data.aws_subnets.public.ids
+  security_groups = [module.service_alb_security_group.security_group_id]
+
+  http_tcp_listeners = [
+    {
+      port               = var.listener_port
+      protocol           = var.listener_protocol
+      target_group_index = 0
+    },
+  ]
+
+  target_groups = [
+    {
+      name             = "${local.name}-arm-tg"
+      backend_protocol = var.container_protocol
+      backend_port     = var.container_port
+      target_type      = "ip"
+      health_check = {
+        path    = var.health_check_path
+        port    = var.container_port
+        matcher = var.health_check_matcher
+      }
+    },
+  ]
+
+  tags = local.tags
+}
+
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.4"
@@ -178,6 +215,25 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
+resource "aws_service_discovery_service" "sd_service_arm" {
+  name = "${local.name}-arm"
+
+  dns_config {
+    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
@@ -213,6 +269,44 @@ module "ecs_service_definition" {
 
   tags = local.tags
 }
+
+module "ecs_service_definition_arm" {
+  source = "../../modules/ecs-service"
+
+  name                       = "${local.name}-arm"
+  desired_count              = var.desired_count
+  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  # cp_strategy_base           = var.cp_strategy_base
+  # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
+  # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+
+  security_groups = [module.service_task_security_group.security_group_id]
+  subnets         = data.aws_subnets.private.ids
+
+  load_balancers = [{
+    target_group_arn = element(module.service_alb_arm.target_group_arns, 0)
+  }]
+
+  service_registry_list = [{
+    registry_arn = aws_service_discovery_service.sd_service_arm.arn
+  }]
+
+  deployment_controller = "ECS"
+
+  # Task Definition
+  attach_task_role_policy       = false
+  container_name                = var.container_name
+  container_port                = var.container_port
+  cpu                           = var.task_cpu
+  memory                        = var.task_memory
+  image                         = module.container_image_ecr.repository_url
+  sidecar_container_definitions = var.sidecar_container_definitions
+  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  task_cpu_architecture         = "ARM64"
+
+  tags = local.tags
+}
+
 
 ################################################################################
 # CodePipeline and CodeBuild for CI/CD
