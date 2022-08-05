@@ -268,16 +268,17 @@ resource "aws_sns_topic" "codestar_notification" {
   tags = local.tags
 }
 
-module "codebuild_ci" {
+module "codebuild_ci_x86" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-${module.ecs_service_definition.name}"
-  service_role   = module.codebuild_ci.codebuild_role_arn
+  name           = "codebuild-x86-${module.ecs_service_definition.name}"
+  service_role   = module.codebuild_ci_x86.codebuild_role_arn
   buildspec_path = var.buildspec_path
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
     privileged_mode = true
+    image = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
@@ -298,18 +299,107 @@ module "codebuild_ci" {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
         }, {
-        name  = "BACKEND_SVC_ENDPOINT"
-        value = var.backend_svc_endpoint
-      },
+        name = "IMG_SUFFIX_ARCH"
+        value = "amd64"  
+        }
     ]
   }
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-${random_id.this.hex}"
+  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-x86-${random_id.this.hex}"
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
 }
+
+module "codebuild_ci_arm" {
+  source = "../../modules/codebuild"
+
+  name           = "codebuild-arm-${module.ecs_service_definition.name}"
+  service_role   = module.codebuild_ci_arm.codebuild_role_arn
+  buildspec_path = var.buildspec_path
+  s3_bucket      = module.codepipeline_s3_bucket
+
+  environment = {
+    privileged_mode = true
+    image = "aws/codebuild/amazonlinux2-aarch64-standard:2.0"
+    environment_variables = [
+      {
+        name  = "REPO_URL"
+        value = module.container_image_ecr.repository_url
+        }, {
+        name  = "TASK_DEFINITION_FAMILY"
+        value = module.ecs_service_definition.task_definition_family
+        }, {
+        name  = "CONTAINER_NAME"
+        value = module.ecs_service_definition.container_name
+        }, {
+        name  = "SERVICE_PORT"
+        value = var.container_port
+        }, {
+        name  = "FOLDER_PATH"
+        value = var.folder_path
+        }, {
+        name  = "ECS_EXEC_ROLE_ARN"
+        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        }, {
+        name = "IMG_SUFFIX_ARCH"
+        value = "arm64v8"  
+        }
+    ]
+  }
+
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-arm-${random_id.this.hex}"
+  ecr_repository  = module.container_image_ecr.repository_arn
+
+  tags = local.tags
+}
+
+module "codebuild_ci_manifest" {
+  source = "../../modules/codebuild"
+
+  name           = "codebuild-manifest-${module.ecs_service_definition.name}"
+  service_role   = module.codebuild_ci_manifest.codebuild_role_arn
+  buildspec_path = var.manifest_buildspec_path
+  s3_bucket      = module.codepipeline_s3_bucket
+
+  environment = {
+    privileged_mode = true
+    image = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    environment_variables = [
+      {
+        name  = "REPO_URL"
+        value = module.container_image_ecr.repository_url
+        }, {
+        name  = "TASK_DEFINITION_FAMILY"
+        value = module.ecs_service_definition.task_definition_family
+        }, {
+        name  = "CONTAINER_NAME"
+        value = module.ecs_service_definition.container_name
+        }, {
+        name  = "SERVICE_PORT"
+        value = var.container_port
+        }, {
+        name  = "FOLDER_PATH"
+        value = var.folder_path
+        }, {
+        name  = "ECS_EXEC_ROLE_ARN"
+        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        }, {
+        name = "IMG_SUFFIX_ARCH"
+        value = "arm64v8"  
+        }
+    ]
+  }
+
+  create_iam_role = true
+  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-manifest-${random_id.this.hex}"
+  ecr_repository  = module.container_image_ecr.repository_arn
+
+  tags = local.tags
+}
+
 
 data "aws_secretsmanager_secret" "github_token" {
   name = var.github_token_secret_name
@@ -322,21 +412,84 @@ data "aws_secretsmanager_secret_version" "github_token" {
 module "codepipeline_ci_cd" {
   source = "../../modules/codepipeline"
 
-  name                  = "pipeline-${module.ecs_service_definition.name}"
-  service_role          = module.codepipeline_ci_cd.codepipeline_role_arn
-  s3_bucket             = module.codepipeline_s3_bucket
-  github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
-  repo_owner            = var.repository_owner
-  repo_name             = var.repository_name
-  branch                = var.repository_branch
-  codebuild_project_app = module.codebuild_ci.project_id
-  sns_topic             = aws_sns_topic.codestar_notification.arn
+  name         = "pipeline-${module.ecs_service_definition.name}"
+  service_role = module.codepipeline_ci_cd.codepipeline_role_arn
+  s3_bucket    = module.codepipeline_s3_bucket
+  sns_topic    = aws_sns_topic.codestar_notification.arn
 
-  app_deploy_configuration = {
-    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-    ServiceName = module.ecs_service_definition.name
-    FileName    = "imagedefinition.json"
-  }
+  stage = [{
+    name = "Source"
+    action = [{
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      input_artifacts  = []
+      output_artifacts = ["SourceArtifact"]
+      configuration = {
+        OAuthToken           = data.aws_secretsmanager_secret_version.github_token.secret_string
+        Owner                = var.repository_owner
+        Repo                 = var.repository_name
+        Branch               = var.repository_branch
+        PollForSourceChanges = true
+      }
+    }],
+    },{
+    name = "Build_amd"
+    action = [{
+      name             = "Build_app_amd"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ProjectName = module.codebuild_ci_x86.project_id
+      }
+    },{
+      name             = "Build_app_arm"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ProjectName = module.codebuild_ci_arm.project_id
+      }
+    }],
+    },{
+    name = "Build_manifest"
+    action = [{
+      name             = "Build_manifest"
+      category         = "Manifest"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ProjectName = module.codebuild_ci_arm.project_id
+      }
+    }],
+    }, {
+    name = "Deploy"
+    action = [{
+      name            = "Deploy_app"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ServiceName = module.ecs_service_definition.name
+        FileName    = "imagedefinition.json"
+      }
+    }],
+  }]
 
   create_iam_role = true
   iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"

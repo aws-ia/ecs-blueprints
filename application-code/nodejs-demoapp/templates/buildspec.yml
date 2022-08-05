@@ -9,6 +9,7 @@ phases:
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG_WITH_ARCH=$IMAGE_TAG-$IMG_SUFFIX_ARCH
   build:
     commands:
       - echo Build started on `date`
@@ -18,18 +19,18 @@ phases:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
-      - docker push $REPO_URL:$IMAGE_TAG
-      - echo Preparing spec files in new folder
-      - mkdir artifacts
-      - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
-      - echo Preparating artifacts
-      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/imagedefinition.json
-      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json
-      - cat artifacts/imagedefinition.json
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG_WITH_ARCH
+      - docker push $REPO_URL:$IMAGE_TAG_WITH_ARCH
+      # - echo Preparing spec files in new folder
+      # - mkdir artifacts
+      # - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
+      # - echo Preparating artifacts
+      # - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/imagedefinition.json
+      # - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json
+      # - cat artifacts/imagedefinition.json
 
-artifacts:
-  files:
-    - '**/*'
-  base-directory: 'artifacts'
-  discard-paths: yes
+# artifacts:
+#   files:
+#     - '**/*'
+#   base-directory: 'artifacts'
+#   discard-paths: yes

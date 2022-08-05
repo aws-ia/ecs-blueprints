@@ -56,6 +56,12 @@ variable "buildspec_path" {
   default     = "./application-code/nodejs-demoapp/templates/buildspec.yml"
 }
 
+variable "manifest_buildspec_path" {
+  description = "The location of the multi architecture manifest buildspec file"
+  type        = string
+  default     = "./application-code/nodejs-demoapp/templates/buildspec_manifest.yml"
+}
+
 variable "folder_path" {
   description = "The location of the application code and Dockerfile files"
   type        = string
@@ -88,7 +94,7 @@ variable "github_token_secret_name" {
 variable "service_name" {
   description = "The service name"
   type        = string
-  default     = "nodejs-multi-arch"
+  default     = "ecsdemo-frontend"
 }
 
 variable "namespace" {
