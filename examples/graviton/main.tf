@@ -529,7 +529,7 @@ module "codepipeline_ci_cd" {
       }
     }],
     }, {
-    name = "Build_amd"
+    name = "Build_image"
     action = [{
       name            = "Build_app_amd"
       category        = "Build"
