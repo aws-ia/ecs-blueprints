@@ -234,7 +234,7 @@ resource "aws_service_discovery_service" "sd_service_arm" {
   }
 }
 
-module "ecs_service_definition" {
+module "ecs_service_definition_amd64" {
   source = "../../modules/ecs-service"
 
   name           = local.name
@@ -270,7 +270,7 @@ module "ecs_service_definition" {
   tags = local.tags
 }
 
-module "ecs_service_definition_arm" {
+module "ecs_service_definition_arm64" {
   source = "../../modules/ecs-service"
 
   name           = "${local.name}-arm"
@@ -362,11 +362,11 @@ resource "aws_sns_topic" "codestar_notification" {
   tags = local.tags
 }
 
-module "codebuild_ci_x86" {
+module "codebuild_ci_amd64" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-x86-${module.ecs_service_definition.name}"
-  service_role   = module.codebuild_ci_x86.codebuild_role_arn
+  name           = "codebuild-amd64-${module.ecs_service_definition_amd64.name}"
+  service_role   = module.codebuild_ci_amd64.codebuild_role_arn
   buildspec_path = var.buildspec_path
   s3_bucket      = module.codepipeline_s3_bucket
 
@@ -379,10 +379,10 @@ module "codebuild_ci_x86" {
         value = module.container_image_ecr.repository_url
         }, {
         name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
+        value = module.ecs_service_definition_amd64.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = module.ecs_service_definition_amd64.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -400,17 +400,17 @@ module "codebuild_ci_x86" {
   }
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-x86-${random_id.this.hex}"
+  iam_role_name   = "${module.ecs_service_definition_amd64.name}-codebuild-amd64-${random_id.this.hex}"
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
 }
 
-module "codebuild_ci_arm" {
+module "codebuild_ci_arm64" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-arm-${module.ecs_service_definition.name}"
-  service_role   = module.codebuild_ci_arm.codebuild_role_arn
+  name           = "codebuild-arm-${module.ecs_service_definition_arm64.name}"
+  service_role   = module.codebuild_ci_arm64.codebuild_role_arn
   buildspec_path = var.buildspec_path
   s3_bucket      = module.codepipeline_s3_bucket
 
@@ -425,10 +425,10 @@ module "codebuild_ci_arm" {
         value = module.container_image_ecr.repository_url
         }, {
         name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
+        value = module.ecs_service_definition_arm64.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = module.ecs_service_definition_arm64.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -446,7 +446,7 @@ module "codebuild_ci_arm" {
   }
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-arm-${random_id.this.hex}"
+  iam_role_name   = "${module.ecs_service_definition_arm64.name}-codebuild-arm-${random_id.this.hex}"
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
@@ -455,7 +455,7 @@ module "codebuild_ci_arm" {
 module "codebuild_ci_manifest" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-manifest-${module.ecs_service_definition.name}"
+  name           = "codebuild-manifest-${local.name}"
   service_role   = module.codebuild_ci_manifest.codebuild_role_arn
   buildspec_path = var.manifest_buildspec_path
   s3_bucket      = module.codepipeline_s3_bucket
@@ -468,11 +468,8 @@ module "codebuild_ci_manifest" {
         name  = "REPO_URL"
         value = module.container_image_ecr.repository_url
         }, {
-        name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
-        }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = module.ecs_service_definition_amd64.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -487,7 +484,7 @@ module "codebuild_ci_manifest" {
   }
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-manifest-${random_id.this.hex}"
+  iam_role_name   = "${local.name}-codebuild-manifest-${random_id.this.hex}"
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
@@ -505,7 +502,7 @@ data "aws_secretsmanager_secret_version" "github_token" {
 module "codepipeline_ci_cd" {
   source = "../../modules/codepipeline"
 
-  name         = "pipeline-${module.ecs_service_definition.name}"
+  name         = "pipeline-${local.name}"
   service_role = module.codepipeline_ci_cd.codepipeline_role_arn
   s3_bucket    = module.codepipeline_s3_bucket
   sns_topic    = aws_sns_topic.codestar_notification.arn
@@ -531,26 +528,24 @@ module "codepipeline_ci_cd" {
     }, {
     name = "Build_image"
     action = [{
-      name            = "Build_app_amd"
+      name            = "Build_app_amd64"
       category        = "Build"
       owner           = "AWS"
       provider        = "CodeBuild"
       version         = "1"
       input_artifacts = ["SourceArtifact"]
-      #      output_artifacts = ["BuildArtifact_app"]
       configuration = {
-        ProjectName = module.codebuild_ci_x86.project_id
+        ProjectName = module.codebuild_ci_amd64.project_id
       }
       }, {
-      name            = "Build_app_arm"
+      name            = "Build_app_arm64"
       category        = "Build"
       owner           = "AWS"
       provider        = "CodeBuild"
       version         = "1"
       input_artifacts = ["SourceArtifact"]
-      #      output_artifacts = ["BuildArtifact_app"]
       configuration = {
-        ProjectName = module.codebuild_ci_arm.project_id
+        ProjectName = module.codebuild_ci_arm64.project_id
       }
     }],
     }, {
@@ -570,7 +565,7 @@ module "codepipeline_ci_cd" {
     }, {
     name = "Deploy"
     action = [{
-      name            = "Deploy_amd"
+      name            = "Deploy_amd64"
       category        = "Deploy"
       owner           = "AWS"
       provider        = "ECS"
@@ -578,11 +573,11 @@ module "codepipeline_ci_cd" {
       input_artifacts = ["BuildArtifact_app"]
       configuration = {
         ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-        ServiceName = module.ecs_service_definition.name
+        ServiceName = module.ecs_service_definition_amd64.name
         FileName    = "imagedefinition.json"
       }
-    }, {
-      name            = "Deploy_arm"
+      }, {
+      name            = "Deploy_arm64"
       category        = "Deploy"
       owner           = "AWS"
       provider        = "ECS"
@@ -590,14 +585,14 @@ module "codepipeline_ci_cd" {
       input_artifacts = ["BuildArtifact_app"]
       configuration = {
         ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-        ServiceName = module.ecs_service_definition_arm.name
+        ServiceName = module.ecs_service_definition_arm64.name
         FileName    = "imagedefinition.json"
       }
     }],
   }]
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"
+  iam_role_name   = "${local.name}-pipeline-${random_id.this.hex}"
 
   tags = local.tags
 }

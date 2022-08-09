@@ -94,7 +94,7 @@ variable "github_token_secret_name" {
 variable "service_name" {
   description = "The service name"
   type        = string
-  default     = "ecsdemo-frontend"
+  default     = "ecsdemo-multi-arch"
 }
 
 variable "namespace" {
