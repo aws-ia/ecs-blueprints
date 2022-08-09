@@ -570,7 +570,7 @@ module "codepipeline_ci_cd" {
     }, {
     name = "Deploy"
     action = [{
-      name            = "Deploy_app"
+      name            = "Deploy_amd"
       category        = "Deploy"
       owner           = "AWS"
       provider        = "ECS"
@@ -579,6 +579,18 @@ module "codepipeline_ci_cd" {
       configuration = {
         ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
         ServiceName = module.ecs_service_definition.name
+        FileName    = "imagedefinition.json"
+      }
+    }, {
+      name            = "Deploy_arm"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ServiceName = module.ecs_service_definition_arm.name
         FileName    = "imagedefinition.json"
       }
     }],
