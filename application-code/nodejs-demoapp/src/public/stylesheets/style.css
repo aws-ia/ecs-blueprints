@@ -1,0 +1,91 @@
+body {
+  padding: 0px;
+}
+
+.nav-link.btn {
+  color: white !important;
+}
+
+.navbar-brand img {
+  height: 40px;
+}
+
+.navbar-brand span {
+  line-height: 40px;
+}
+
+.navbar-brand span:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footnote {
+  font-size: 90%;
+  float: right;
+  top: -30px;
+  padding-right: 20px;
+  color: #aaa;
+  padding-top: 2rem;
+}
+
+.index-head {
+  margin-top: -20px;
+  border-radius: 6px;
+  padding: 15px;
+}
+
+#weather-list {
+  font-size: 1.5rem;
+}
+
+.owi {
+  font-size: clamp(10rem, 20vw, 18rem);
+  color: #39d8dd;
+}
+
+.todo td {
+  font-size: 1.5rem;
+}
+
+.todo-done {
+  text-decoration: line-through;
+  color: #999999;
+}
+
+.todo-check {
+  cursor: pointer;
+  font-size: 3rem;
+}
+
+.envvars {
+  word-break: break-all;
+  color: #45da59;
+}
+
+.envtable {
+  max-height: 500px;
+  overflow-y: scroll;
+  font-family: 'Lucida Console', 'Lucida Sans Typewriter', monaco, 'Bitstream Vera Sans Mono', monospace;
+
+  background-color: #222222;
+}
+
+.code {
+  word-wrap: break-word;
+  word-break: break-all;
+  background-color: #222222;
+  color: #45da59;
+  width: 100%;
+}
+
+.profile-photo {
+  width: 160px;
+  border-radius: 50%;
+}
+
+.dark-translucent {
+  background-color: rgba(120, 120, 120, 0.2);
+}
+
+canvas {
+  background-color: white;
+}

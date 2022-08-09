@@ -1,0 +1,25 @@
+<%- include('_head.ejs') %>
+
+<div class="card text-white bg-secondary">
+  <div class="card-header bg-info h3">
+    <i class="fa fa-globe"></i>
+    &nbsp; Geolocated Weather
+    <span id="location"></span>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-warning fade text-dark" role="alert" id="error"></div>
+
+    <div class="row">
+      <div class="col-7"><ul id="weather-list"></ul></div>
+      <div class="col"><i id="weatherIcon" class="owi"></i></div>
+    </div>
+  </div>
+</div>
+
+<div class="p-4">
+  <img src="images/open-weather.png" height="64px" />
+</div>
+
+<script src="js/weather.js"></script>
+
+<%- include('_foot.ejs') %>

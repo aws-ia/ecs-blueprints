@@ -74,6 +74,8 @@
 | <a name="input_sidecar_container_definitions"></a> [sidecar\_container\_definitions](#input\_sidecar\_container\_definitions) | List of container definitions to add to the task | `list(any)` | `[]` | no |
 | <a name="input_subnets"></a> [subnets](#input\_subnets) | Subnets associated with the task or service. | `list(string)` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | tags | `map(string)` | `{}` | no |
+| <a name="input_task_cpu_architecture"></a> [task\_cpu\_architecture](#input\_task\_cpu\_architecture) | CPU architecture X86\_64 or ARM64 | `string` | `"X86_64"` | no |
+| <a name="input_task_os_family"></a> [task\_os\_family](#input\_task\_os\_family) | The OS family for task | `string` | `"LINUX"` | no |
 | <a name="input_task_role_policy"></a> [task\_role\_policy](#input\_task\_role\_policy) | The task's role policy | `string` | `null` | no |
 
 ## Outputs
