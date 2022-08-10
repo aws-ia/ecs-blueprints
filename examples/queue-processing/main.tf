@@ -131,7 +131,7 @@ module "ecs_service_definition" {
 
   # Task Definition
   task_role_policy              = data.aws_iam_policy_document.task_role.json
-  attach_task_role_policy       = false
+  attach_task_role_policy       = true
   container_name                = var.container_name
   container_port                = var.container_port
   cpu                           = var.task_cpu
@@ -440,6 +440,7 @@ data "aws_iam_policy_document" "task_role" {
     actions = [
       "sqs:ChangeMessageVisibility",
       "sqs:ChangeMessageVisibilityBatch",
+      "sqs:SendMessage",
       "sqs:DeleteMessage",
       "sqs:DeleteMessageBatch",
       "sqs:GetQueueAttributes",
