@@ -370,7 +370,7 @@ module "codebuild_ci" {
         name  = "FOLDER_PATH"
         value = var.folder_path
         }, {
-        name  = "QUEUE_URL"
+        name  = "QUEUE_NAME"
         value = module.processing_queue.this_sqs_queue_name
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
