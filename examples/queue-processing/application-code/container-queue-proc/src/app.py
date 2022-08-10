@@ -183,7 +183,7 @@ def usage_demo():
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
     print('-'*88)
 
-    queue = '<QUEUE_URL>'
+    queue = sqs.get_queue_by_name(QueueName='ecs-queue-proc-processing-queue')
 
     with open(__file__) as file:
         lines = file.readlines()

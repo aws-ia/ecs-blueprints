@@ -130,6 +130,7 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
+  task_role_policy              = data.aws_iam_policy_document.task_role.json
   attach_task_role_policy       = false
   container_name                = var.container_name
   container_port                = var.container_port
@@ -157,13 +158,15 @@ module "lambda_function" {
 
   # create_package         = false
   source_path = "./application-code/lambda-function-trigger/"
-
+  
+  cloudwatch_logs_retention_in_days = 7
+  
   environment_variables = {
 
   }
 
   allowed_triggers = {
-    ScanAmiRule = {
+    PollSSMScale = {
       principal  = "events.amazonaws.com"
       source_arn = aws_cloudwatch_event_rule.fargate_scaling.arn
     }
@@ -368,7 +371,7 @@ module "codebuild_ci" {
         value = var.folder_path
         }, {
         name  = "QUEUE_URL"
-        value = module.processing_queue.this_sqs_queue_id
+        value = module.processing_queue.this_sqs_queue_name
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
@@ -422,4 +425,27 @@ module "codepipeline_ci_cd" {
 
 resource "random_id" "this" {
   byte_length = "2"
+}
+
+data "aws_iam_policy_document" "task_role" {
+
+  statement {
+    sid       = "IAMPassRole"
+    actions   = ["iam:PassRole"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "SQSReadWrite"
+    actions = [
+      "sqs:ChangeMessageVisibility",
+      "sqs:ChangeMessageVisibilityBatch",
+      "sqs:DeleteMessage",
+      "sqs:DeleteMessageBatch",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl",
+      "sqs:ReceiveMessage"
+    ]
+    resources = [module.processing_queue.this_sqs_queue_arn]
+  }
 }
