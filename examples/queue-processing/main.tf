@@ -116,7 +116,7 @@ module "ecs_service_definition" {
 
   name                       = local.name
   desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
   cp_strategy_base           = var.cp_strategy_base
   cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
@@ -155,12 +155,13 @@ module "lambda_function" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   publish       = true
+  policy_json   = data.aws_iam_policy_document.lambda_role.json
 
   # create_package         = false
   source_path = "./application-code/lambda-function-trigger/"
-  
+
   cloudwatch_logs_retention_in_days = 7
-  
+
   environment_variables = {
 
   }
@@ -225,11 +226,11 @@ module "source_s3_bucket" {
   tags = local.tags
 }
 
-module "processed_s3_bucket" {
+module "destination_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "${local.name}-processed-${var.aws_region}-${random_id.this.hex}"
+  bucket = "${local.name}-destination-${var.aws_region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please evaluate for your environment
@@ -287,6 +288,70 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     filter_prefix = "ecsproc/"
     filter_suffix = ".jpg"
   }
+}
+
+################################################################################
+# ECS Scaling Params
+################################################################################
+
+resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
+  name  = "PIPELINE_ENABLED"
+  type  = "String"
+  value = 1
+}
+
+resource "aws_ssm_parameter" "ecs_pipeline_max_tasks" {
+  name  = "PIPELINE_ECS_MAX_TASKS"
+  type  = "String"
+  value = 10
+}
+
+resource "aws_ssm_parameter" "sqs_processing_queue" {
+  name  = "PIPELINE_UNPROCESSED_SQS_URL"
+  type  = "String"
+  value = module.processing_queue.this_sqs_queue_name
+}
+
+resource "aws_ssm_parameter" "s3_destination_bucket" {
+  name  = "PIPELINE_S3_DEST_BUCKET"
+  type  = "String"
+  value = module.destination_s3_bucket.s3_bucket_arn
+}
+
+resource "aws_ssm_parameter" "s3_destination_prefix" {
+  name  = "PIPELINE_S3_DEST_PREFIX"
+  type  = "String"
+  value = "processed"
+}
+
+resource "aws_ssm_parameter" "ecs_cluster_name" {
+  name  = "PIPELINE_ECS_CLUSTER"
+  type  = "String"
+  value = data.aws_ecs_cluster.core_infra.cluster_name
+}
+
+resource "aws_ssm_parameter" "ecs_task_definition" {
+  name  = "PIPELINE_ECS_TASK_DEFINITON"
+  type  = "String"
+  value = module.ecs_service_definition.task_definition_arn
+}
+
+resource "aws_ssm_parameter" "ecs_task_container_name" {
+  name  = "PIPELINE_ECS_TASK_CONTAINER"
+  type  = "String"
+  value = module.ecs_service_definition.container_name
+}
+
+resource "aws_ssm_parameter" "ecs_task_subnet" {
+  name  = "PIPELINE_ECS_TASK_SUBNET"
+  type  = "String"
+  value = data.aws_subnets.private.ids[0]
+}
+
+resource "aws_ssm_parameter" "ecs_task_security_group" {
+  name  = "PIPELINE_ECS_TASK_SECURITYGROUP"
+  type  = "String"
+  value = module.service_task_security_group.security_group_id
 }
 
 ################################################################################
@@ -448,5 +513,84 @@ data "aws_iam_policy_document" "task_role" {
       "sqs:ReceiveMessage"
     ]
     resources = [module.processing_queue.this_sqs_queue_arn]
+  }
+
+  statement {
+    sid = "S3Read"
+    actions = [
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+
+    ]
+    resources = [
+      module.source_s3_bucket.s3_bucket_arn,
+      "${module.source_s3_bucket.s3_bucket_arn}/*",
+      module.destination_s3_bucket.s3_bucket_arn,
+      "${module.destination_s3_bucket.s3_bucket_arn}/*"
+    ]
+  }
+
+  statement {
+    sid = "SSMRead"
+    actions = [
+      "ssm:GetParameters",
+      "ssm:DescribeParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "lambda_role" {
+
+  statement {
+    sid       = "IAMPassRole"
+    actions   = ["iam:PassRole"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "SQSReadWrite"
+    actions = [
+      "sqs:ChangeMessageVisibility",
+      "sqs:ChangeMessageVisibilityBatch",
+      "sqs:SendMessage",
+      "sqs:DeleteMessage",
+      "sqs:DeleteMessageBatch",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl",
+      "sqs:ReceiveMessage"
+    ]
+    resources = [module.processing_queue.this_sqs_queue_arn]
+
+  }
+  statement {
+    sid = "ECSTaskReadWrite"
+    actions = [
+      "ecs:Describe*",
+      "ecs:List*",
+      "ecs:DescribeTasks",
+      "ecs:ListTasks",
+      "ecs:StartTask",
+      "ecs:RunTask"
+    ]
+    resources = [data.aws_ecs_cluster.core_infra.arn]
+  }
+
+  statement {
+    sid = "SSMRead"
+    actions = [
+      "ssm:GetParameters",
+      "ssm:DescribeParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter",
+      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
+    ]
   }
 }
