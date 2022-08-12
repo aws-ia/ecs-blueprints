@@ -289,7 +289,7 @@ module "ecs_service_server" {
 
   name           = "${local.name}-server"
   desired_count  = 1
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.server_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
@@ -323,7 +323,7 @@ module "ecs_service_client" {
 
   name           = "${local.name}-client"
   desired_count  = 1
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.client_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
