@@ -239,7 +239,7 @@ module "ecs_service_definition_amd64" {
 
   name           = local.name
   desired_count  = var.desired_count
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
   # cp_strategy_base           = var.cp_strategy_base
   # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
@@ -275,7 +275,7 @@ module "ecs_service_definition_arm64" {
 
   name           = "${local.name}-arm"
   desired_count  = var.desired_count
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
   # cp_strategy_base           = var.cp_strategy_base
   # cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   # cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
