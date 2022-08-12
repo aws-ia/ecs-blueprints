@@ -155,8 +155,9 @@ module "lambda_function" {
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.8"
   publish       = true
-  policy_json   = data.aws_iam_policy_document.lambda_role.json
 
+  attach_policy_json = true
+  policy_json        = data.aws_iam_policy_document.lambda_role.json
   # create_package         = false
   source_path = "./application-code/lambda-function-trigger/"
 
