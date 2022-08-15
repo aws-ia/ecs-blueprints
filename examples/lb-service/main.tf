@@ -122,7 +122,6 @@ module "service_alb" {
   tags = local.tags
 }
 
-/*
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.4"
@@ -136,7 +135,6 @@ module "container_image_ecr" {
 
   tags = local.tags
 }
-*/
 
 module "service_task_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
