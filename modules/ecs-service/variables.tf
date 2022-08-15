@@ -206,6 +206,7 @@ variable "task_cpu_architecture" {
 # Autoscaling
 ################################################################################
 
+#Target Scaling
 variable "enable_autoscaling" {
   description = "Determines whether autoscaling is enabled for the service"
   type        = bool
@@ -234,4 +235,41 @@ variable "autoscaling_cpu_threshold" {
   description = "The desired threashold for CPU consumption"
   type        = number
   default     = 75
+}
+
+# schedule scaling
+variable "enable_scheduled_autoscaling" {
+  description = "Determines whether scheduled autoscaling is enabled for the service"
+  type        = bool
+  default     = true
+}
+
+variable "scheduled_autoscaling_timezone" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "America/Los_Angeles"
+}
+
+variable "scheduled_autoscaling_up_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 6 * * ? *)"
+}
+
+variable "scheduled_autoscaling_down_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 20 * * ? *)"
+}
+
+variable "scheduled_autoscaling_up__min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 4
+}
+
+variable "scheduled_autoscaling_up__max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 6
 }
