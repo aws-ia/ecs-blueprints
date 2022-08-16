@@ -195,7 +195,7 @@ resource "aws_cloudwatch_event_target" "ecs_fargate_lambda_function" {
 }
 
 ################################################################################
-# S3 Bucket and SQS Queue
+# S3 Buckets and SQS Queue
 ################################################################################
 
 module "source_s3_bucket" {

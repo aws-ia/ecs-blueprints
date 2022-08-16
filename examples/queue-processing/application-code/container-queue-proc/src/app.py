@@ -6,81 +6,22 @@ Purpose
 
 Demonstrate basic message operations in Amazon Simple Queue Service (Amazon SQS).
 """
-
 import logging
+import uuid
 import sys
-
+import json
 import boto3
 from botocore.exceptions import ClientError
+try:
+    from PIL import Image
+except ImportError:
+    import Image
 
 logger = logging.getLogger(__name__)
 sqs = boto3.resource('sqs')
+s3_client = boto3.client('s3')
 
-def send_message(queue, message_body, message_attributes=None):
-    """
-    Send a message to an Amazon SQS queue.
-
-    :param queue: The queue that receives the message.
-    :param message_body: The body text of the message.
-    :param message_attributes: Custom attributes of the message. These are key-value
-                               pairs that can be whatever you want.
-    :return: The response from SQS that contains the assigned message ID.
-    """
-    if not message_attributes:
-        message_attributes = {}
-
-    try:
-        response = queue.send_message(
-            MessageBody=message_body,
-            MessageAttributes=message_attributes
-        )
-    except ClientError as error:
-        logger.exception("Send message failed: %s", message_body)
-        raise error
-    else:
-        return response
-
-
-def send_messages(queue, messages):
-    """
-    Send a batch of messages in a single request to an SQS queue.
-    This request may return overall success even when some messages were not sent.
-    The caller must inspect the Successful and Failed lists in the response and
-    resend any failed messages.
-
-    :param queue: The queue to receive the messages.
-    :param messages: The messages to send to the queue. These are simplified to
-                     contain only the message body and attributes.
-    :return: The response from SQS that contains the list of successful and failed
-             messages.
-    """
-    try:
-        entries = [{
-            'Id': str(ind),
-            'MessageBody': msg['body'],
-            'MessageAttributes': msg['attributes']
-        } for ind, msg in enumerate(messages)]
-        response = queue.send_messages(Entries=entries)
-        if 'Successful' in response:
-            for msg_meta in response['Successful']:
-                logger.info(
-                    "Message sent: %s: %s",
-                    msg_meta['MessageId'],
-                    messages[int(msg_meta['Id'])]['body']
-                )
-        if 'Failed' in response:
-            for msg_meta in response['Failed']:
-                logger.warning(
-                    "Failed to send: %s: %s",
-                    msg_meta['MessageId'],
-                    messages[int(msg_meta['Id'])]['body']
-                )
-    except ClientError as error:
-        logger.exception("Send messages failed to queue: %s", queue)
-        raise error
-    else:
-        return response
-
+DEST_BUCKET = 'ecs-queue-proc-destination-us-west-2-1791'
 
 def receive_messages(queue, max_number, wait_time):
     """
@@ -108,23 +49,6 @@ def receive_messages(queue, max_number, wait_time):
         raise error
     else:
         return messages
-
-
-def delete_message(message):
-    """
-    Delete a message from a queue. Clients must delete messages after they
-    are received and processed to remove them from the queue.
-
-    :param message: The message to delete. The message's queue URL is contained in
-                    the message's metadata.
-    :return: None
-    """
-    try:
-        message.delete()
-        logger.info("Deleted message: %s", message.message_id)
-    except ClientError as error:
-        logger.exception("Couldn't delete message: %s", message.message_id)
-        raise error
 
 
 def delete_messages(queue, messages):
@@ -157,6 +81,18 @@ def delete_messages(queue, messages):
         return response
 
 
+def resize_image(image_path, resized_path):
+    size = 224, 224
+
+    try:
+        with Image.open(image_path) as image:
+            image.thumbnail((size, Image.ANTIALIAS))
+            image.save(resized_path)
+            print("Processed " + image_path + " to " + resized_path)
+    except IOError:
+        print("Cannot process image " + image_path)
+
+
 def usage_demo():
     """
     Shows how to:
@@ -165,42 +101,17 @@ def usage_demo():
     * Receive the messages in batches until the queue is empty.
     * Reassemble the lines of the file and verify they match the original file.
     """
-    def pack_message(msg_path, msg_body, msg_line):
-        return {
-            'body': msg_body,
-            'attributes': {
-                'path': {'StringValue': msg_path, 'DataType': 'String'},
-                'line': {'StringValue': str(msg_line), 'DataType': 'String'}
-            }
-        }
 
     def unpack_message(msg):
-        return (msg.message_attributes['path']['StringValue'],
-                msg.body,
-                int(msg.message_attributes['line']['StringValue']))
+        return (msg.body)
 
     print('-'*88)
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
     print('-'*88)
 
-    queue = sqs.get_queue_by_name(QueueName='<QUEUE_NAME>')
+    queue = sqs.get_queue_by_name(QueueName='ecs-queue-proc-processing-queue')
 
-    with open(__file__) as file:
-        lines = file.readlines()
-
-    line = 0
-    batch_size = 10
-    received_lines = [None]*len(lines)
-    print(f"Sending file lines in batches of {batch_size} as messages.")
-    while line < len(lines):
-        messages = [pack_message(__file__, lines[index], index)
-                    for index in range(line, min(line + batch_size, len(lines)))]
-        line = line + batch_size
-        send_messages(queue, messages)
-        print('.', end='')
-        sys.stdout.flush()
-    print(f"Done. Sent {len(lines) - 1} messages.")
-
+    batch_size = 1
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")
     more_messages = True
     while more_messages:
@@ -208,19 +119,22 @@ def usage_demo():
         print('.', end='')
         sys.stdout.flush()
         for message in received_messages:
-            path, body, line = unpack_message(message)
-            received_lines[line] = body
+            msg = unpack_message(message)
+            body = json.loads(msg)
+            bucket = body['Records'][0]['s3']['bucket']['name']
+            key = body['Records'][0]['s3']['object']['key']
+            download_path = '/tmp/{}{}'.format(uuid.uuid4(), key)
+            upload_path = '/tmp/resized-{}'.format(key)
+
+            s3_client.download_file(bucket, key, download_path)
+            resize_image(download_path, upload_path)
+            s3_client.upload_file(upload_path, DEST_BUCKET, key)
+
         if received_messages:
             delete_messages(queue, received_messages)
         else:
             more_messages = False
     print('Done.')
-
-    if all([lines[index] == received_lines[index] for index in range(len(lines))]):
-        print(f"Successfully reassembled all file lines!")
-    else:
-        print(f"Uh oh, some lines were missed!")
-
 
     print("Thanks for watching!")
     print('-'*88)
