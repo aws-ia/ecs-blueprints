@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 sqs = boto3.resource('sqs')
 s3_client = boto3.client('s3')
 
-DEST_BUCKET = 'ecs-queue-proc-destination-us-west-2-1791'
+DEST_BUCKET = '<DESTINATION_BUCKET>'
 
 def receive_messages(queue, max_number, wait_time):
     """
@@ -108,7 +108,7 @@ def usage_demo():
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
     print('-'*88)
 
-    queue = sqs.get_queue_by_name(QueueName='ecs-queue-proc-processing-queue')
+    queue = sqs.get_queue_by_name(QueueName='<QUEUE_NAME>')
 
     batch_size = 10
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")

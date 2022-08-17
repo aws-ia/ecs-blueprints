@@ -439,6 +439,9 @@ module "codebuild_ci" {
         name  = "QUEUE_NAME"
         value = module.processing_queue.this_sqs_queue_name
         }, {
+        name  = "DESTINATION_BUCKET"
+        value = module.destination_s3_bucket.s3_bucket_id
+        }, {
         name  = "ECS_EXEC_ROLE_ARN"
         value = data.aws_iam_role.ecs_core_infra_exec_role.arn
       },
