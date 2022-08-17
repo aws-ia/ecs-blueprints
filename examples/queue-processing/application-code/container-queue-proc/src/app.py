@@ -124,8 +124,8 @@ def usage_demo():
             bucket = body['Records'][0]['s3']['bucket']['name']
             key = body['Records'][0]['s3']['object']['key']
             file_name = os.path.split(key)
-            download_path = './tmp/' + file_name[1]
-            upload_path = './tmp/thumbnail-{}'.format(file_name[1])
+            download_path = '/tmp/' + file_name[1]
+            upload_path = '/tmp/thumbnail-{}'.format(file_name[1])
             s3_client.download_file(bucket, key, download_path)
             resize_image(download_path, upload_path)
             s3_client.upload_file(upload_path, DEST_BUCKET, key)
