@@ -110,7 +110,7 @@ def usage_demo():
 
     queue = sqs.get_queue_by_name(QueueName='ecs-queue-proc-processing-queue')
 
-    batch_size = 1
+    batch_size = 10
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")
     more_messages = True
     while more_messages:
