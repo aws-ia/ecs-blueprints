@@ -1,5 +1,7 @@
 FROM public.ecr.aws/docker/library/python:alpine3.16
 
+RUN mkdir -p /tmp/ecsproc/
+
 WORKDIR /app
 
 COPY ./src /app
