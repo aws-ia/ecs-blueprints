@@ -183,7 +183,7 @@ module "ecs_service_definition" {
 
   name                       = local.name
   desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.arn
+  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
   cp_strategy_base           = var.cp_strategy_base
   cp_strategy_fg_weight      = var.cp_strategy_fg_weight
   cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
@@ -322,21 +322,59 @@ data "aws_secretsmanager_secret_version" "github_token" {
 module "codepipeline_ci_cd" {
   source = "../../modules/codepipeline"
 
-  name                  = "pipeline-${module.ecs_service_definition.name}"
-  service_role          = module.codepipeline_ci_cd.codepipeline_role_arn
-  s3_bucket             = module.codepipeline_s3_bucket
-  github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
-  repo_owner            = var.repository_owner
-  repo_name             = var.repository_name
-  branch                = var.repository_branch
-  codebuild_project_app = module.codebuild_ci.project_id
-  sns_topic             = aws_sns_topic.codestar_notification.arn
+  name         = "pipeline-${module.ecs_service_definition.name}"
+  service_role = module.codepipeline_ci_cd.codepipeline_role_arn
+  s3_bucket    = module.codepipeline_s3_bucket
+  sns_topic    = aws_sns_topic.codestar_notification.arn
 
-  app_deploy_configuration = {
-    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-    ServiceName = module.ecs_service_definition.name
-    FileName    = "imagedefinition.json"
-  }
+  stage = [{
+    name = "Source"
+    action = [{
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      input_artifacts  = []
+      output_artifacts = ["SourceArtifact"]
+      configuration = {
+        OAuthToken           = data.aws_secretsmanager_secret_version.github_token.secret_string
+        Owner                = var.repository_owner
+        Repo                 = var.repository_name
+        Branch               = var.repository_branch
+        PollForSourceChanges = true
+      }
+    }],
+    }, {
+    name = "Build"
+    action = [{
+      name             = "Build_app"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ProjectName = module.codebuild_ci.project_id
+      }
+    }],
+    }, {
+    name = "Deploy"
+    action = [{
+      name            = "Deploy_app"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ServiceName = module.ecs_service_definition.name
+        FileName    = "imagedefinition.json"
+      }
+    }],
+  }]
 
   create_iam_role = true
   iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"

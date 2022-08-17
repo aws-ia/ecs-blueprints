@@ -1,0 +1,41 @@
+version: 0.2
+# Based on the Docker documentation, must include the DOCKER_CLI_EXPERIMENTAL environment variable
+# https://docs.docker.com/engine/reference/commandline/manifest/
+
+phases:
+  install:
+    commands:
+      - yum update -y
+  pre_build:
+    commands:
+      - echo $REPO_URL
+      - REPOSITORY=${REPO_URL%/*}
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo $REPO_URL:$IMAGE_TAG
+      - echo Building the Docker manifest...
+      - export DOCKER_CLI_EXPERIMENTAL=enabled
+      - docker manifest create $REPO_URL:$IMAGE_TAG $REPO_URL:$IMAGE_TAG-arm64v8 $REPO_URL:$IMAGE_TAG-amd64
+      - echo Preparing spec files in new folder
+      - mkdir artifacts
+      - cp application-code/nodejs-demoapp/templates/imagedefinition.json artifacts/imagedefinition.json
+      - echo Preparating artifacts
+      - sed -i "s|<CONTAINER_NAME>|$CONTAINER_NAME|g" artifacts/imagedefinition.json
+      - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json
+      - cat artifacts/imagedefinition.json
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker manifest...
+      - docker manifest push $REPO_URL:$IMAGE_TAG
+      - docker manifest inspect $REPO_URL:$IMAGE_TAG
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'artifacts'
+  discard-paths: yes

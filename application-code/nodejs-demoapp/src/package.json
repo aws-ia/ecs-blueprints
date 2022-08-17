@@ -1,0 +1,44 @@
+{
+  "name": "nodejs-demoapp",
+  "description": "Node.js Express app for demos",
+  "version": "4.8.6",
+  "author": "Ben Coleman",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benc-uk/nodejs-demoapp.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "node --expose_gc server.mjs",
+    "start-bg": "node server.mjs &",
+    "watch": "nodemon --experimental-modules",
+    "test-report": "mocha --reporter mochawesome --exit ./tests > test-results.json",
+    "test": "mocha --exit ./tests",
+    "test-postman": "newman run tests/postman_collection.json --timeout 60000 --env-var apphost=$TEST_HOST",
+    "lint": "eslint . --ext mjs && prettier --check **/*.mjs",
+    "lint-fix": "eslint . --ext mjs --fix && prettier --write **/*.mjs"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.1",
+    "ejs": "^3.1.8",
+    "express": "~4.18.1",
+    "express-session": "^1.17.3",
+    "mongodb": "^4.7.0",
+    "morgan": "~1.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.17.0",
+    "mocha": "^10.0.0",
+    "mochawesome": "^7.1.3",
+    "newman": "^5.3.2",
+    "nodemon": "^2.0.16",
+    "prettier": "^2.7.1",
+    "supertest": "^6.2.3"
+  }
+}

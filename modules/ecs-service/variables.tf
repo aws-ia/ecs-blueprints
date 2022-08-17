@@ -190,6 +190,18 @@ variable "execution_role_arn" {
   type        = string
 }
 
+variable "task_os_family" {
+  description = "The OS family for task"
+  type        = string
+  default     = "LINUX"
+}
+
+variable "task_cpu_architecture" {
+  description = "CPU architecture X86_64 or ARM64"
+  type        = string
+  default     = "X86_64"
+}
+
 ################################################################################
 # Autoscaling
 ################################################################################

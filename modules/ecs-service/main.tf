@@ -135,6 +135,10 @@ resource "aws_ecs_task_definition" "this" {
     )
   )
 
+  runtime_platform {
+    operating_system_family = var.task_os_family
+    cpu_architecture        = var.task_cpu_architecture
+  }
   tags = var.tags
 }
 

@@ -1,0 +1,135 @@
+{
+  "info": {
+    "_postman_id": "8c90c22b-3e1f-45c9-aaf5-058b37f34474",
+    "name": "Node.js Demoapp",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Check Home Page",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "e1f514e2-fc14-4fcd-a140-50b3fc9f5a56",
+            "exec": [
+              "pm.test(\"Home Page: Successful GET request\", function () {",
+              "    pm.response.to.be.ok;",
+              "});",
+              "",
+              "pm.test(\"Home Page: Response valid & HTML body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.contain('text/html');",
+              "});",
+              "",
+              "pm.test(\"Home Page: Check content\", function () {",
+              "    pm.expect(pm.response.text()).to.include('Ben Coleman');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "http://{{apphost}}/",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": [""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Info Page",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "e1f514e2-fc14-4fcd-a140-50b3fc9f5a56",
+            "exec": [
+              "pm.test(\"Info Page: Successful GET request\", function () {",
+              "    pm.response.to.be.ok;",
+              "});",
+              "",
+              "pm.test(\"Info Page: Response valid & HTML body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.contain('text/html');",
+              "});",
+              "",
+              "pm.test(\"Info Page: Check content\", function () {",
+              "    pm.expect(pm.response.text()).to.include('Hostname');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "http://{{apphost}}/info",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": ["info"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Error Page",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "e1f514e2-fc14-4fcd-a140-50b3fc9f5a56",
+            "exec": [
+              "pm.test(\"Error Page: Returns 500\", function () {",
+              "    pm.response.to.be.error;",
+              "});",
+              "",
+              "pm.test(\"Error Page: Response valid & HTML body\", function () {",
+              "    pm.response.to.be.withBody;",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.contain('text/html');",
+              "});",
+              "",
+              "pm.test(\"Error Page: Check exception\", function () {",
+              "    pm.expect(pm.response.text()).to.include('ReferenceError');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "http://{{apphost}}/tools/error",
+          "protocol": "http",
+          "host": ["{{apphost}}"],
+          "path": ["tools/error"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
