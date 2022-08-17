@@ -143,6 +143,21 @@ module "ecs_service_definition" {
   tags                          = local.tags
 }
 
+module "ecs-fargate-task-definition" {
+  source  = "cn-terraform/ecs-fargate-task-definition/aws"
+  version = "1.0.30"
+  
+  container_image  = module.container_image_ecr.repository_url
+  container_name   = var.container_name
+  name_prefix      = "ecs-proc"
+
+  container_cpu    = 256
+  container_memory = 512
+
+  task_role_arn    = aws_iam_role.task.arn
+
+}
+
 ################################################################################
 # Lambda Function ECS scaling trigger
 ################################################################################
@@ -334,7 +349,7 @@ resource "aws_ssm_parameter" "ecs_cluster_name" {
 resource "aws_ssm_parameter" "ecs_task_definition" {
   name  = "PIPELINE_ECS_TASK_DEFINITON"
   type  = "String"
-  value = module.ecs_service_definition.task_definition_arn
+  value = module.ecs-fargate-task-definition.aws_ecs_task_definition_td_arn
 }
 
 resource "aws_ssm_parameter" "ecs_task_container_name" {
@@ -494,6 +509,33 @@ module "codepipeline_ci_cd" {
 
 resource "random_id" "this" {
   byte_length = "2"
+}
+
+################################################################################
+# Task Role
+################################################################################
+
+resource "aws_iam_role" "task" {
+  name               = "${local.name}-task"
+  assume_role_policy = data.aws_iam_policy_document.task.json
+
+  tags = local.tags
+}
+
+data "aws_iam_policy_document" "task" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "task" {
+  name   = "${local.name}-task"
+  role   = aws_iam_role.task.id
+  policy = data.aws_iam_policy_document.task_role.json
 }
 
 data "aws_iam_policy_document" "task_role" {
