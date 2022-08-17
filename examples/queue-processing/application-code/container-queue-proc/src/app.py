@@ -8,7 +8,7 @@ Demonstrate basic message operations in Amazon Simple Queue Service (Amazon SQS)
 """
 import logging
 import uuid
-import sys
+import sys, os
 import json
 import boto3
 from botocore.exceptions import ClientError
@@ -86,7 +86,7 @@ def resize_image(image_path, resized_path):
 
     try:
         with Image.open(image_path) as image:
-            image.thumbnail((size, Image.ANTIALIAS))
+            image.thumbnail(size)
             image.save(resized_path)
             print("Processed " + image_path + " to " + resized_path)
     except IOError:
@@ -116,16 +116,16 @@ def usage_demo():
     more_messages = True
     while more_messages:
         received_messages = receive_messages(queue, batch_size, 2)
-        print('.', end='')
         sys.stdout.flush()
+        
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)
             bucket = body['Records'][0]['s3']['bucket']['name']
             key = body['Records'][0]['s3']['object']['key']
-            download_path = '/tmp/{}{}'.format(uuid.uuid4(), key)
-            upload_path = '/tmp/resized-{}'.format(key)
-
+            file_name = os.path.split(key)
+            download_path = './tmp/' + file_name[1]
+            upload_path = './tmp/{}-thumbnail'.format(file_name[1])
             s3_client.download_file(bucket, key, download_path)
             resize_image(download_path, upload_path)
             s3_client.upload_file(upload_path, DEST_BUCKET, key)
