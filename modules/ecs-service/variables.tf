@@ -241,7 +241,7 @@ variable "autoscaling_cpu_threshold" {
 variable "enable_scheduled_autoscaling" {
   description = "Determines whether scheduled autoscaling is enabled for the service"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "scheduled_autoscaling_timezone" {
@@ -256,6 +256,7 @@ variable "scheduled_autoscaling_up_time" {
   default     = "cron(0 6 * * ? *)"
 }
 
+#cron syntax (s m h day-of-month month day-of-week year)
 variable "scheduled_autoscaling_down_time" {
   description = "Timezone which scheduled scaling occurs"
   type        = string
