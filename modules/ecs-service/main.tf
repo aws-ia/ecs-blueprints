@@ -297,8 +297,8 @@ resource "aws_appautoscaling_scheduled_action" "scale_up" {
   timezone           = var.scheduled_autoscaling_timezone
 
   scalable_target_action {
-    min_capacity = var.scheduled_autoscaling_up__min_capacity
-    max_capacity = var.scheduled_autoscaling_up__max_capacity
+    min_capacity = var.scheduled_autoscaling_up_min_capacity
+    max_capacity = var.scheduled_autoscaling_up_max_capacity
   }
 }
 
@@ -313,7 +313,7 @@ resource "aws_appautoscaling_scheduled_action" "scale_down" {
   timezone           = var.scheduled_autoscaling_timezone
 
   scalable_target_action {
-    min_capacity = var.autoscaling_min_capacity
-    max_capacity = var.autoscaling_max_capacity
+    min_capacity = var.scheduled_autoscaling_down_min_capacity
+    max_capacity = var.scheduled_autoscaling_down_max_capacity
   }
 }

@@ -213,12 +213,14 @@ module "ecs_service_definition" {
 
   tags = local.tags
 
-  enable_scheduled_autoscaling = var.enable_scheduled_autoscaling
-  scheduled_autoscaling_timezone = var.scheduled_autoscaling_timezone
-  scheduled_autoscaling_up_time  = var.scheduled_autoscaling_up_time
-  scheduled_autoscaling_down_time = var.scheduled_autoscaling_down_time
-  scheduled_autoscaling_up__min_capacity = var.scheduled_autoscaling_up__min_capacity
-  scheduled_autoscaling_up__max_capacity = var.scheduled_autoscaling_up__max_capacity
+  enable_scheduled_autoscaling            = var.enable_scheduled_autoscaling
+  scheduled_autoscaling_timezone          = var.scheduled_autoscaling_timezone
+  scheduled_autoscaling_up_time           = var.scheduled_autoscaling_up_time
+  scheduled_autoscaling_down_time         = var.scheduled_autoscaling_down_time
+  scheduled_autoscaling_up_min_capacity   = var.scheduled_autoscaling_up_min_capacity
+  scheduled_autoscaling_up_max_capacity   = var.scheduled_autoscaling_up_max_capacity
+  scheduled_autoscaling_down_min_capacity = var.scheduled_autoscaling_down_min_capacity
+  scheduled_autoscaling_down_max_capacity = var.scheduled_autoscaling_down_max_capacity
 }
 
 

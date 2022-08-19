@@ -234,14 +234,26 @@ variable "scheduled_autoscaling_down_time" {
   default     = "cron(0 20 * * ? *)"
 }
 
-variable "scheduled_autoscaling_up__min_capacity" {
+variable "scheduled_autoscaling_up_min_capacity" {
   description = "The minimum number of tasks to provision"
   type        = number
   default     = 4
 }
 
-variable "scheduled_autoscaling_up__max_capacity" {
+variable "scheduled_autoscaling_up_max_capacity" {
   description = "The maximum number of tasks to provision"
   type        = number
   default     = 6
+}
+
+variable "scheduled_autoscaling_down_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 1
+}
+
+variable "scheduled_autoscaling_down_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 3
 }
