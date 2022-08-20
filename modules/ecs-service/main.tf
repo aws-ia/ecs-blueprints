@@ -8,12 +8,12 @@ resource "aws_ecs_service" "this" {
   name    = var.name
   cluster = var.ecs_cluster_id
   # launch_type                        = "FARGATE"
-  platform_version                   = var.platform_version
-  task_definition                    = aws_ecs_task_definition.this.arn
-  desired_count                      = var.desired_count
-  enable_ecs_managed_tags            = var.enable_ecs_managed_tags
-  propagate_tags                     = var.propagate_tags
-  enable_execute_command             = var.enable_execute_command
+  platform_version        = var.platform_version
+  task_definition         = aws_ecs_task_definition.this.arn
+  desired_count           = var.desired_count
+  enable_ecs_managed_tags = var.enable_ecs_managed_tags
+  propagate_tags          = var.propagate_tags
+  enable_execute_command  = var.enable_execute_command
 
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
@@ -42,8 +42,8 @@ resource "aws_ecs_service" "this" {
       container_port   = var.container_port
     }
   }
-  
-  health_check_grace_period_seconds  = length(var.load_balancers)!=0 ? var.health_check_grace_period_seconds : null 
+
+  health_check_grace_period_seconds = length(var.load_balancers) != 0 ? var.health_check_grace_period_seconds : null
 
   dynamic "service_registries" {
     for_each = var.service_registry_list
