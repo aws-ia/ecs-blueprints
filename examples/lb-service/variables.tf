@@ -208,3 +208,52 @@ variable "cp_strategy_fg_spot_weight" {
   type        = number
   default     = 0
 }
+
+# schedule scaling
+variable "enable_scheduled_autoscaling" {
+  description = "Determines whether scheduled autoscaling is enabled for the service"
+  type        = bool
+  default     = false
+}
+
+variable "scheduled_autoscaling_timezone" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "America/Los_Angeles"
+}
+
+variable "scheduled_autoscaling_up_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 6 * * ? *)"
+}
+
+variable "scheduled_autoscaling_down_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 20 * * ? *)"
+}
+
+variable "scheduled_autoscaling_up_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 4
+}
+
+variable "scheduled_autoscaling_up_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 6
+}
+
+variable "scheduled_autoscaling_down_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 1
+}
+
+variable "scheduled_autoscaling_down_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 3
+}

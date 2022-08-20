@@ -26,6 +26,8 @@
 |------|------|
 | [aws_appautoscaling_policy.cpu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
 | [aws_appautoscaling_policy.memory](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy) | resource |
+| [aws_appautoscaling_scheduled_action.scale_down](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_scheduled_action) | resource |
+| [aws_appautoscaling_scheduled_action.scale_up](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_scheduled_action) | resource |
 | [aws_appautoscaling_target.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_target) | resource |
 | [aws_cloudwatch_log_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
 | [aws_cloudwatch_metric_alarm.high_cpu_policy_alarm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm) | resource |
@@ -60,6 +62,7 @@
 | <a name="input_enable_autoscaling"></a> [enable\_autoscaling](#input\_enable\_autoscaling) | Determines whether autoscaling is enabled for the service | `bool` | `false` | no |
 | <a name="input_enable_ecs_managed_tags"></a> [enable\_ecs\_managed\_tags](#input\_enable\_ecs\_managed\_tags) | Specifies whether to enable Amazon ECS managed tags for the tasks within the service. | `bool` | `true` | no |
 | <a name="input_enable_execute_command"></a> [enable\_execute\_command](#input\_enable\_execute\_command) | Specifies whether to enable Amazon ECS Exec for the tasks within the service. | `bool` | `false` | no |
+| <a name="input_enable_scheduled_autoscaling"></a> [enable\_scheduled\_autoscaling](#input\_enable\_scheduled\_autoscaling) | Determines whether scheduled autoscaling is enabled for the service | `bool` | `false` | no |
 | <a name="input_execution_role_arn"></a> [execution\_role\_arn](#input\_execution\_role\_arn) | ecs-blueprint-infra ECS execution ARN | `string` | n/a | yes |
 | <a name="input_health_check_grace_period_seconds"></a> [health\_check\_grace\_period\_seconds](#input\_health\_check\_grace\_period\_seconds) | Number of seconds for the task health check | `number` | `30` | no |
 | <a name="input_image"></a> [image](#input\_image) | The container image | `string` | n/a | yes |
@@ -69,6 +72,13 @@
 | <a name="input_name"></a> [name](#input\_name) | The name for the ecs service | `string` | n/a | yes |
 | <a name="input_platform_version"></a> [platform\_version](#input\_platform\_version) | Platform version on which to run your service | `string` | `null` | no |
 | <a name="input_propagate_tags"></a> [propagate\_tags](#input\_propagate\_tags) | Specifies whether to propagate the tags from the task definition or the service to the tasks. The valid values are SERVICE and TASK\_DEFINITION. | `string` | `"SERVICE"` | no |
+| <a name="input_scheduled_autoscaling_down_max_capacity"></a> [scheduled\_autoscaling\_down\_max\_capacity](#input\_scheduled\_autoscaling\_down\_max\_capacity) | The maximum number of tasks to provision | `number` | `3` | no |
+| <a name="input_scheduled_autoscaling_down_min_capacity"></a> [scheduled\_autoscaling\_down\_min\_capacity](#input\_scheduled\_autoscaling\_down\_min\_capacity) | The minimum number of tasks to provision | `number` | `1` | no |
+| <a name="input_scheduled_autoscaling_down_time"></a> [scheduled\_autoscaling\_down\_time](#input\_scheduled\_autoscaling\_down\_time) | Timezone which scheduled scaling occurs | `string` | `"cron(0 20 * * ? *)"` | no |
+| <a name="input_scheduled_autoscaling_timezone"></a> [scheduled\_autoscaling\_timezone](#input\_scheduled\_autoscaling\_timezone) | Timezone which scheduled scaling occurs | `string` | `"America/Los_Angeles"` | no |
+| <a name="input_scheduled_autoscaling_up_max_capacity"></a> [scheduled\_autoscaling\_up\_max\_capacity](#input\_scheduled\_autoscaling\_up\_max\_capacity) | The maximum number of tasks to provision | `number` | `6` | no |
+| <a name="input_scheduled_autoscaling_up_min_capacity"></a> [scheduled\_autoscaling\_up\_min\_capacity](#input\_scheduled\_autoscaling\_up\_min\_capacity) | The minimum number of tasks to provision | `number` | `4` | no |
+| <a name="input_scheduled_autoscaling_up_time"></a> [scheduled\_autoscaling\_up\_time](#input\_scheduled\_autoscaling\_up\_time) | Timezone which scheduled scaling occurs | `string` | `"cron(0 6 * * ? *)"` | no |
 | <a name="input_security_groups"></a> [security\_groups](#input\_security\_groups) | Security groups associated with the task or service. If you do not specify a security group, the default security group for the VPC is used. | `list(string)` | n/a | yes |
 | <a name="input_service_registry_list"></a> [service\_registry\_list](#input\_service\_registry\_list) | A list of service discovery registry names for the service | <pre>list(object({<br>    registry_arn = string<br>  }))</pre> | `[]` | no |
 | <a name="input_sidecar_container_definitions"></a> [sidecar\_container\_definitions](#input\_sidecar\_container\_definitions) | List of container definitions to add to the task | `list(any)` | `[]` | no |
