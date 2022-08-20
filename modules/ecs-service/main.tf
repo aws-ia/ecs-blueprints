@@ -95,6 +95,28 @@ module "task_sidecar_containers" {
   }
 }
 
+module "task_main_app_container" {
+  source          = "../ecs-container-definition"
+  container_image = var.image
+  container_name  = var.container_name
+  port_mappings = [{
+    protocol : "tcp",
+    containerPort : var.container_port,
+    hostPort : var.container_port
+  }]
+  log_configuration = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : aws_cloudwatch_log_group.this.name,
+      awslogs-stream-prefix : "ecs"
+    }
+  }
+  map_secrets     = var.map_secrets
+  map_environment = var.map_environment
+
+}
+
 resource "aws_ecs_task_definition" "this" {
   family                   = var.name
   network_mode             = "awsvpc"
@@ -106,33 +128,7 @@ resource "aws_ecs_task_definition" "this" {
 
   container_definitions = jsonencode(
     concat(
-      [{
-        # below would set reservation to be same
-        # as task cpu and memory which is not what we want
-        # since it can potentially starve other containers in the task
-        # the container level reservations should be sent in the container definition
-        # no reservations for now
-        #      cpu : var.cpu,
-        #      memory : var.memory,
-
-        image : var.image,
-        name : var.container_name,
-        portMappings : [
-          {
-            protocol : "tcp",
-            containerPort : var.container_port,
-            hostPort : var.container_port
-          }
-        ],
-        logConfiguration : {
-          logDriver : "awslogs",
-          options : {
-            awslogs-region : data.aws_region.current.name,
-            awslogs-group : aws_cloudwatch_log_group.this.name,
-            awslogs-stream-prefix : "ecs"
-          }
-        }
-      }],
+      [module.task_main_app_container.json_map_object],
       [for sc in module.task_sidecar_containers : sc.json_map_object]
     )
   )
