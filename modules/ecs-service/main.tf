@@ -14,7 +14,7 @@ resource "aws_ecs_service" "this" {
   enable_ecs_managed_tags            = var.enable_ecs_managed_tags
   propagate_tags                     = var.propagate_tags
   enable_execute_command             = var.enable_execute_command
-  health_check_grace_period_seconds  = var.health_check_grace_period_seconds
+
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
@@ -42,6 +42,8 @@ resource "aws_ecs_service" "this" {
       container_port   = var.container_port
     }
   }
+  
+  health_check_grace_period_seconds  = length(var.load_balancers)!=0 ? var.health_check_grace_period_seconds : null 
 
   dynamic "service_registries" {
     for_each = var.service_registry_list

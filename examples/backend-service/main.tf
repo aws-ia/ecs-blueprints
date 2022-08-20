@@ -112,7 +112,7 @@ resource "aws_service_discovery_service" "sd_service" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-backend-service"
+  source = "../../modules/ecs-service"
 
   name                       = local.name
   desired_count              = var.desired_count
