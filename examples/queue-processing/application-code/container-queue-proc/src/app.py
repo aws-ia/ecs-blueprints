@@ -6,6 +6,7 @@ Purpose
 
 Demonstrate basic message operations in Amazon Simple Queue Service (Amazon SQS).
 """
+import urllib.parse
 import logging
 import sys, os
 import json
@@ -114,15 +115,14 @@ def usage_demo():
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")
     more_messages = True
     while more_messages:
-        received_messages = receive_messages(queue, batch_size, 2)
+        received_messages = receive_messages(queue, batch_size, 4)
         sys.stdout.flush()
 
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)
             bucket = body['Records'][0]['s3']['bucket']['name']
-            key = body['Records'][0]['s3']['object']['key']
-
+            key = urllib.parse.unquote_plus(body['Records'][0]['s3']['object']['key'], encoding='utf-8')
             file_name = os.path.split(key)
             download_path = '/tmp/ecsproc/' + file_name[1]
             upload_path = '/tmp/ecsproc/thumbnail-{}'.format(file_name[1])

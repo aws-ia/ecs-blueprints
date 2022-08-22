@@ -46,28 +46,9 @@ data "aws_iam_role" "ecs_core_infra_exec_role" {
   name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
 }
 
-data "aws_service_discovery_dns_namespace" "sd_namespace" {
-  name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
-}
-
 ################################################################################
 # ECS Blueprint
 ################################################################################
-
-module "container_image_ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.4"
-
-  repository_name = var.container_name
-
-  repository_force_delete           = true
-  create_lifecycle_policy           = false
-  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
-
-  tags = local.tags
-}
 
 module "service_task_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -92,85 +73,49 @@ module "service_task_security_group" {
   tags = local.tags
 }
 
-resource "aws_service_discovery_service" "sd_service" {
-  name = local.name
+module "container_image_ecr" {
+  source  = "terraform-aws-modules/ecr/aws"
+  version = "~> 1.4"
 
-  dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
+  repository_name = var.container_name
 
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
+  repository_force_delete           = true
+  create_lifecycle_policy           = false
+  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
+  repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
-    routing_policy = "MULTIVALUE"
-  }
-
-  health_check_custom_config {
-    failure_threshold = 1
-  }
+  tags = local.tags
 }
 
-# module "ecs_service_definition" {
-#   source = "../../modules/ecs-backend-service"
-
-#   name                       = local.name
-#   desired_count              = var.desired_count
-#   ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
-#   cp_strategy_base           = var.cp_strategy_base
-#   cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-#   cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
-
-#   security_groups = [module.service_task_security_group.security_group_id]
-#   subnets         = data.aws_subnets.private.ids
-
-#   service_registry_list = [{
-#     registry_arn = aws_service_discovery_service.sd_service.arn
-#   }]
-#   deployment_controller = "ECS"
-
-#   # Task Definition
-#   task_role_policy              = data.aws_iam_policy_document.task_role.json
-#   attach_task_role_policy       = true
-#   container_name                = var.container_name
-#   container_port                = var.container_port
-#   cpu                           = var.task_cpu
-#   memory                        = var.task_memory
-#   image                         = module.container_image_ecr.repository_url
-#   execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-#   sidecar_container_definitions = var.sidecar_container_definitions
-#   enable_execute_command        = true
-#   tags                          = local.tags
-# }
-
-module "ecs-fargate-task-definition" {
-  source  = "cn-terraform/ecs-fargate-task-definition/aws"
-  version = "1.0.30"
-
-  container_image = module.container_image_ecr.repository_url
-  container_name  = var.container_name
-  name_prefix     = "ecs-proc"
-
-  container_cpu    = var.task_cpu
-  container_memory = var.task_memory
-
-  task_role_arn = aws_iam_role.task.arn
-
-  log_configuration = {
-    logDriver : "awslogs",
-    options : {
-      awslogs-region : data.aws_region.current.name,
-      awslogs-group : aws_cloudwatch_log_group.this.name,
-      awslogs-stream-prefix : "ecs"
+resource "aws_ecs_task_definition" "this" {
+  family                   = var.container_name
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  task_role_arn            = aws_iam_role.task.arn
+  execution_role_arn       = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  container_definitions    = jsonencode([
+    {
+      name      = var.container_name
+      image     = "${module.container_image_ecr.repository_url}:654ff8e"
+    logConfiguration = {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-region": var.aws_region,
+        "awslogs-group": aws_cloudwatch_log_group.this.name,
+        "awslogs-stream-prefix": "ecs"
+      }
     }
   }
+  ])
 }
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${local.name}"
   retention_in_days = var.log_retention_in_days
 
-  tags = var.tags
+  tags = local.tags
 }
 
 ################################################################################
@@ -364,13 +309,13 @@ resource "aws_ssm_parameter" "ecs_cluster_name" {
 resource "aws_ssm_parameter" "ecs_task_definition" {
   name  = "PIPELINE_ECS_TASK_DEFINITON"
   type  = "String"
-  value = module.ecs-fargate-task-definition.aws_ecs_task_definition_td_arn
+  value = aws_ecs_task_definition.this.arn
 }
 
 resource "aws_ssm_parameter" "ecs_task_container_name" {
   name  = "PIPELINE_ECS_TASK_CONTAINER"
   type  = "String"
-  value = module.ecs_service_definition.container_name
+  value = var.container_name
 }
 
 resource "aws_ssm_parameter" "ecs_task_subnet" {
@@ -442,7 +387,7 @@ resource "aws_sns_topic" "codestar_notification" {
 module "codebuild_ci" {
   source = "../../modules/codebuild"
 
-  name           = "codebuild-${module.ecs_service_definition.name}"
+  name           = "codebuild-${local.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
   buildspec_path = var.buildspec_path
   s3_bucket      = module.codepipeline_s3_bucket
@@ -455,10 +400,10 @@ module "codebuild_ci" {
         value = module.container_image_ecr.repository_url
         }, {
         name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
+        value = aws_ecs_task_definition.this.family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -479,7 +424,7 @@ module "codebuild_ci" {
   }
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-codebuild-${random_id.this.hex}"
+  iam_role_name   = "${local.name}-codebuild-${random_id.this.hex}"
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
@@ -496,24 +441,47 @@ data "aws_secretsmanager_secret_version" "github_token" {
 module "codepipeline_ci_cd" {
   source = "../../modules/codepipeline"
 
-  name                  = "pipeline-${module.ecs_service_definition.name}"
-  service_role          = module.codepipeline_ci_cd.codepipeline_role_arn
-  s3_bucket             = module.codepipeline_s3_bucket
-  github_token          = data.aws_secretsmanager_secret_version.github_token.secret_string
-  repo_owner            = var.repository_owner
-  repo_name             = var.repository_name
-  branch                = var.repository_branch
-  codebuild_project_app = module.codebuild_ci.project_id
-  sns_topic             = aws_sns_topic.codestar_notification.arn
+  name         = "pipeline-${local.name}"
+  service_role = module.codepipeline_ci_cd.codepipeline_role_arn
+  s3_bucket    = module.codepipeline_s3_bucket
+  sns_topic    = aws_sns_topic.codestar_notification.arn
 
-  app_deploy_configuration = {
-    ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-    ServiceName = module.ecs_service_definition.name
-    FileName    = "imagedefinition.json"
-  }
+  stage = [{
+    name = "Source"
+    action = [{
+      name             = "Source"
+      category         = "Source"
+      owner            = "ThirdParty"
+      provider         = "GitHub"
+      version          = "1"
+      input_artifacts  = []
+      output_artifacts = ["SourceArtifact"]
+      configuration = {
+        OAuthToken           = data.aws_secretsmanager_secret_version.github_token.secret_string
+        Owner                = var.repository_owner
+        Repo                 = var.repository_name
+        Branch               = var.repository_branch
+        PollForSourceChanges = true
+      }
+    }],
+    }, {
+    name = "Build"
+    action = [{
+      name             = "Build_app"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ProjectName = module.codebuild_ci.project_id
+      }
+    }],
+  }]
 
   create_iam_role = true
-  iam_role_name   = "${module.ecs_service_definition.name}-pipeline-${random_id.this.hex}"
+  iam_role_name   = "${local.name}-pipeline-${random_id.this.hex}"
 
   tags = local.tags
 }
@@ -640,7 +608,7 @@ data "aws_iam_policy_document" "lambda_role" {
       "ecs:StartTask",
       "ecs:RunTask"
     ]
-    resources = [data.aws_ecs_cluster.core_infra.arn]
+    resources = ["*"]
   }
 
   statement {

@@ -9,6 +9,12 @@ variable "core_stack_name" {
   default     = "ecs-blueprint-infra"
 }
 
+variable "service_name" {
+  description = "The service name"
+  type        = string
+  default     = "ecs-queue-proc"
+}
+
 variable "vpc_tag_key" {
   description = "The tag key of the VPC and subnets"
   type        = string
@@ -80,29 +86,6 @@ variable "github_token_secret_name" {
 }
 
 ################################################################################
-# Servie definition parameters
-################################################################################
-
-# application related input parameters
-variable "service_name" {
-  description = "The service name"
-  type        = string
-  default     = "ecs-queue-proc"
-}
-
-variable "namespace" {
-  description = "The service discovery namespace"
-  type        = string
-  default     = "default"
-}
-
-variable "desired_count" {
-  description = "The number of task replicas for service"
-  type        = number
-  default     = 1
-}
-
-################################################################################
 # Task definition parameters
 ################################################################################
 variable "task_cpu" {
@@ -115,6 +98,11 @@ variable "task_memory" {
   type        = string
 }
 
+variable "log_retention_in_days" {
+  description = "The number of days for which to retain task logs"
+  type        = number
+  default     = 7
+}
 
 ################################################################################
 # Container definition used in task
@@ -144,32 +132,14 @@ variable "container_port" {
 # ]
 # see modules/ecs-container-definition for full set of parameters
 # map_environment and map_secrets are common to add in container definition
-variable "sidecar_container_definitions" {
-  description = "List of container definitions to add to the task"
-  type        = list(any)
-  default     = []
-}
+# variable "sidecar_container_definitions" {
+#   description = "List of container definitions to add to the task"
+#   type        = list(any)
+#   default     = []
+# }
 
 ################################################################################
 # Capacity provider strategy setting
 # to distribute tasks between Fargate
 # Fargate Spot
 ################################################################################
-
-variable "cp_strategy_base" {
-  description = "Base number of tasks to create on Fargate on-demand"
-  type        = number
-  default     = 1
-}
-
-variable "cp_strategy_fg_weight" {
-  description = "Relative number of tasks to put in Fargate"
-  type        = number
-  default     = 1
-}
-
-variable "cp_strategy_fg_spot_weight" {
-  description = "Relative number of tasks to put in Fargate Spot"
-  type        = number
-  default     = 0
-}
