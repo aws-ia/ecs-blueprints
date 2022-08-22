@@ -116,7 +116,7 @@ def usage_demo():
     while more_messages:
         received_messages = receive_messages(queue, batch_size, 2)
         sys.stdout.flush()
-        
+
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)

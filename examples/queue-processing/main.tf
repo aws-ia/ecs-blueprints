@@ -111,51 +111,66 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
-module "ecs_service_definition" {
-  source = "../../modules/ecs-backend-service"
+# module "ecs_service_definition" {
+#   source = "../../modules/ecs-backend-service"
 
-  name                       = local.name
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
-  cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+#   name                       = local.name
+#   desired_count              = var.desired_count
+#   ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
+#   cp_strategy_base           = var.cp_strategy_base
+#   cp_strategy_fg_weight      = var.cp_strategy_fg_weight
+#   cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+#   security_groups = [module.service_task_security_group.security_group_id]
+#   subnets         = data.aws_subnets.private.ids
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
-  deployment_controller = "ECS"
+#   service_registry_list = [{
+#     registry_arn = aws_service_discovery_service.sd_service.arn
+#   }]
+#   deployment_controller = "ECS"
 
-  # Task Definition
-  task_role_policy              = data.aws_iam_policy_document.task_role.json
-  attach_task_role_policy       = true
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  sidecar_container_definitions = var.sidecar_container_definitions
-  enable_execute_command        = true
-  tags                          = local.tags
-}
+#   # Task Definition
+#   task_role_policy              = data.aws_iam_policy_document.task_role.json
+#   attach_task_role_policy       = true
+#   container_name                = var.container_name
+#   container_port                = var.container_port
+#   cpu                           = var.task_cpu
+#   memory                        = var.task_memory
+#   image                         = module.container_image_ecr.repository_url
+#   execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
+#   sidecar_container_definitions = var.sidecar_container_definitions
+#   enable_execute_command        = true
+#   tags                          = local.tags
+# }
 
 module "ecs-fargate-task-definition" {
   source  = "cn-terraform/ecs-fargate-task-definition/aws"
   version = "1.0.30"
-  
-  container_image  = module.container_image_ecr.repository_url
-  container_name   = var.container_name
-  name_prefix      = "ecs-proc"
 
-  container_cpu    = 256
-  container_memory = 512
+  container_image = module.container_image_ecr.repository_url
+  container_name  = var.container_name
+  name_prefix     = "ecs-proc"
 
-  task_role_arn    = aws_iam_role.task.arn
+  container_cpu    = var.task_cpu
+  container_memory = var.task_memory
 
+  task_role_arn = aws_iam_role.task.arn
+
+  log_configuration = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : aws_cloudwatch_log_group.this.name,
+      awslogs-stream-prefix : "ecs"
+    }
+  }
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  name              = "/ecs/${local.name}"
+  retention_in_days = var.log_retention_in_days
+
+  tags = var.tags
 }
 
 ################################################################################
