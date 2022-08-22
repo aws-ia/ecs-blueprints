@@ -37,6 +37,7 @@ The solution has following key components:
     * Service definition takes the load balancer target group created above as input.
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
     * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
+* (Optional) Scheduled autoscaling: The blueprint also includes settings for scheduled autoscaling. Let us say you expect your application to have higher load during business hours (say 8am-5pm), and low load outside of it. You can configure the service to scale up, that is, increase the number of tasks behind the service say at 7:45am; and configure to scale down at say 5:15pm. You can configure the desired count for the high load and low load situation. And you can provide the time to scale up and down using simple cron syntax.
 
 The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
 

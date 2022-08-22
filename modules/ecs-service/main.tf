@@ -8,13 +8,13 @@ resource "aws_ecs_service" "this" {
   name    = var.name
   cluster = var.ecs_cluster_id
   # launch_type                        = "FARGATE"
-  platform_version                   = var.platform_version
-  task_definition                    = aws_ecs_task_definition.this.arn
-  desired_count                      = var.desired_count
-  enable_ecs_managed_tags            = var.enable_ecs_managed_tags
-  propagate_tags                     = var.propagate_tags
-  enable_execute_command             = var.enable_execute_command
-  health_check_grace_period_seconds  = var.health_check_grace_period_seconds
+  platform_version        = var.platform_version
+  task_definition         = aws_ecs_task_definition.this.arn
+  desired_count           = var.desired_count
+  enable_ecs_managed_tags = var.enable_ecs_managed_tags
+  propagate_tags          = var.propagate_tags
+  enable_execute_command  = var.enable_execute_command
+
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
@@ -42,6 +42,8 @@ resource "aws_ecs_service" "this" {
       container_port   = var.container_port
     }
   }
+
+  health_check_grace_period_seconds = length(var.load_balancers) != 0 ? var.health_check_grace_period_seconds : null
 
   dynamic "service_registries" {
     for_each = var.service_registry_list
@@ -184,7 +186,7 @@ resource "aws_iam_role_policy" "task" {
 
 # ------- AWS Autoscaling target to linke the ECS cluster and service -------
 resource "aws_appautoscaling_target" "this" {
-  count = var.enable_autoscaling ? 1 : 0
+  count = var.enable_autoscaling || var.enable_scheduled_autoscaling ? 1 : 0
 
   min_capacity       = var.autoscaling_min_capacity
   max_capacity       = var.autoscaling_max_capacity
@@ -279,5 +281,41 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu_policy_alarm" {
   dimensions = {
     "ServiceName" = aws_ecs_service.this.name
     "ClusterName" = var.ecs_cluster_id
+  }
+}
+
+
+# Scheduled Scaling
+# Schedule scaling is not shown in AWS console. Can view from this cli command - aws application-autoscaling describe-scheduled-actions --service-namespace ecs
+
+resource "aws_appautoscaling_scheduled_action" "scale_up" {
+  count = var.enable_scheduled_autoscaling ? 1 : 0
+
+  name               = "ecs_scheduled_scale_up_${aws_ecs_service.this.name}"
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  schedule           = var.scheduled_autoscaling_up_time
+  timezone           = var.scheduled_autoscaling_timezone
+
+  scalable_target_action {
+    min_capacity = var.scheduled_autoscaling_up_min_capacity
+    max_capacity = var.scheduled_autoscaling_up_max_capacity
+  }
+}
+
+resource "aws_appautoscaling_scheduled_action" "scale_down" {
+  count = var.enable_scheduled_autoscaling ? 1 : 0
+
+  name               = "ecs_scheduled_scale_down_${aws_ecs_service.this.name}"
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  schedule           = var.scheduled_autoscaling_down_time
+  timezone           = var.scheduled_autoscaling_timezone
+
+  scalable_target_action {
+    min_capacity = var.scheduled_autoscaling_down_min_capacity
+    max_capacity = var.scheduled_autoscaling_down_max_capacity
   }
 }
