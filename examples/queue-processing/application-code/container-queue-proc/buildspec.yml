@@ -33,6 +33,8 @@ phases:
             }'> tmp-td.json)
       - NEW_TASK_DEFINTION=$(jq -r --arg NEWIMAGE "$REPO_URL:$IMAGE_TAG" '.containerDefinitions[].image |= $NEWIMAGE' tmp-td.json > tmp-ntd.json)
       - aws ecs register-task-definition --cli-input-json file://tmp-ntd.json
+      - mkdir artifacts
+      - cp tmp-ntd.json artifacts/task-definition.json
 
 artifacts:
   files:
