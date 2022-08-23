@@ -130,7 +130,7 @@ def usage_demo():
 
             s3_client.download_file(bucket, key, download_path)
             resize_image(download_path, upload_path)
-            s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name)
+            s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name[1])
 
         if received_messages:
             delete_messages(queue, received_messages)
