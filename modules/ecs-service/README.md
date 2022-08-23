@@ -18,6 +18,7 @@
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_task_main_app_container"></a> [task\_main\_app\_container](#module\_task\_main\_app\_container) | ../ecs-container-definition | n/a |
 | <a name="module_task_sidecar_containers"></a> [task\_sidecar\_containers](#module\_task\_sidecar\_containers) | ../ecs-container-definition | n/a |
 
 ## Resources
@@ -68,6 +69,8 @@
 | <a name="input_image"></a> [image](#input\_image) | The container image | `string` | n/a | yes |
 | <a name="input_load_balancers"></a> [load\_balancers](#input\_load\_balancers) | A list of load balancer config objects for the ECS service | <pre>list(object({<br>    target_group_arn = string<br>  }))</pre> | `[]` | no |
 | <a name="input_log_retention_in_days"></a> [log\_retention\_in\_days](#input\_log\_retention\_in\_days) | The number of days for which to retain task logs | `number` | `7` | no |
+| <a name="input_map_environment"></a> [map\_environment](#input\_map\_environment) | The environment variables to pass to the container. This is a map of string: {key: value}. map\_environment overrides environment | `map(string)` | `null` | no |
+| <a name="input_map_secrets"></a> [map\_secrets](#input\_map\_secrets) | The secrets variables to pass to the container. This is a map of string: {key: value}. map\_secrets overrides secrets | `map(string)` | `null` | no |
 | <a name="input_memory"></a> [memory](#input\_memory) | The MEMORY value to assign to the container, read AWS documentation to available values | `number` | `512` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name for the ecs service | `string` | n/a | yes |
 | <a name="input_platform_version"></a> [platform\_version](#input\_platform\_version) | Platform version on which to run your service | `string` | `null` | no |
