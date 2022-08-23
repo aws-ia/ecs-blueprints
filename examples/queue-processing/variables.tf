@@ -114,32 +114,24 @@ variable "container_name" {
   default     = "ecs-queue-proc"
 }
 
-variable "container_port" {
-  description = "The container port to serve traffic"
-  type        = number
-  default     = 3000
+################################################################################
+# ECS Pipeline
+################################################################################
+
+variable "pipeline_enabled" {
+  description = "Enables or Disables the Pipeline in Lambda"
+  type        = string
+  default     = 1
 }
 
-# Provide a list of map objects
-# Each map object has container definition parameters
-# The required parameters are container_name, container_image, port_mappings
-# [
-#  {
-#    "container_name":"monitoring-agent",
-#    "container_image": "img-repo-url"},
-#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
-#  }
-# ]
-# see modules/ecs-container-definition for full set of parameters
-# map_environment and map_secrets are common to add in container definition
-# variable "sidecar_container_definitions" {
-#   description = "List of container definitions to add to the task"
-#   type        = list(any)
-#   default     = []
-# }
+variable "pipeline_max_tasks" {
+  description = "Number of Tasks Lambda spins up"
+  type        = string
+  default     = 10
+}
 
-################################################################################
-# Capacity provider strategy setting
-# to distribute tasks between Fargate
-# Fargate Spot
-################################################################################
+variable "pipeline_s3_dest_prefix" {
+  description = "S3 prefix for processed Thumbnails"
+  type        = string
+  default     = "processed"
+}

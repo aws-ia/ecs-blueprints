@@ -12,12 +12,11 @@ github_token_secret_name = "ecs-github-token"
 # core_stack_name is also same as ecs_cluster_name
 core_stack_name = "ecs-blueprint-infra"
 service_name    = "ecsdemo-queue-proc"
-namespace       = "default"
-desired_count   = 3
 task_cpu        = 256
 task_memory     = 512
 container_name  = "ecsdemo-queue-proc"
 
-#Don't change the container port as it is specific to this app example
-
-container_port = 3000
+# Pipeline variables
+pipeline_enabled        = 1
+pipeline_max_tasks      = 10
+pipeline_s3_dest_prefix = "processed"

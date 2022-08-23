@@ -129,7 +129,7 @@ module "lambda_function" {
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
-  
+
   # create_package         = false
   source_path = "./application-code/lambda-function-trigger/"
 
@@ -266,7 +266,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
   name  = "PIPELINE_ENABLED"
   type  = "String"
-  value = 1
+  value = var.pipeline_enabled
 
   tags = local.tags
 }
@@ -274,7 +274,7 @@ resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
 resource "aws_ssm_parameter" "ecs_pipeline_max_tasks" {
   name  = "PIPELINE_ECS_MAX_TASKS"
   type  = "String"
-  value = 10
+  value = var.pipeline_max_tasks
 
   tags = local.tags
 }
@@ -298,7 +298,7 @@ resource "aws_ssm_parameter" "s3_destination_bucket" {
 resource "aws_ssm_parameter" "s3_destination_prefix" {
   name  = "PIPELINE_S3_DEST_PREFIX"
   type  = "String"
-  value = "processed"
+  value = var.pipeline_s3_dest_prefix
 
   tags = local.tags
 }
@@ -418,9 +418,6 @@ module "codebuild_ci" {
         name  = "CONTAINER_NAME"
         value = var.container_name
         }, {
-        name  = "SERVICE_PORT"
-        value = var.container_port
-        }, {
         name  = "FOLDER_PATH"
         value = var.folder_path
         }, {
@@ -429,9 +426,6 @@ module "codebuild_ci" {
         }, {
         name  = "DESTINATION_BUCKET"
         value = module.destination_s3_bucket.s3_bucket_id
-        }, {
-        name  = "ECS_EXEC_ROLE_ARN"
-        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
       },
     ]
   }
