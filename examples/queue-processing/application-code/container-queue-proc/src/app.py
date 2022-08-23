@@ -22,6 +22,7 @@ sqs = boto3.resource('sqs')
 s3_client = boto3.client('s3')
 
 DEST_BUCKET = '<DESTINATION_BUCKET>'
+S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
 
 def receive_messages(queue, max_number, wait_time):
     """
@@ -129,7 +130,7 @@ def usage_demo():
 
             s3_client.download_file(bucket, key, download_path)
             resize_image(download_path, upload_path)
-            s3_client.upload_file(upload_path, DEST_BUCKET, key)
+            s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name)
 
         if received_messages:
             delete_messages(queue, received_messages)

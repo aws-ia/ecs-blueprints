@@ -48,6 +48,8 @@ def lambda_handler(event, context):
             TASK_SUBNET = param['Value']
         if param['Name'] == 'PIPELINE_ECS_TASK_SECURITYGROUP':
             TASK_SECURITYGROUP = param['Value']
+        if param['Name'] == 'PIPELINE_S3_DEST_PREFIX':
+            S3_DEST_PREFIX = param['Value']
     if (sqs_url and pipeline_enabled and max_tasks and
         TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITON and TASK_SUBNET and TASK_SECURITYGROUP):
         max_tasks = int(max_tasks)
@@ -84,6 +86,9 @@ def lambda_handler(event, context):
                 {
                     'name': 'PIPELINE_ECS_JOB_MODE',
                     'value': '1'
+                }, {
+                    'name': 'PIPELINE_S3_DEST_PREFIX',
+                    'value': S3_DEST_PREFIX
                 }
                 ]
             }

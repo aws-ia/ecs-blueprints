@@ -55,20 +55,11 @@ module "service_task_security_group" {
   version = "~> 4.0"
 
   name        = "${local.name}-task-sg"
-  description = "Security group for service task"
+  description = "Security group for task"
   vpc_id      = data.aws_vpc.vpc.id
 
   ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
   egress_rules        = ["all-all"]
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = var.container_port
-      to_port     = var.container_port
-      protocol    = "tcp"
-      description = "User-service ports"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
 
   tags = local.tags
 }
@@ -109,6 +100,12 @@ resource "aws_ecs_task_definition" "this" {
       }
     }
   ])
+
+  lifecycle {
+    ignore_changes = [container_definitions]
+  }
+
+  tags = local.tags
 }
 
 resource "aws_cloudwatch_log_group" "this" {
@@ -125,22 +122,18 @@ resource "aws_cloudwatch_log_group" "this" {
 module "lambda_function" {
   source = "terraform-aws-modules/lambda/aws"
 
-  function_name = "${local.name}-${random_id.this.hex}"
-  description   = "Automatically invoke ECS tasks based on SQS queue size and available tasks"
-  handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.8"
-  publish       = true
-
+  function_name      = "${local.name}-${random_id.this.hex}"
+  description        = "Automatically invoke ECS tasks based on SQS queue size and available tasks"
+  handler            = "lambda_function.lambda_handler"
+  runtime            = "python3.8"
+  publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
+  
   # create_package         = false
   source_path = "./application-code/lambda-function-trigger/"
 
   cloudwatch_logs_retention_in_days = 7
-
-  environment_variables = {
-
-  }
 
   allowed_triggers = {
     PollSSMScale = {
@@ -274,60 +267,80 @@ resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
   name  = "PIPELINE_ENABLED"
   type  = "String"
   value = 1
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_pipeline_max_tasks" {
   name  = "PIPELINE_ECS_MAX_TASKS"
   type  = "String"
   value = 10
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "sqs_processing_queue" {
   name  = "PIPELINE_UNPROCESSED_SQS_URL"
   type  = "String"
   value = module.processing_queue.this_sqs_queue_name
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "s3_destination_bucket" {
   name  = "PIPELINE_S3_DEST_BUCKET"
   type  = "String"
   value = module.destination_s3_bucket.s3_bucket_arn
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "s3_destination_prefix" {
   name  = "PIPELINE_S3_DEST_PREFIX"
   type  = "String"
   value = "processed"
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_cluster_name" {
   name  = "PIPELINE_ECS_CLUSTER"
   type  = "String"
   value = data.aws_ecs_cluster.core_infra.cluster_name
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_task_definition" {
   name  = "PIPELINE_ECS_TASK_DEFINITON"
   type  = "String"
   value = aws_ecs_task_definition.this.arn
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_task_container_name" {
   name  = "PIPELINE_ECS_TASK_CONTAINER"
   type  = "String"
   value = var.container_name
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_task_subnet" {
   name  = "PIPELINE_ECS_TASK_SUBNET"
   type  = "String"
   value = data.aws_subnets.private.ids[0]
+
+  tags = local.tags
 }
 
 resource "aws_ssm_parameter" "ecs_task_security_group" {
   name  = "PIPELINE_ECS_TASK_SECURITYGROUP"
   type  = "String"
   value = module.service_task_security_group.security_group_id
+
+  tags = local.tags
 }
 
 ################################################################################
