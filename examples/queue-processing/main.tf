@@ -129,9 +129,7 @@ module "lambda_function" {
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
-
-  # create_package         = false
-  source_path = "./application-code/lambda-function-trigger/"
+  source_path        = var.lambda_source
 
   cloudwatch_logs_retention_in_days = 7
 
@@ -494,15 +492,7 @@ module "codepipeline_ci_cd" {
 }
 
 ################################################################################
-# Supporting Resources
-################################################################################
-
-resource "random_id" "this" {
-  byte_length = "2"
-}
-
-################################################################################
-# Task Role
+# Task and Lambda Roles
 ################################################################################
 
 resource "aws_iam_role" "task" {
@@ -535,7 +525,6 @@ data "aws_iam_policy_document" "task_role" {
     actions   = ["iam:PassRole"]
     resources = ["*"]
   }
-
   statement {
     sid = "SQSReadWrite"
     actions = [
@@ -550,7 +539,6 @@ data "aws_iam_policy_document" "task_role" {
     ]
     resources = [module.processing_queue.this_sqs_queue_arn]
   }
-
   statement {
     sid = "S3Read"
     actions = [
@@ -559,7 +547,6 @@ data "aws_iam_policy_document" "task_role" {
       "s3:GetObject",
       "s3:PutObject",
       "s3:DeleteObject"
-
     ]
     resources = [
       module.source_s3_bucket.s3_bucket_arn,
@@ -568,7 +555,6 @@ data "aws_iam_policy_document" "task_role" {
       "${module.destination_s3_bucket.s3_bucket_arn}/*"
     ]
   }
-
   statement {
     sid = "SSMRead"
     actions = [
@@ -589,7 +575,6 @@ data "aws_iam_policy_document" "lambda_role" {
     actions   = ["iam:PassRole"]
     resources = ["*"]
   }
-
   statement {
     sid = "SQSReadWrite"
     actions = [
@@ -617,7 +602,6 @@ data "aws_iam_policy_document" "lambda_role" {
     ]
     resources = ["*"]
   }
-
   statement {
     sid = "SSMRead"
     actions = [
@@ -629,4 +613,12 @@ data "aws_iam_policy_document" "lambda_role" {
       "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
     ]
   }
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+resource "random_id" "this" {
+  byte_length = "2"
 }

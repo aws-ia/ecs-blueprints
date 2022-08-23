@@ -53,13 +53,19 @@ variable "ecs_task_execution_role_name" {
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
-  default     = "./examples/queue-processing/application-code/container-queue-proc/buildspec.yml"
+  default     = "./application-code/container-queue-proc/templates/buildspec.yml"
 }
 
 variable "folder_path" {
   description = "The location of the application code and Dockerfile files"
   type        = string
-  default     = "./examples/queue-processing/application-code/container-queue-proc/."
+  default     = "./application-code/container-queue-proc/."
+}
+
+variable "lambda_source" {
+  description = "The location of the Lambda source code"
+  type = string
+  default = "../../application-code/lambda-function-queue-trigger/"
 }
 
 variable "repository_owner" {

@@ -1,6 +1,8 @@
 # ECS Fargate Autoscaling Queue Processing
 
-This solution blueprint creates a backend servie that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. Below are steps for deploying this service:
+This solution blueprint deploys an end to end data processing pipeline using ECS Fargate, Lambda, S3, and SQS. This use case will process a massive number of files in S3 to be consumed or used by another job or service. For example, resizing images into a standard 224x224 or 299x299 format for deep learning.
+
+This blueprint expects files uploaded to an S3 source bucket which trigger S3 event notifications which publish file metadata to SQS. On a regular 2 minute CloudWatch event rule, a Lambda function is invoked which checks the SQS queue for the `ApproximateNumberOfMessages` attribute and the ECS `run_task()` API to scale the number of Fargate tasks based on queue depth, max number of tasks, and running tasks. The tasks are designed to continue processing and draining the SQS queue before scaling down to 0 tasks automatically, eliminating the need to keep a fixed pool of ECS tasks running.
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
@@ -20,11 +22,12 @@ terraform apply -auto-approve
 
 * **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret (not as key-value pair secret). This token is used to access the *application-code* repository and build images.**
 * S3 bucket to store CodePipeline assets. The bucket is encrypted with AWS managed key.
+* 2 S3 buckets for source and destination artifacts
 * SNS topic for notifications from the pipeline
-* CodeBuild for building container images
+* CodeBuild for building queue processing container image
     * Needs the S3 bucket created above
     * IAM role for the build service
-    * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](../../application-code/ecsdemo-nodejs/templates/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
+    * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](./application-code/container-queue-proc/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
     * A set of environment variables including repository URL and folder path.
 * CodePipeline to listen for changes to the repository and trigger build and deployment.
     * Needs the S3 bucket created above

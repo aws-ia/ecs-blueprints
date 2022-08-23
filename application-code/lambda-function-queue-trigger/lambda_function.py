@@ -69,7 +69,7 @@ def lambda_handler(event, context):
     if sqs_queue_size == 0:
         return
     ecs_response = ecs.list_tasks(
-        cluster=TASK_CLUSTER,maxResults=100,desiredStatus='RUNNING',launchType='FARGATE')
+        cluster=TASK_CLUSTER,maxResults=100,desiredStatus='RUNNING',family=TASK_CONTAINER)
     current_running_tasks = len(ecs_response["taskArns"])
     available_tasks = max_tasks - current_running_tasks
     tasks_to_start = min([sqs_queue_size, available_tasks, max_tasks_per_run, max_tasks])
@@ -77,6 +77,17 @@ def lambda_handler(event, context):
     if tasks_to_start<=0:
         return
     run_task_response = ecs.run_task(
+        capacityProviderStrategy=[
+            {
+            'capacityProvider': 'FARGATE',
+            'weight': 1,
+            'base': 2
+            }, {
+            'capacityProvider': 'FARGATE_SPOT',
+            'weight': 4,
+            'base': 0
+            }
+        ],
         cluster=TASK_CLUSTER,
         taskDefinition=TASK_DEFINITON,
         overrides={
@@ -96,7 +107,7 @@ def lambda_handler(event, context):
             ]
         },
         count=tasks_to_start,
-        launchType='FARGATE',
+        # launchType='FARGATE',
         networkConfiguration={
             'awsvpcConfiguration': {
                 'subnets': [TASK_SUBNET],
