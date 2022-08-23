@@ -95,19 +95,19 @@ resource "aws_ecs_task_definition" "this" {
   memory                   = var.task_memory
   task_role_arn            = aws_iam_role.task.arn
   execution_role_arn       = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  container_definitions    = jsonencode([
+  container_definitions = jsonencode([
     {
-      name      = var.container_name
-      image     = "${module.container_image_ecr.repository_url}:654ff8e"
-    logConfiguration = {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-region": var.aws_region,
-        "awslogs-group": aws_cloudwatch_log_group.this.name,
-        "awslogs-stream-prefix": "ecs"
+      name  = var.container_name
+      image = module.container_image_ecr.repository_url
+      logConfiguration = {
+        "logDriver" : "awslogs",
+        "options" : {
+          "awslogs-region" : var.aws_region,
+          "awslogs-group" : aws_cloudwatch_log_group.this.name,
+          "awslogs-stream-prefix" : "ecs"
+        }
       }
     }
-  }
   ])
 }
 

@@ -3,7 +3,7 @@ import boto3, os
 sqs = boto3.client('sqs')
 ecs = boto3.client('ecs')
 ssm = boto3.client('ssm')
-max_tasks_per_run = 10
+max_tasks_per_run = 100
 
 def lambda_handler(event, context):
     max_tasks = None
