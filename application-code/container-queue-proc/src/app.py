@@ -24,6 +24,7 @@ s3_client = boto3.client('s3')
 DEST_BUCKET = '<DESTINATION_BUCKET>'
 S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
 
+
 def receive_messages(queue, max_number, wait_time):
     """
     Receive a batch of messages in a single request from an SQS queue.
@@ -139,8 +140,8 @@ def usage_demo():
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)
-
-            if body['Event'] == 's3:TestEvent':
+            # print(body)
+            if body.get('Event') == 's3:TestEvent':
                 delete_message(message)
             else:
                 try:
