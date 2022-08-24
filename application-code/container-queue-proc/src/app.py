@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 sqs = boto3.resource('sqs')
 s3_client = boto3.client('s3')
 
-DEST_BUCKET = '<DESTINATION_BUCKET>'
-S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
+DEST_BUCKET = 'ecsdemo-queue-proc-destination-us-west-2-de95'
+# S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
+S3_PREFIX = 'processing'
 
 def receive_messages(queue, max_number, wait_time):
     """
@@ -82,6 +83,23 @@ def delete_messages(queue, messages):
         return response
 
 
+def delete_message(message):
+    """
+    Delete a message from a queue. Clients must delete messages after they
+    are received and processed to remove them from the queue.
+
+    :param message: The message to delete. The message's queue URL is contained in
+                    the message's metadata.
+    :return: None
+    """
+    try:
+        message.delete()
+        logger.info("Deleted message: %s", message.message_id)
+    except ClientError as error:
+        logger.exception("Couldn't delete message: %s", message.message_id)
+        raise error
+
+
 def resize_image(image_path, resized_path):
     size = 224, 224
 
@@ -110,7 +128,7 @@ def usage_demo():
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
     print('-'*88)
 
-    queue = sqs.get_queue_by_name(QueueName='<QUEUE_NAME>')
+    queue = sqs.get_queue_by_name(QueueName='ecsdemo-queue-proc-processing-queue')
 
     batch_size = 10
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")
@@ -122,15 +140,22 @@ def usage_demo():
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)
-            bucket = body['Records'][0]['s3']['bucket']['name']
-            key = urllib.parse.unquote_plus(body['Records'][0]['s3']['object']['key'], encoding='utf-8')
-            file_name = os.path.split(key)
-            download_path = '/tmp/ecsproc/' + file_name[1]
-            upload_path = '/tmp/ecsproc/thumbnail-{}'.format(file_name[1])
+            
+            if body['Event'] == 's3:TestEvent':
+                delete_message(message)
+            else:
+                try:
+                    bucket = body['Records'][0]['s3']['bucket']['name']
+                    key = urllib.parse.unquote_plus(body['Records'][0]['s3']['object']['key'], encoding='utf-8')
+                except KeyError:
+                    print(f"Invalid {bucket} or {key}")
+                file_name = os.path.split(key)
+                download_path = '/tmp/ecsproc/' + file_name[1]
+                upload_path = '/tmp/ecsproc/thumbnail-{}'.format(file_name[1])
 
-            s3_client.download_file(bucket, key, download_path)
-            resize_image(download_path, upload_path)
-            s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name[1])
+                s3_client.download_file(bucket, key, download_path)
+                resize_image(download_path, upload_path)
+                s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name[1])
 
         if received_messages:
             delete_messages(queue, received_messages)
