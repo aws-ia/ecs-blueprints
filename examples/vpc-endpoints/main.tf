@@ -114,12 +114,6 @@ module "vpc_endpoints" {
 
       tags = { Name = "${local.name}-secrets-manager" }
     },
-    sqs = {
-      service             = "sqs"
-      private_dns_enabled = true
-
-      tags = { Name = "${local.name}-sqs" }
-    },
   }
 
   tags = local.tags
