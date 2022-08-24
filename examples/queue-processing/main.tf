@@ -131,7 +131,7 @@ module "lambda_function" {
   policy_json        = data.aws_iam_policy_document.lambda_role.json
   source_path        = var.lambda_source
 
-  cloudwatch_logs_retention_in_days = 7
+  cloudwatch_logs_retention_in_days = var.log_retention_in_days
 
   allowed_triggers = {
     PollSSMScale = {
