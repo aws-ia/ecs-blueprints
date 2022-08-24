@@ -64,8 +64,8 @@ variable "folder_path" {
 
 variable "lambda_source" {
   description = "The location of the Lambda source code"
-  type = string
-  default = "../../application-code/lambda-function-queue-trigger/"
+  type        = string
+  default     = "../../application-code/lambda-function-queue-trigger/"
 }
 
 variable "repository_owner" {

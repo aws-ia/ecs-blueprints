@@ -21,9 +21,8 @@ logger = logging.getLogger(__name__)
 sqs = boto3.resource('sqs')
 s3_client = boto3.client('s3')
 
-DEST_BUCKET = 'ecsdemo-queue-proc-destination-us-west-2-de95'
-# S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
-S3_PREFIX = 'processing'
+DEST_BUCKET = '<DESTINATION_BUCKET>'
+S3_PREFIX = os.environ['PIPELINE_S3_DEST_PREFIX']
 
 def receive_messages(queue, max_number, wait_time):
     """
@@ -128,7 +127,7 @@ def usage_demo():
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
     print('-'*88)
 
-    queue = sqs.get_queue_by_name(QueueName='ecsdemo-queue-proc-processing-queue')
+    queue = sqs.get_queue_by_name(QueueName='<QUEUE_NAME>')
 
     batch_size = 10
     print(f"Receiving, handling, and deleting messages in batches of {batch_size}.")
@@ -140,7 +139,7 @@ def usage_demo():
         for message in received_messages:
             msg = unpack_message(message)
             body = json.loads(msg)
-            
+
             if body['Event'] == 's3:TestEvent':
                 delete_message(message)
             else:
