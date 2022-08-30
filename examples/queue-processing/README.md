@@ -19,7 +19,7 @@ terraform init
 terraform plan
 terraform apply -auto-approve
 ```
-* To test, upload lot of `.jpg` image files to the S3 source bucket
+* To test, upload a lot of `.jpg` image files to the S3 source bucket
 ```bash
 aws s3 cp . s3://ecsdemo-queue-proc-source-xx-xxx-xxx-xx/ecsproc --recursive
 ```
