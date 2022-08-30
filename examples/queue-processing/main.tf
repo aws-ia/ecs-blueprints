@@ -540,7 +540,7 @@ data "aws_iam_policy_document" "task_role" {
     resources = [module.processing_queue.this_sqs_queue_arn]
   }
   statement {
-    sid = "S3Read"
+    sid = "S3ReadWrite"
     actions = [
       "s3:ListBucket",
       "s3:GetBucketLocation",
