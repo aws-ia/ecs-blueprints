@@ -149,6 +149,15 @@ data "aws_iam_policy_document" "this" {
     resources = ["*"]
   }
   statement {
+    sid    = "ECSReadWriteTaskDefinition"
+    effect = "Allow"
+    actions = [
+      "ecs:DescribeTaskDefinition",
+      "ecs:RegisterTaskDefinition"
+    ]
+    resources = ["*"]
+  }
+  statement {
     sid    = "AllowIAMPassRole"
     effect = "Allow"
     actions = [
