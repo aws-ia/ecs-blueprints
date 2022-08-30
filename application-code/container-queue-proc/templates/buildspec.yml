@@ -1,0 +1,43 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - REPOSITORY=${REPO_URL%/*}
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
+      - sed -i "s|<QUEUE_NAME>|$QUEUE_NAME|g" ./application-code/container-queue-proc/src/app.py
+      - sed -i "s|<DESTINATION_BUCKET>|$DESTINATION_BUCKET|g" ./application-code/container-queue-proc/src/app.py
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - docker build -t $REPO_URL $FOLDER_PATH
+  post_build:
+    commands:
+      # - docker push $REPO_URL || true #chicken & egg problem : ecr immutable this push will only works one time, but required for first deployment from terraform
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG
+      - |
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query '{
+                containerDefinitions: taskDefinition.containerDefinitions,
+                family: taskDefinition.family,
+                taskRoleArn: taskDefinition.taskRoleArn,
+                executionRoleArn: taskDefinition.executionRoleArn,
+                networkMode: taskDefinition.networkMode,
+                volumes: taskDefinition.volumes,
+                placementConstraints: taskDefinition.placementConstraints,
+                requiresCompatibilities: taskDefinition.requiresCompatibilities,
+                cpu: taskDefinition.cpu,
+                memory: taskDefinition.memory
+            }'> tmp-td.json)
+      - NEW_TASK_DEFINTION=$(jq -r --arg NEWIMAGE "$REPO_URL:$IMAGE_TAG" '.containerDefinitions[].image |= $NEWIMAGE' tmp-td.json > tmp-ntd.json)
+      # - NEW_REVISION=$(echo $NEW_TASK_INFO | jq '.taskDefinition.revision')
+      - aws ecs register-task-definition --cli-input-json file://tmp-ntd.json
+      - mkdir artifacts
+      - cp tmp-ntd.json artifacts/task-definition.json
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'artifacts'
+  discard-paths: yes
