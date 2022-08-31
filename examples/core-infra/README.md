@@ -61,7 +61,7 @@ terraform destroy
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.28.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 3.72.0 |
 
 ## Modules
 

@@ -74,7 +74,7 @@ terraform apply --auto-approve
 **NOTE:** lb-service module requires a Codestar notification rule, which itself requires a **one-time** creation of a service-linked role. You may run into terraform errors if one is not created.  
   *  If you receive the error, please create the service-linked role with the `awscli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
-  * Again, once this is created, you will not have to complete these steps for the other examples. 
+  * Again, once this is created, you will not have to complete these steps for the other examples.
 
 You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
 * [VPC Endpoints](./examples/vpc-endpoints/README.md)
