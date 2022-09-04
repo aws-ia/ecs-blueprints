@@ -33,3 +33,27 @@ variable "instance_type" {
   description = "ECS Container Instance Instance Type"
   default = "c5.large"
 }
+
+variable "asg_name" {
+  type = string
+  description = "Name of the AutoScaling Group"
+  default = "ecs_blueprint_asg"
+}
+
+variable "desired_capacity" {
+  type = number
+  description = "Desire Capacity Of AutoScalingGroup"
+  default = 1
+}
+
+variable "max_size" {
+  type = number
+  description = "Maximum Size Of AutoScalingGroup"
+  default = 1
+}
+
+variable "min_size" {
+  type = number
+  description = "Minimum Size Of AutoScalingGroup"
+  default = 1
+}

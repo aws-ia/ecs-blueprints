@@ -152,16 +152,35 @@ resource "aws_security_group" "ecs_container-instance_sg" {
 ################################################################################
 
 module "lauch_template" {
-
   source = "../../modules/launch-template"
-
   name = local.name
-
   instance_type = var.instance_type
-  
   vpc_security_group_ids = aws_security_group.ecs_container-instance_sg.id
 }
-
 ################################################################################
 # Auto Scaling Group
 ################################################################################
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [module.vpc.vpc_id]
+  }
+
+  tags = {
+    Name = "ecs-blueprint-infra-private-*"
+  }
+}
+
+resource "aws_autoscaling_group" "ecs_blueprint_asg" {
+  depends_on = [module.vpc]
+  name = "${local.name}-asg"
+  vpc_zone_identifier = tolist(data.aws_subnets.private.ids)
+  desired_capacity   = var.desired_capacity
+  max_size           = var.max_size
+  min_size           = var.min_size
+
+  launch_template {
+    id      = module.lauch_template.lt_id
+    version = "$Latest"
+  }
+}

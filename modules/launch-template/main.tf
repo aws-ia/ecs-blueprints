@@ -81,7 +81,7 @@ vpc_security_group_ids = [var.vpc_security_group_ids]
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "test"
+      Name = "ecs_blueprint_container_instance"
     }
   }
 
