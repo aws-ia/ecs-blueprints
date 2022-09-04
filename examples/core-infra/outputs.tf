@@ -41,3 +41,9 @@ output "sd_namespaces" {
   description = "Service discovery namespaces already available"
   value       = aws_service_discovery_private_dns_namespace.sd_namespaces
 }
+
+output "launch_template_arn" {
+  description = "The ARN of launch template"
+  value = module.lauch_template
+    
+  }

@@ -118,3 +118,50 @@ resource "aws_iam_policy_attachment" "execution" {
   roles      = [aws_iam_role.execution.name]
   policy_arn = local.task_execution_role_managed_policy_arn[count.index]
 }
+
+################################################################################
+# Launch Template Security Group
+################################################################################
+resource "aws_security_group" "ecs_container-instance_sg" {
+  name        = "container_instance_sg"
+  description = "Allow http inbound traffic"
+  vpc_id      =  module.vpc.vpc_id
+
+  ingress {
+    description      = "HTTP from VPC"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = [module.vpc.vpc_cidr_block]
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Container Instance Security Group"
+  }
+}
+
+################################################################################
+# Launch Template
+################################################################################
+
+module "lauch_template" {
+
+  source = "../../modules/launch-template"
+
+  name = local.name
+
+  instance_type = var.instance_type
+  
+  vpc_security_group_ids = aws_security_group.ecs_container-instance_sg.id
+}
+
+################################################################################
+# Auto Scaling Group
+################################################################################

@@ -27,3 +27,9 @@ variable "enable_nat_gw" {
   default     = true
 
 }
+
+variable "instance_type" {
+  type = string
+  description = "ECS Container Instance Instance Type"
+  default = "c5.large"
+}
