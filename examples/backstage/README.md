@@ -23,10 +23,11 @@ Now we can deploy the blueprint
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
   * Use the AWS Secrets Manager secret name containing the plaintext Github access token for variable `github_token_secret_name` and the PostgresDB password secret name for `postgresdb_master_password`
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
-  * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
-
-    ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
-  *  If you receive the error above, please create the service-linked role with the `aws cli` below.
+  ```shell
+  aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications
+  An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.
+  ```
+  *  If you receive the error above, please create the service-linked role below.
   ```shell
   aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com
   ```
@@ -40,11 +41,13 @@ terraform apply -auto-approve
 
 The solution has following key components:
 * Aurora: Running PostgreSQL engine in serverless mode
+* AWS Secrets Manager to store the GitHub token and Postgres database password and make them available to the backstage application container at runtime
+* AWS SSM Parameter store for storing and providing `POSTGRES_HOST`, `POSTGRES_USER`, and `POSTGRES_PORT` settings to the backstage applicaiton at runtime.
 * ALB: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
     * ALB security group - allows ingress from any IP address to port 80 and allows all egress
     * ALB subnet - ALB is created in a public subnet
     * Listener - listens on port 80 for protocol HTTP
-    * Target group - Since we are using Fargate launch type, the targe type is IP since each task in Fargate gets its own ENI and IP address. The target group has container port (3000) and protocol (HTTP) where the application container will serve requests. The ALB runs health check against all registered targets. In this example, ALB send HTTP GET request to path "/" to container port 3000. We are using target group default health check settings. You can tune these settings to adjust the time interval and frequency of health checks. It impacts how fast tasks become available to serve traffic. (See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more.)
+    * Target group - Since we are using Fargate launch type, the targe type is IP since each task in Fargate gets its own ENI and IP address. The target group has container port (7007) and protocol (HTTP) where the application container will serve requests. The ALB runs health check against all registered targets. We are using target group default health check settings. You can tune these settings to adjust the time interval and frequency of health checks. It impacts how fast tasks become available to serve traffic. (See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more.)
 * ECR registery for the container image. We are using only one container image for the task in this example.
 * ECS service definition:
     * Task security group: allows ingress for TCP from the ALB security group to the container service port (3000 for this example). And allows all egress.
