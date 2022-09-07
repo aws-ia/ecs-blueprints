@@ -1,5 +1,5 @@
 # Running Backstage app on ECS Fargate
-[Backstage.io](backstage.io) is an open platform for building developer platforms. This solution blueprint deploys a backstage application on ECS Fargate with Aurora PostgreSQL serverless backend and ALB.
+[Backstage.io](backstage.io) is an open platform for building developer portals. This solution blueprint deploys a backstage application on ECS Fargate with Aurora PostgreSQL serverless backend and ALB.
 
 # Prerequisites
 * Install the [prerequisites](https://backstage.io/docs/getting-started/#prerequisites) for backstage application.
