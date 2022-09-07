@@ -7,7 +7,7 @@ aws_region = "us-west-2"
 # The AWS Secrets Manager secret name containing the plaintext Github access token
 github_token_secret_name   = "ecs-github-token"
 
-# The AWS Secrets Manager containing the password to use for 
+# The AWS Secrets Manager containing the password to use for
 # backend postgres db
 #postgresdb_master_password = "backstage-db-password"
 
@@ -31,5 +31,3 @@ container_name  = "unicorn-ui"
 
 #Don't change the container port as it is specific to this app example
 container_port = 7007
-
-
