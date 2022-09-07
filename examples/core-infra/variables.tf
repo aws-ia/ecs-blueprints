@@ -27,3 +27,10 @@ variable "enable_nat_gw" {
   default     = true
 
 }
+
+variable "enable_secerts_manager_read_access" {
+  description = "Provide task execution role with secrets manager read access"
+  type        = bool
+  default     = true
+
+}

@@ -72,7 +72,7 @@ variable "repository_branch" {
 }
 
 variable "github_token_secret_name" {
-  description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
+  description = "Name of secret manager secret storing github token for auth"
   type        = string
 }
 
@@ -92,12 +92,6 @@ variable "desired_count" {
   description = "The number of task replicas for service"
   type        = number
   default     = 1
-}
-
-variable "backend_svc_endpoint" {
-  description = "The FQDN DNS name of the backend service"
-  type        = string
-  default     = ""
 }
 
 # listener settings for the load balanced service
@@ -247,8 +241,31 @@ variable "scheduled_autoscaling_down_max_capacity" {
   default     = 3
 }
 
-variable "map_secrets" {
-  type        = map(string)
-  description = "The secrets variables to pass to the container. This is a map of string: {key: value}. map_secrets overrides secrets"
-  default     = null
+variable "postgresdb_master_username" {
+  type        = string
+  description = "The master username for backstage postgress db"
+  default     = "postgres"
+}
+
+variable "postgresdb_master_password" {
+  type        = string
+  description = "AWS secrets manager secret name that stores the db master password"
+}
+
+variable "postgresdb_name" {
+  type        = string
+  description = "Name of the backstage postgres db"
+  default     = "backstage-db"
+}
+
+variable "postgresdb_version" {
+  type        = string
+  description = "Version of postgres db to use"
+  default     = "14.3"
+}
+
+variable "postgresdb_port" {
+  type        = string
+  description = "Postgres db port"
+  default     = "5432"
 }

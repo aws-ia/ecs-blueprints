@@ -63,6 +63,60 @@ data "aws_service_discovery_dns_namespace" "sd_namespace" {
   name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
   type = "DNS_PRIVATE"
 }
+################################################################################
+# RDS Aurora for Backstage backend db
+################################################################################
+data "aws_secretsmanager_secret" "postgresdb_master_password" {
+  name = var.postgresdb_master_password
+}
+
+data "aws_secretsmanager_secret_version" "postgresdb_master_password" {
+  secret_id = data.aws_secretsmanager_secret.postgresdb_master_password.id
+}
+
+module "aurora_postgresdb" {
+  source = "terraform-aws-modules/rds-aurora/aws"
+
+  name           = var.postgresdb_name
+  engine         = "aurora-postgresql"
+  engine_mode    = "serverless"
+  engine_version = var.postgresdb_version
+
+
+  vpc_id  = data.aws_vpc.vpc.id
+  subnets = data.aws_subnets.private.ids
+
+  allowed_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+
+  storage_encrypted   = true
+  apply_immediately   = true
+  monitoring_interval = 60
+
+  create_random_password = false
+  master_username        = var.postgresdb_master_username
+  master_password        = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
+  port                   = var.postgresdb_port
+
+  tags = local.tags
+}
+
+resource "aws_ssm_parameter" "postgres_host" {
+  name  = "postgres_host"
+  type  = "String"
+  value = module.aurora_postgresdb.cluster_endpoint
+}
+
+resource "aws_ssm_parameter" "postgres_port" {
+  name  = "postgres_port"
+  type  = "String"
+  value = var.postgresdb_port
+}
+
+resource "aws_ssm_parameter" "postgres_user" {
+  name  = "postgres_user"
+  type  = "String"
+  value = var.postgresdb_master_username
+}
 
 ################################################################################
 # ECS Blueprint
@@ -210,7 +264,13 @@ module "ecs_service_definition" {
   image                         = module.container_image_ecr.repository_url
   sidecar_container_definitions = var.sidecar_container_definitions
   execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  map_secrets                   = var.map_secrets
+  map_secrets = {
+    "GITHUB_TOKEN"      = data.aws_secretsmanager_secret.github_token.arn,
+    "POSTGRES_HOST"     = aws_ssm_parameter.postgres_host.name,
+    "POSTGRES_PORT"     = aws_ssm_parameter.postgres_port.name,
+    "POSTGRES_USER"     = aws_ssm_parameter.postgres_user.name,
+    "POSTGRES_PASSWORD" = data.aws_secretsmanager_secret.postgresdb_master_password.arn
+  }
 
   tags = local.tags
 
@@ -288,7 +348,7 @@ module "codebuild_ci" {
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
-    image = "aws/codebuild/standard:5.0"
+    image           = "aws/codebuild/standard:5.0"
     privileged_mode = true
     environment_variables = [
       {

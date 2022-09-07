@@ -1,6 +1,23 @@
-# ECS load-balanced service
+# Running Backstage app on ECS Fargate
+[Backstage.io](backstage.io) is an open platform for building developer platforms. This solution blueprint deploys a backstage application on ECS Fargate with Aurora PostgreSQL serverless backend and ALB.
 
-This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
+# Prerequisites
+* Install the [prerequisites](https://backstage.io/docs/getting-started/#prerequisites) for backstage application.
+* [Create the backstage application](https://backstage.io/docs/getting-started/#create-your-backstage-app)
+```bash
+npx @backstage/create-app
+[give app name] unicorn-ui (for this example)
+[select postgresql] for db
+```
+* Copy the following items from https://github.com/arvindsoni80/unicorn-ui to your backstage application
+* * `app-config.yaml`
+* * `templates/`
+* Commit the application to your github repository
+* Create two secrets and store them in AWS Secret Manager in the region where you will deploy this blueprint
+* * GitHub token to access your repository for both CI/CD and for Backstage artifacts
+* * A secure password to use for PostgresDB backend for backstage application
+
+Now we can deploy the blueprint
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
@@ -18,12 +35,8 @@ terraform plan
 terraform apply -auto-approve
 ```
 
-<p align="center">
-  <img src="../../docs/lb-service.png"/>
-</p>
-
 The solution has following key components:
-
+* Aurora: Running PostgreSQL engine in serverless mode
 * ALB: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
     * ALB security group - allows ingress from any IP address to port 80 and allows all egress
     * ALB subnet - ALB is created in a public subnet
@@ -36,8 +49,8 @@ The solution has following key components:
     * Tasks for this service will be deployed in private subnet
     * Service definition takes the load balancer target group created above as input.
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
-    * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
-* (Optional) Scheduled autoscaling: The blueprint also includes settings for scheduled autoscaling. Let us say you expect your application to have higher load during business hours (say 8am-5pm), and low load outside of it. You can configure the service to scale up, that is, increase the number of tasks behind the service say at 7:45am; and configure to scale down at say 5:15pm. You can configure the desired count for the high load and low load situation. And you can provide the time to scale up and down using simple cron syntax.
+    * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images, send logs to AWS CloudWatch on behalf of the task, fetch parameters from SSM Parameter Store, and fetch secrets from AWS Secrets Manager.
+
 
 The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
 
@@ -60,4 +73,4 @@ The second half of `main.tf` focuses on creating the CI/CD pipeline using AWS Co
     * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
     * IAM role
 
-Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.
+Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with your *backstage-app* GitHub repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder to build images.

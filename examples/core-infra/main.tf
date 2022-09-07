@@ -114,8 +114,7 @@ resource "aws_service_discovery_private_dns_namespace" "sd_namespaces" {
 resource "aws_iam_role" "execution" {
   name               = "${local.name}-execution"
   assume_role_policy = data.aws_iam_policy_document.execution.json
-  # managed_policy_arns = local.task_execution_role_managed_policy_arn
-  tags = local.tags
+  tags               = local.tags
 }
 
 data "aws_iam_policy_document" "execution" {
@@ -133,4 +132,28 @@ resource "aws_iam_policy_attachment" "execution" {
   name       = "${local.name}-execution-policy"
   roles      = [aws_iam_role.execution.name]
   policy_arn = local.task_execution_role_managed_policy_arn[count.index]
+}
+
+resource "aws_iam_policy" "secrets_manager_read_policy" {
+  name   = "ECSTaskExecutionReadSecretsManager"
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+resource "aws_iam_policy_attachment" "secret_manager_read" {
+  count      = var.enable_secerts_manager_read_access ? 1 : 0
+  name       = "${local.name}-execution-policy"
+  roles      = [aws_iam_role.execution.name]
+  policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
 }
