@@ -10,12 +10,12 @@ npx @backstage/create-app
 [select postgresql] for db
 ```
 * Copy the following items from https://github.com/arvindsoni80/unicorn-ui to your backstage application
-* * `app-config.yaml`
-* * `templates/`
+  * `app-config.yaml`
+  * `templates/`
 * Commit the application to your github repository
 * Create two secrets and store them in AWS Secret Manager in the region where you will deploy this blueprint
-* * GitHub token to access your repository for both CI/CD and for Backstage artifacts
-* * A secure password to use for PostgresDB backend for backstage application
+  * GitHub token to access your repository for both CI/CD and for Backstage artifacts
+  * A secure password to use for PostgresDB backend for backstage application
 
 Now we can deploy the blueprint
 
