@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_region" "current" {}
 
 locals {
   name   = var.core_stack_name
@@ -11,6 +12,14 @@ locals {
   vpc_cidr       = var.vpc_cidr
   num_of_subnets = min(length(data.aws_availability_zones.available.names), 3)
   azs            = slice(data.aws_availability_zones.available.names, 0, local.num_of_subnets)
+  
+  user_data = <<-EOT
+    #!/bin/bash
+    cat <<'EOF' >> /etc/ecs/ecs.config
+    ECS_CLUSTER=${local.name}
+    ECS_LOGLEVEL=debug
+    EOF
+  EOT
 
   tags = {
     Blueprint  = local.name
@@ -35,6 +44,20 @@ module "ecs" {
       logging = "OVERRIDE"
       log_configuration = {
         cloud_watch_log_group_name = aws_cloudwatch_log_group.this.name
+      }
+    }
+  }
+# Autoscaling Based Capacity Provider
+  autoscaling_capacity_providers = {
+    cp-one = {
+      auto_scaling_group_arn         = module.asg.autoscaling_group_arn
+      managed_termination_protection = "ENABLED"
+
+      managed_scaling = {
+        maximum_scaling_step_size = 1000
+        minimum_scaling_step_size = 1
+        status                    = "ENABLED"
+        target_capacity           = 100
       }
     }
   }
@@ -148,18 +171,29 @@ resource "aws_security_group" "ecs_container-instance_sg" {
 }
 
 ################################################################################
-# Launch Template
+# Auto Scaling Group with Launch Template
 ################################################################################
+# Fetching AWS AMI
+data "aws_ami" "ecs_optimized" {
+  most_recent      = true
+  owners           = ["amazon"]
 
-module "lauch_template" {
-  source = "../../modules/launch-template"
-  name = local.name
-  instance_type = var.instance_type
-  vpc_security_group_ids = aws_security_group.ecs_container-instance_sg.id
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-2.0.20220831-x86_64-ebs"]
+  }
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
-################################################################################
-# Auto Scaling Group
-################################################################################
+
+#Fetching Private Subnets
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
@@ -171,16 +205,55 @@ data "aws_subnets" "private" {
   }
 }
 
-resource "aws_autoscaling_group" "ecs_blueprint_asg" {
-  depends_on = [module.vpc]
-  name = "${local.name}-asg"
-  vpc_zone_identifier = tolist(data.aws_subnets.private.ids)
-  desired_capacity   = var.desired_capacity
-  max_size           = var.max_size
-  min_size           = var.min_size
+module "asg" {
+  source  = "terraform-aws-modules/autoscaling/aws"
 
-  launch_template {
-    id      = module.lauch_template.lt_id
-    version = "$Latest"
+  # Autoscaling group
+  name = "${local.name}-asg"
+
+  min_size                  = var.min_size
+  max_size                  = var.max_size
+  desired_capacity          = var.desired_capacity
+  vpc_zone_identifier       = tolist(data.aws_subnets.private.ids)
+  protect_from_scale_in     = true
+
+  # Launch template
+  launch_template_name        = "${local.name}-launch_template"
+  launch_template_description = "Launch template example"
+  update_default_version      = true
+
+  image_id          = data.aws_ami.ecs_optimized.image_id
+  instance_type     = var.instance_type
+  ebs_optimized     = true
+  enable_monitoring = true
+  user_data         = base64encode(local.user_data)
+
+  # IAM instance profile
+  create_iam_instance_profile = true
+  iam_role_name               = "${local.name}-instance-role"
+  iam_role_path               = "/"
+  iam_role_description        = "IAM role for ECS Container Instance"
+  iam_role_tags = {
+    CustomIamRole = "Yes"
   }
+  iam_role_policies = {
+    AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+  }
+  
+  security_groups = [aws_security_group.ecs_container-instance_sg.id]
+
+  block_device_mappings = [
+    {
+      # Root volume
+      device_name = "/dev/xvda"
+      no_device   = 0
+      ebs = {
+        delete_on_termination = true
+        encrypted             = true
+        volume_size           = var.volume_size
+        volume_type           = var.volume_type
+      }
+      }
+  ]
+  tags = local.tags
 }

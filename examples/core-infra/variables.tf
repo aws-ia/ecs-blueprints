@@ -43,17 +43,45 @@ variable "asg_name" {
 variable "desired_capacity" {
   type = number
   description = "Desire Capacity Of AutoScalingGroup"
-  default = 1
+  default = 0
 }
 
 variable "max_size" {
   type = number
   description = "Maximum Size Of AutoScalingGroup"
-  default = 1
+  default = 4
 }
 
 variable "min_size" {
   type = number
   description = "Minimum Size Of AutoScalingGroup"
-  default = 1
+  default = 0
+}
+
+variable "launch_name" {
+  type = string
+  description = "Name of the Launch Template"
+  default = "ecs-blueprint-launch_template"
+}
+variable "volume_size" {
+  type = string
+  default = 30
+}
+
+variable "instance_initiated_shutdown_behavior" {
+  type = string
+  description = "Shutdown behavioure on instance"
+  default = "terminate"
+}
+
+variable "volume_type" {
+  type = string
+  description = "Volume type to be used"
+  default = "gp2"
+}
+
+variable "capcitiy-provider_name" {
+  type = string
+  description = "Name of capacity provider"
+  default = "capacity-provide-blue-print"
 }
