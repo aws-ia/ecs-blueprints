@@ -5,26 +5,6 @@
   <div class="card-body">
     <table class="table table-striped h5">
       <tr>
-        <td><i class="fa fa-cube"></i></td>
-        <td>Containerized</td>
-        <% if (isContainer) { %>
-          <td>Looks like we're running in a container! 😁</td>
-        <% } else { %>
-          <td>Not running as a container 😢</td>
-        <% } %>
-      </tr>
-
-      <tr>
-        <td><i class="fa fa-project-diagram"></i></td>
-        <td>Kubernetes</td>
-        <% if (isKube) { %>
-          <td>We're also running in a Kubernetes pod! 😃</td>
-        <% } else { %>
-          <td>Not running in Kubernetes 😢</td>
-        <% } %>
-      </tr>
-
-      <tr>
         <td><i class="fa fa-home"></i></td>
         <td>Hostname</td>
         <td><%= info.hostname %></td>
