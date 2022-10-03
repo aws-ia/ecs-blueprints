@@ -41,3 +41,8 @@ output "sd_namespaces" {
   description = "Service discovery namespaces already available"
   value       = aws_service_discovery_private_dns_namespace.sd_namespaces
 }
+
+output "cp_name" {
+  description = "EC2 Capacity Provider Name"
+  value       = aws_service_discovery_private_dns_namespace.sd_namespaces
+}
