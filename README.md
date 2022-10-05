@@ -1,14 +1,14 @@
 # Amazon ECS Solution Blueprints for Terraform
 Welcome to Amazon ECS Solution Blueprints for Terraform!
 
-When **new users** want to adopt containers to build, deploy, and run their applications, it often takes them several months to  learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or and host OS. With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**!
+When **new users** want to adopt containers to build, deploy, and run their applications, it often takes them several months to  learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or host OS. With ECS Solution Blueprints, we want new users to **achieve benefits of container-based modernization in hours rather than months**!
 
 The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. With blueprints we aspire to codify best practices, well-designed architecture patterns, and provide end-to-end solutions addressing CI/CD, observability, security, and cost efficiency.
 
 We fully expect you to get started by copying the modules and examples but we **do not** expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the *modules* and *examples* code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
 
 ## Prerequisites
-* You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to [Getting Started](#getting-started)
+* You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to [Quick Start](#quick-start)
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
 * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
 * [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
@@ -62,7 +62,7 @@ terraform apply --auto-approve
 cd ../lb-service
 cp terraform.tfvars.example terraform.tfvars
 vim terraform.tfvars
-# change the repository owner to your repo owner name and set aws region to ECS cluster region
+# uncomment and change the repository owner to your repo owner name, and set aws region to ECS cluster region
 ```
 * Deploy the load balanced service and CI/CD pipeline
 ```shell
@@ -70,6 +70,12 @@ terraform init
 terraform plan
 terraform apply --auto-approve
 ```
+
+**NOTE:** lb-service module requires a Codestar notification rule, which itself requires a **one-time** creation of a service-linked role. You may run into terraform errors if one is not created.  
+  *  If you receive the error, please create the service-linked role with the `awscli` below.
+  * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
+  * Again, once this is created, you will not have to complete these steps for the other examples.
+
 You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
 * [VPC Endpoints](./examples/vpc-endpoints/README.md)
 * [Backend Service](./examples/backend-service/README.md)
