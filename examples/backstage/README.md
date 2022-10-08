@@ -7,16 +7,28 @@
 ```bash
 npx @backstage/create-app
 [give app name] unicorn-ui (for this example)
-[select postgresql] for db
 ```
 * Copy the following items from https://github.com/arvindsoni80/unicorn-ui to your backstage application
   * `app-config.yaml`
   * `templates/`
 * Commit the application to your github repository
+  ```bash
+  git init
+  git remote add origin https://github.com/nvpnathan/unicorn-ui.git
+  git branch -M main
+  git push -u origin main
+  ```
+
 * Create two secrets and store them in AWS Secret Manager in the region where you will deploy this blueprint
   * GitHub token to access your repository for both CI/CD and for Backstage artifacts
   * A secure password to use for PostgresDB backend for backstage application
 
+  ```bash
+  aws secretsmanager create-secret --name ecs-github-token --secret-string "<github-token-created-above>"
+  ```
+  ```bash
+  aws secretsmanager create-secret --name postgresdb_passwd --secret-string "<insert-db-password>"
+  ```
 Now we can deploy the blueprint
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.

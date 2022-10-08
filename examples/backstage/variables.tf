@@ -258,12 +258,6 @@ variable "postgresdb_name" {
   default     = "backstage-db"
 }
 
-variable "postgresdb_version" {
-  type        = string
-  description = "Version of postgres db to use"
-  default     = "14.3"
-}
-
 variable "postgresdb_port" {
   type        = string
   description = "Postgres db port"

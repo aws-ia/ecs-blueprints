@@ -9,15 +9,15 @@ github_token_secret_name   = "ecs-github-token"
 
 # The AWS Secrets Manager containing the password to use for
 # backend postgres db
-#postgresdb_master_password = "backstage-db-password"
+postgresdb_master_password = "postgresdb_passwd"
 
 # Repository information for your backstage application
-# repository_owner           = "arvindsoni80"
-# repository_name            = "unicorn-ui"
-# repository_branch          = "main"
+# repository_owner           = ""
+# repository_name            = ""
+repository_branch          = "main"
 
 # the CodeBuild buildspec path
-# buildspec_path             = "./templates/buildspec.yml"
+buildspec_path             = "./templates/buildspec.yml"
 
 # It is optional to change the below variables
 # core_stack_name is also same as ecs_cluster_name from core-infra

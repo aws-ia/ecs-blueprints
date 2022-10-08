@@ -63,9 +63,11 @@ data "aws_service_discovery_dns_namespace" "sd_namespace" {
   name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
   type = "DNS_PRIVATE"
 }
+
 ################################################################################
 # RDS Aurora for Backstage backend db
 ################################################################################
+
 data "aws_secretsmanager_secret" "postgresdb_master_password" {
   name = var.postgresdb_master_password
 }
@@ -77,11 +79,9 @@ data "aws_secretsmanager_secret_version" "postgresdb_master_password" {
 module "aurora_postgresdb" {
   source = "terraform-aws-modules/rds-aurora/aws"
 
-  name           = var.postgresdb_name
-  engine         = "aurora-postgresql"
-  engine_mode    = "serverless"
-  engine_version = var.postgresdb_version
-
+  name        = var.postgresdb_name
+  engine      = "aurora-postgresql"
+  engine_mode = "serverless"
 
   vpc_id  = data.aws_vpc.vpc.id
   subnets = data.aws_subnets.private.ids
@@ -116,6 +116,12 @@ resource "aws_ssm_parameter" "postgres_user" {
   name  = "postgres_user"
   type  = "String"
   value = var.postgresdb_master_username
+}
+
+resource "aws_ssm_parameter" "base_url" {
+  name  = "base_url"
+  type  = "String"
+  value = "http://${module.service_alb.lb_dns_name}"
 }
 
 ################################################################################
@@ -266,6 +272,7 @@ module "ecs_service_definition" {
   execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
   map_secrets = {
     "GITHUB_TOKEN"      = data.aws_secretsmanager_secret.github_token.arn,
+    "BASE_URL"          = aws_ssm_parameter.base_url.name,
     "POSTGRES_HOST"     = aws_ssm_parameter.postgres_host.name,
     "POSTGRES_PORT"     = aws_ssm_parameter.postgres_port.name,
     "POSTGRES_USER"     = aws_ssm_parameter.postgres_user.name,
