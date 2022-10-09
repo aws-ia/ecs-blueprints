@@ -90,7 +90,7 @@ module "service_alb" {
   version = "~> 7.0"
 
   name = "${local.name}-alb"
-
+  
   load_balancer_type = "application"
 
   vpc_id          = data.aws_vpc.vpc.id
@@ -180,13 +180,11 @@ resource "aws_service_discovery_service" "sd_service" {
 
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
-
   name                       = local.name
   desired_count              = var.desired_count
   ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
   cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+  cp_strategy_ec2_weight     = var.cp_strategy_ec2_weight
 
   security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids

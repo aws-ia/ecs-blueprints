@@ -121,6 +121,12 @@ variable "cp_strategy_ec2_weight" {
   default     = 1
 }
 
+variable "cp_strategy_fg_weight" {
+  description = "Relative number of tasks to put in Fargate"
+  type        = number
+  default     = 1
+}
+
 variable "cp_strategy_fg_spot_weight" {
   description = "Relative number of tasks to put in Fargate Spot"
   type        = number
