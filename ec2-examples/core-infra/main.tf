@@ -207,7 +207,7 @@ data "aws_subnets" "private" {
 
 module "asg" {
   source  = "terraform-aws-modules/autoscaling/aws"
-
+  depends_on = [module.vpc]
   # Autoscaling group
   name = "${local.name}-asg"
 
