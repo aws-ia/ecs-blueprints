@@ -105,9 +105,9 @@ variable "log_retention_in_days" {
 }
 
 variable "cp_name" {
-  type = string
+  type        = string
   description = "Name of EC2 based capacity provider"
-  default = "cp-one"
+  default     = "cp-one"
 }
 variable "cp_strategy_base" {
   description = "Base number of tasks to create on Fargate on-demand"

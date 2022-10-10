@@ -12,7 +12,7 @@ locals {
   vpc_cidr       = var.vpc_cidr
   num_of_subnets = min(length(data.aws_availability_zones.available.names), 3)
   azs            = slice(data.aws_availability_zones.available.names, 0, local.num_of_subnets)
-  
+
   user_data = <<-EOT
     #!/bin/bash
     cat <<'EOF' >> /etc/ecs/ecs.config
@@ -47,7 +47,7 @@ module "ecs" {
       }
     }
   }
-# Autoscaling Based Capacity Provider
+  # Autoscaling Based Capacity Provider
   autoscaling_capacity_providers = {
     cp-one = {
       auto_scaling_group_arn         = module.asg.autoscaling_group_arn
@@ -148,21 +148,21 @@ resource "aws_iam_policy_attachment" "execution" {
 resource "aws_security_group" "ecs_container-instance_sg" {
   name        = "container_instance_sg"
   description = "Allow http inbound traffic"
-  vpc_id      =  module.vpc.vpc_id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
-    description      = "HTTP from VPC"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = [module.vpc.vpc_cidr_block]
+    description = "HTTP from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [module.vpc.vpc_cidr_block]
   }
 
   egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -175,8 +175,8 @@ resource "aws_security_group" "ecs_container-instance_sg" {
 ################################################################################
 # Fetching AWS AMI
 data "aws_ami" "ecs_optimized" {
-  most_recent      = true
-  owners           = ["amazon"]
+  most_recent = true
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
@@ -206,16 +206,16 @@ data "aws_subnets" "private" {
 }
 
 module "asg" {
-  source  = "terraform-aws-modules/autoscaling/aws"
+  source     = "terraform-aws-modules/autoscaling/aws"
   depends_on = [module.vpc]
   # Autoscaling group
   name = "${local.name}-asg"
 
-  min_size                  = var.min_size
-  max_size                  = var.max_size
-  desired_capacity          = var.desired_capacity
-  vpc_zone_identifier       = tolist(data.aws_subnets.private.ids)
-  protect_from_scale_in     = true
+  min_size              = var.min_size
+  max_size              = var.max_size
+  desired_capacity      = var.desired_capacity
+  vpc_zone_identifier   = tolist(data.aws_subnets.private.ids)
+  protect_from_scale_in = true
 
   # Launch template
   launch_template_name        = "${local.name}-launch_template"
@@ -239,7 +239,7 @@ module "asg" {
   iam_role_policies = {
     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
   }
-  
+
   security_groups = [aws_security_group.ecs_container-instance_sg.id]
 
   block_device_mappings = [
@@ -253,7 +253,7 @@ module "asg" {
         volume_size           = var.volume_size
         volume_type           = var.volume_type
       }
-      }
+    }
   ]
   tags = local.tags
 }

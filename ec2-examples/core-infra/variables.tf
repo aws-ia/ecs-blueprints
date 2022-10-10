@@ -29,59 +29,59 @@ variable "enable_nat_gw" {
 }
 
 variable "instance_type" {
-  type = string
+  type        = string
   description = "ECS Container Instance Instance Type"
-  default = "c5.large"
+  default     = "c5.large"
 }
 
 variable "asg_name" {
-  type = string
+  type        = string
   description = "Name of the AutoScaling Group"
-  default = "ecs_blueprint_asg"
+  default     = "ecs_blueprint_asg"
 }
 
 variable "desired_capacity" {
-  type = number
+  type        = number
   description = "Desire Capacity Of AutoScalingGroup"
-  default = 0
+  default     = 0
 }
 
 variable "max_size" {
-  type = number
+  type        = number
   description = "Maximum Size Of AutoScalingGroup"
-  default = 4
+  default     = 4
 }
 
 variable "min_size" {
-  type = number
+  type        = number
   description = "Minimum Size Of AutoScalingGroup"
-  default = 0
+  default     = 0
 }
 
 variable "launch_name" {
-  type = string
+  type        = string
   description = "Name of the Launch Template"
-  default = "ecs-blueprint-launch_template"
+  default     = "ecs-blueprint-launch_template"
 }
 variable "volume_size" {
-  type = string
+  type    = string
   default = 30
 }
 
 variable "instance_initiated_shutdown_behavior" {
-  type = string
+  type        = string
   description = "Shutdown behavioure on instance"
-  default = "terminate"
+  default     = "terminate"
 }
 
 variable "volume_type" {
-  type = string
+  type        = string
   description = "Volume type to be used"
-  default = "gp2"
+  default     = "gp2"
 }
 
 variable "capcitiy-provider_name" {
-  type = string
+  type        = string
   description = "Name of capacity provider"
-  default = "capacity-provide-blue-print"
+  default     = "capacity-provide-blue-print"
 }

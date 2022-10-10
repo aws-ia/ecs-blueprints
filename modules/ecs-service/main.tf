@@ -18,14 +18,14 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
 
-# Capacity Provider for EC2 Launch Type
+  # Capacity Provider for EC2 Launch Type
   capacity_provider_strategy {
-     base              = var.cp_strategy_base
-     capacity_provider = var.cp_name
-     weight            = var.cp_strategy_ec2_weight
+    base              = var.cp_strategy_base
+    capacity_provider = var.cp_name
+    weight            = var.cp_strategy_ec2_weight
   }
 
-# Capacity Provider for Fargate and Fargate SPOT Launch Type
+  # Capacity Provider for Fargate and Fargate SPOT Launch Type
 
   # capacity_provider_strategy {
   #   base              = var.cp_strategy_base
