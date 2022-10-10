@@ -24,7 +24,7 @@ Note you should create the secret in an AWS region where you plan to deploy the 
 ## Usage
 * Clone the forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 ```bash
-cd examples/core-infra/
+cd ec2-examples/core-infra/
 ```
 * Run Terraform init to download the providers and install the modules
 ```shell
