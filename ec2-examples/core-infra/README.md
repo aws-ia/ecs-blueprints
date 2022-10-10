@@ -104,5 +104,5 @@ terraform destroy
 | <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | A list of public subnets |
 | <a name="output_sd_namespaces"></a> [sd\_namespaces](#output\_sd\_namespaces) | Service discovery namespaces already available |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | The ID of the VPC |
-| <a name="autoscaling_capacity_providers"></a> [vpc\_id](#output\_vpc\_id) | The ID of the VPC |
+| <a name="autoscaling_capacity_providers"></a> [autoscaling_capacity_providers](#output\_vpc\_id) | Map of autoscaling capacity providers created and their attributes |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
