@@ -7,7 +7,7 @@ This folder contains the Terraform code to deploy the core infratructure for an 
     * 1 NAT Gateway
     * 1 Internet Gateway
     * Associated Route Tables
-* 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
+* 1 ECS Cluster with Auto Scaling group capacity provider and AWS CloudWatch Container Insights enabled.
 * Task execution IAM role
 * CloudWatch log groups
 * CloudMap service discovery namespace `default`
@@ -24,7 +24,7 @@ Note you should create the secret in an AWS region where you plan to deploy the 
 ## Usage
 * Clone the forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 ```bash
-cd examples/core-infra/
+cd ec2-examples/core-infra/
 ```
 * Run Terraform init to download the providers and install the modules
 ```shell
@@ -104,4 +104,5 @@ terraform destroy
 | <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | A list of public subnets |
 | <a name="output_sd_namespaces"></a> [sd\_namespaces](#output\_sd\_namespaces) | Service discovery namespaces already available |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | The ID of the VPC |
+| <a name="autoscaling_capacity_providers"></a> [autoscaling_capacity_providers](#output\_vpc\_id) | Map of autoscaling capacity providers created and their attributes |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
