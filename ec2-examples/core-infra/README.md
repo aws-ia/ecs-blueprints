@@ -7,7 +7,7 @@ This folder contains the Terraform code to deploy the core infratructure for an 
     * 1 NAT Gateway
     * 1 Internet Gateway
     * Associated Route Tables
-* 1 ECS Cluster with Auto Scaling group capacity providers and AWS CloudWatch Container Insights enabled.
+* 1 ECS Cluster with Auto Scaling group capacity provider and AWS CloudWatch Container Insights enabled.
 * Task execution IAM role
 * CloudWatch log groups
 * CloudMap service discovery namespace `default`
