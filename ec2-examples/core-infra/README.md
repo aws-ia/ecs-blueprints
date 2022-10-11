@@ -1,5 +1,5 @@
 # Core Infrastructure
-This folder contains the Terraform code to deploy the core infratructure for an ECS Fargate workload. The AWS resources created by the script are:
+This folder contains the Terraform code to deploy the core infratructure for an ECS EC2 based workload. The AWS resources created by the script are:
 * Networking
   * VPC
     * 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
