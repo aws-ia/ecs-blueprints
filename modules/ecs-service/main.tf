@@ -19,25 +19,25 @@ resource "aws_ecs_service" "this" {
   deployment_maximum_percent         = var.deployment_maximum_percent
 
   # Capacity Provider for EC2 Launch Type
-  capacity_provider_strategy {
-    base              = var.cp_strategy_base
-    capacity_provider = var.cp_name
-    weight            = var.cp_strategy_ec2_weight
-  }
+#   capacity_provider_strategy {
+#     base              = var.cp_strategy_base
+#     capacity_provider = var.cp_name
+#     weight            = var.cp_strategy_ec2_weight
+#   }
 
   # Capacity Provider for Fargate and Fargate SPOT Launch Type
 
-  # capacity_provider_strategy {
-  #   base              = var.cp_strategy_base
-  #   capacity_provider = "FARGATE"
-  #   weight            = var.cp_strategy_fg_weight
-  # }
-  # capacity_provider_strategy {
-  #   base              = 0
-  #   capacity_provider = "FARGATE_SPOT"
-  #   weight            = var.cp_strategy_fg_spot_weight
+  capacity_provider_strategy {
+    base              = var.cp_strategy_base
+    capacity_provider = "FARGATE"
+    weight            = var.cp_strategy_fg_weight
+  }
+  capacity_provider_strategy {
+    base              = 0
+    capacity_provider = "FARGATE_SPOT"
+    weight            = var.cp_strategy_fg_spot_weight
 
-  # }
+  }
   network_configuration {
     subnets         = var.subnets
     security_groups = var.security_groups
