@@ -4,6 +4,29 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
+* Uncomment lines inside ecs-service module that are beneath "# Capacity Provider for EC2 Launch Type" and comment out lines beneath "# Capacity Provider for Fargate and Fargate SPOT Launch Type" as show below:
+  ```
+  # Capacity Provider for EC2 Launch Type
+  capacity_provider_strategy {
+    base              = var.cp_strategy_base
+    capacity_provider = var.cp_name
+    weight            = var.cp_strategy_ec2_weight
+  }
+
+  # Capacity Provider for Fargate and Fargate SPOT Launch Type
+
+  # capacity_provider_strategy {
+  #   base              = var.cp_strategy_base
+  #   capacity_provider = "FARGATE"
+  #   weight            = var.cp_strategy_fg_weight
+  # }
+  # capacity_provider_strategy {
+  #   base              = 0
+  #   capacity_provider = "FARGATE_SPOT"
+  #   weight            = var.cp_strategy_fg_spot_weight
+
+  # }
+  ```
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 
