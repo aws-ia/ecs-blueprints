@@ -20,7 +20,7 @@ phases:
     commands:
       - echo "Building from $(pwd)"
       - echo Build started on `date`
-      - echo Building the Docker image...   
+      - echo Building the Docker image...
       - yarn build
       - yarn build-image
   post_build:
@@ -50,5 +50,3 @@ artifacts:
         - '**/*'
       base-directory: 'packages/app/dist'
       discard-paths: no
-
-
