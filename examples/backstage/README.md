@@ -8,13 +8,13 @@
 npx @backstage/create-app
 [give app name] unicorn-ui (for this example)
 ```
-* Copy the following items from https://github.com/arvindsoni80/unicorn-ui to your backstage application
+* Copy the following items to your backstage application
   * `app-config.yaml`
   * `templates/`
 * Commit the application to your github repository
   ```bash
   git init
-  git remote add origin https://github.com/nvpnathan/unicorn-ui.git
+  git remote add origin https://github.com/<github_username>/unicorn-ui.git
   git branch -M main
   git push -u origin main
   ```
