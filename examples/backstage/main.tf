@@ -92,6 +92,11 @@ module "aurora_postgresdb" {
   apply_immediately   = true
   monitoring_interval = 60
 
+  scaling_configuration = {
+      min_capacity        = 2
+      max_capacity        = 2
+}
+
   create_random_password = false
   master_username        = var.postgresdb_master_username
   master_password        = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
