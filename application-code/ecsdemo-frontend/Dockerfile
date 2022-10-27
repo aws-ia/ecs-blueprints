@@ -1,5 +1,5 @@
 # FROM ruby:2.5-slim
-FROM public.ecr.aws/bitnami/ruby:2.5
+FROM public.ecr.aws/bitnami/ruby:2.6.7
 
 COPY Gemfile Gemfile.lock /usr/src/app/
 WORKDIR /usr/src/app
