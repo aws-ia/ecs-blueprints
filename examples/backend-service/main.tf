@@ -131,6 +131,14 @@ module "ecs_service_definition" {
 
   # Task Definition
   attach_task_role_policy = false
+  container_port          = var.container_port
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  enable_execute_command  = true
+
+  container_definition_defaults = {
+    cpu = 2
+  }
+
   container_definitions = {
     default = {
       name   = var.container_name
@@ -140,10 +148,7 @@ module "ecs_service_definition" {
     }
   }
 
-  container_port         = var.container_port
-  execution_role_arn     = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  enable_execute_command = true
-  tags                   = local.tags
+  tags = local.tags
 }
 
 ################################################################################
