@@ -1,5 +1,16 @@
+data "aws_region" "current" {}
+
 locals {
-  is_not_windows = var.platform != "windows"
+  is_not_windows = contains(["LINUX"], var.operating_system_family)
+
+  log_configuration = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : try(aws_cloudwatch_log_group.this[0].name, ""),
+      awslogs-stream-prefix : "ecs"
+    }
+  }
 
   definition = {
     command                = length(var.command) > 0 ? var.command : null
@@ -22,7 +33,7 @@ locals {
     interactive            = var.interactive
     links                  = local.is_not_windows && length(var.links) > 0 ? var.links : null
     linuxParameters        = local.is_not_windows && length(var.linux_parameters) > 0 ? var.linux_parameters : null
-    logConfiguration       = length(var.log_configuration) > 0 ? var.log_configuration : null
+    logConfiguration       = length(var.log_configuration) > 0 ? var.log_configuration : local.log_configuration
     memory                 = var.memory
     memoryReservation      = var.memory_reservation
     mountPoints            = length(var.mount_points) > 0 ? var.mount_points : null
@@ -45,4 +56,14 @@ locals {
 
   # Strip out all null values, ECS API will provide defaults in place of null/empty values
   container_definition = { for k, v in local.definition : k => v if v != null }
+}
+
+resource "aws_cloudwatch_log_group" "this" {
+  count = length(var.log_configuration) > 0 ? 0 : 1
+
+  name              = "/ecs/${var.service}/${var.name}"
+  retention_in_days = var.cloudwatch_log_group_retention_in_days
+  kms_key_id        = var.cloudwatch_log_group_kms_key_id
+
+  tags = var.tags
 }

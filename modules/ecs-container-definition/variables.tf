@@ -1,8 +1,12 @@
-variable "platform" {
-  description = "Identifies whether the underlying OS platform is `linux` or `windows`"
+variable "operating_system_family" {
+  description = "The OS family for task"
   type        = string
-  default     = "linux"
+  default     = "LINUX"
 }
+
+################################################################################
+# Container Definition
+################################################################################
 
 variable "command" {
   description = "The command that's passed to the container"
@@ -258,4 +262,32 @@ variable "working_directory" {
   description = "The working directory to run commands inside the container"
   type        = string
   default     = null
+}
+
+################################################################################
+# CloudWatch Log Group
+################################################################################
+
+variable "service" {
+  description = "The name of the service that the container definition is associated with"
+  type        = string
+  default     = ""
+}
+
+variable "cloudwatch_log_group_retention_in_days" {
+  description = "Number of days to retain log events. Default retention - 90 days"
+  type        = number
+  default     = 90
+}
+
+variable "cloudwatch_log_group_kms_key_id" {
+  description = "If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)"
+  type        = string
+  default     = null
+}
+
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }
