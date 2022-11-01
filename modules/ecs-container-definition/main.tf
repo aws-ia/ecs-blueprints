@@ -1,103 +1,48 @@
 locals {
-  # Sort environment variables so terraform will not try to recreate on each plan/apply
-  env_vars_keys        = var.map_environment != null ? keys(var.map_environment) : var.environment != null ? [for m in var.environment : lookup(m, "name")] : []
-  env_vars_values      = var.map_environment != null ? values(var.map_environment) : var.environment != null ? [for m in var.environment : lookup(m, "value")] : []
-  env_vars_as_map      = zipmap(local.env_vars_keys, local.env_vars_values)
-  sorted_env_vars_keys = sort(local.env_vars_keys)
+  is_not_windows = var.platform != "windows"
 
-  sorted_environment_vars = [
-    for key in local.sorted_env_vars_keys :
-    {
-      name  = key
-      value = lookup(local.env_vars_as_map, key)
-    }
-  ]
-
-  # Sort secrets so terraform will not try to recreate on each plan/apply
-  secrets_keys        = var.map_secrets != null ? keys(var.map_secrets) : var.secrets != null ? [for m in var.secrets : lookup(m, "name")] : []
-  secrets_values      = var.map_secrets != null ? values(var.map_secrets) : var.secrets != null ? [for m in var.secrets : lookup(m, "valueFrom")] : []
-  secrets_as_map      = zipmap(local.secrets_keys, local.secrets_values)
-  sorted_secrets_keys = sort(local.secrets_keys)
-
-  sorted_secrets_vars = [
-    for key in local.sorted_secrets_keys :
-    {
-      name      = key
-      valueFrom = lookup(local.secrets_as_map, key)
-    }
-  ]
-
-  # mount_points = length(var.mount_points) > 0 ? [
-  #   for mount_point in var.mount_points : {
-  #     containerPath = lookup(mount_point, "containerPath")
-  #     sourceVolume  = lookup(mount_point, "sourceVolume")
-  #     readOnly      = tobool(lookup(mount_point, "readOnly", false))
-  #   }
-  # ] : var.mount_points
-
-  # https://www.terraform.io/docs/configuration/expressions.html#null
-  final_environment_vars = length(local.sorted_environment_vars) > 0 ? local.sorted_environment_vars : null
-  final_secrets_vars     = length(local.sorted_secrets_vars) > 0 ? local.sorted_secrets_vars : null
-
-  log_configuration_secret_options = var.log_configuration != null ? lookup(var.log_configuration, "secretOptions", null) : null
-  log_configuration_with_null = var.log_configuration == null ? null : {
-    logDriver = tostring(lookup(var.log_configuration, "logDriver"))
-    options   = tomap(lookup(var.log_configuration, "options"))
-    secretOptions = local.log_configuration_secret_options == null ? null : [
-      for secret_option in tolist(local.log_configuration_secret_options) : {
-        name      = tostring(lookup(secret_option, "name"))
-        valueFrom = tostring(lookup(secret_option, "valueFrom"))
-      }
-    ]
-  }
-  log_configuration_without_null = local.log_configuration_with_null == null ? null : {
-    for k, v in local.log_configuration_with_null :
-    k => v
-    if v != null
-  }
-  container_definition = {
-    name                   = var.container_name
-    image                  = var.container_image
+  definition = {
+    command                = length(var.command) > 0 ? var.command : null
+    cpu                    = var.cpu
+    dependsOn              = length(var.dependencies) > 0 ? var.dependencies : null # depends_on is a reserved word
+    disableNetworking      = local.is_not_windows ? var.disable_networking : null
+    dnsSearchDomains       = local.is_not_windows && length(var.dns_search_domains) > 0 ? var.dns_search_domains : null
+    dnsServers             = local.is_not_windows && length(var.dns_servers) > 0 ? var.dns_servers : null
+    dockerLabels           = length(var.docker_labels) > 0 ? var.docker_labels : null
+    dockerSecurityOptions  = length(var.docker_security_options) > 0 ? var.docker_security_options : null
+    entrypoint             = length(var.entrypoint) > 0 ? var.entrypoint : null
+    environment            = length(var.environment) > 0 ? var.environment : null
+    environmentFiles       = length(var.environment_files) > 0 ? var.environment_files : null
     essential              = var.essential
-    entryPoint             = var.entrypoint
-    command                = var.command
-    workingDirectory       = var.working_directory
-    readonlyRootFilesystem = var.readonly_root_filesystem
-    dnsServers             = var.dns_servers
-    dnsSearchDomains       = var.dns_search_domains
-    ulimits                = var.ulimits
-    repositoryCredentials  = var.repository_credentials
-    links                  = var.links
-    volumesFrom            = var.volumes_from
-    dependsOn              = var.container_depends_on
-    privileged             = var.privileged
-    portMappings           = var.port_mappings
-    healthCheck            = var.healthcheck
-    linuxParameters        = var.linux_parameters
-    logConfiguration       = local.log_configuration_without_null
-    memory                 = var.container_memory
-    memoryReservation      = var.container_memory_reservation
-    cpu                    = var.container_cpu
-    environmentFiles       = var.environment_files
-    secrets                = local.final_secrets_vars
-    environment            = local.final_environment_vars
-    dockerLabels           = var.docker_labels
+    extraHosts             = local.is_not_windows && length(var.extra_hosts) > 0 ? var.extra_hosts : null
+    firelensConfiguration  = length(var.firelens_configuration) > 0 ? var.firelens_configuration : null
+    healthCheck            = length(var.health_check) > 0 ? var.health_check : null
+    hostname               = var.hostname
+    image                  = var.image
+    interactive            = var.interactive
+    links                  = local.is_not_windows && length(var.links) > 0 ? var.links : null
+    linuxParameters        = local.is_not_windows && length(var.linux_parameters) > 0 ? var.linux_parameters : null
+    logConfiguration       = length(var.log_configuration) > 0 ? var.log_configuration : null
+    memory                 = var.memory
+    memoryReservation      = var.memory_reservation
+    mountPoints            = length(var.mount_points) > 0 ? var.mount_points : null
+    name                   = var.name
+    portMappings           = length(var.port_mappings) > 0 ? var.port_mappings : null
+    privileged             = local.is_not_windows ? var.privileged : null
+    pseudoTerminal         = var.pseudo_terminal
+    readonlyRootFilesystem = local.is_not_windows ? var.readonly_root_filesystem : null
+    repositoryCredentials  = length(var.repository_credentials) > 0 ? var.repository_credentials : null
+    resourceRequirements   = length(var.resource_requirements) > 0 ? var.resource_requirements : null
+    secrets                = length(var.secrets) > 0 ? var.secrets : null
     startTimeout           = var.start_timeout
     stopTimeout            = var.stop_timeout
-    systemControls         = var.system_controls
-    extraHosts             = var.extra_hosts
-    hostname               = var.hostname
-    disableNetworking      = var.disable_networking
-    interactive            = var.interactive
-    pseudoTerminal         = var.pseudo_terminal
-    dockerSecurityOptions  = var.docker_security_options
-    resourceRequirements   = var.resource_requirements
+    systemControls         = length(var.system_controls) > 0 ? var.system_controls : null
+    ulimits                = local.is_not_windows && length(var.ulimits) > 0 ? var.ulimits : null
+    user                   = local.is_not_windows ? var.user : null
+    volumesFrom            = length(var.volumes_from) > 0 ? var.volumes_from : null
+    workingDirectory       = var.working_directory
   }
 
-  container_definition_without_null = {
-    for k, v in local.container_definition :
-    k => v
-    if v != null
-  }
-  json_map = jsonencode(merge(local.container_definition_without_null, var.container_definition))
+  # Strip out all null values, ECS API will provide defaults in place of null/empty values
+  container_definition = { for k, v in local.definition : k => v if v != null }
 }
