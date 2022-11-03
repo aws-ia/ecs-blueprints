@@ -114,17 +114,30 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = true
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = var.container_image
-  task_role_policy              = data.aws_iam_policy_document.task_role.json
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  sidecar_container_definitions = var.sidecar_container_definitions
-  enable_execute_command        = true
-  tags                          = local.tags
+  attach_task_role_policy = true
+  lb_container_port       = var.container_port
+  lb_container_name       = var.container_name
+  cpu                     = var.cpu
+  memory                  = var.memory
+  task_role_policy        = data.aws_iam_policy_document.task_role.json
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  enable_execute_command  = true
+
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name                     = var.container_name
+      image                    = var.container_image
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : var.container_port
+        hostPort : var.container_port
+      }]
+    },
+    sidecar_container = var.sidecar_container_definition
+  }
 }
 
 ################################################################################

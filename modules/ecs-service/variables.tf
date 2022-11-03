@@ -120,16 +120,28 @@ variable "cp_strategy_fg_spot_weight" {
 # Task Definition
 ################################################################################
 
+variable "lb_container_name" {
+  description = "The container name for the LB"
+  type        = string
+  default     = null
+}
+
 variable "cpu" {
   description = "The number of cpu units used by the task."
   type        = number
   default     = 256
 }
 
-variable "container_port" {
+variable "memory" {
+  description = "The number of cpu units used by the task."
+  type        = number
+  default     = 1024
+}
+
+variable "lb_container_port" {
   description = "The port that the container will use to listen to requests"
   type        = number
-  default     = 8080
+  default     = null
 }
 
 variable "attach_task_role_policy" {

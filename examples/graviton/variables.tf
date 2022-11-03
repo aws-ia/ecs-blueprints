@@ -141,21 +141,35 @@ variable "health_check_matcher" {
   default     = "200-299"
 }
 
-variable "task_cpu" {
+################################################################################
+# Task definition parameters
+################################################################################
+
+variable "cpu" {
   description = "The task vCPU size"
   type        = number
 }
 
-variable "task_memory" {
+variable "memory" {
   description = "The task memory size"
-  type        = string
+  type        = number
 }
 
 variable "container_name" {
   description = "The container name to use in service task definition"
   type        = string
-  default     = "ecsdemo-frontend"
+  default     = "nodejs-multi-arch"
 }
+
+variable "container_definition_defaults" {
+  description = "Default values to use on all container definitions created if a specific value is not specified"
+  type        = any
+  default     = {}
+}
+
+################################################################################
+# Container definition used in task
+################################################################################
 
 variable "container_port" {
   description = "The container port to serve traffic"
@@ -167,22 +181,4 @@ variable "container_protocol" {
   description = "The container traffic protocol"
   type        = string
   default     = "HTTP"
-}
-
-# Provide a list of map objects
-# Each map object has container definition parameters
-# The required parameters are container_name, container_image, port_mappings
-# [
-#  {
-#    "container_name":"monitoring-agent",
-#    "container_image": "img-repo-url"},
-#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
-#  }
-# ]
-# see modules/ecs-container-definition for full set of parameters
-# map_environment and map_secrets are common to add in container definition
-variable "sidecar_container_definitions" {
-  description = "List of container definitions to add to the task"
-  type        = list(any)
-  default     = []
 }

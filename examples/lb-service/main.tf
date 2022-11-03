@@ -202,14 +202,28 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = false
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  sidecar_container_definitions = var.sidecar_container_definitions
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  lb_container_name       = var.container_name
+  cpu                     = var.cpu
+  memory                  = var.memory
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  enable_execute_command  = true
+
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name                     = var.container_name
+      image                    = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : var.container_port
+        hostPort : var.container_port
+      }]
+    }
+  }
 
   tags = local.tags
 
@@ -297,7 +311,7 @@ module "codebuild_ci" {
         value = module.ecs_service_definition.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port

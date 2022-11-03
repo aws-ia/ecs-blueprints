@@ -258,16 +258,27 @@ module "ecs_service_definition_amd64" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = false
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  sidecar_container_definitions = var.sidecar_container_definitions
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  lb_container_name       = var.container_name
+  cpu                     = var.cpu
+  memory                  = var.memory
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  tags = local.tags
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name                     = var.container_name
+      image                    = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : var.container_port
+        hostPort : var.container_port
+      }]
+    }
+  }
 }
 
 module "ecs_service_definition_arm64" {
@@ -294,19 +305,29 @@ module "ecs_service_definition_arm64" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = false
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  sidecar_container_definitions = var.sidecar_container_definitions
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  task_cpu_architecture         = "ARM64"
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  lb_container_name       = var.container_name
+  cpu                     = var.cpu
+  memory                  = var.memory
+  task_cpu_architecture   = "ARM64"
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  tags = local.tags
+  container_definition_defaults = {}
+
+  container_definitions = {
+    main_container = {
+      name                     = var.container_name
+      image                    = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : var.container_port
+        hostPort : var.container_port
+      }]
+    }
+  }
 }
-
 
 ################################################################################
 # CodePipeline and CodeBuild for CI/CD
@@ -382,7 +403,7 @@ module "codebuild_ci_amd64" {
         value = module.ecs_service_definition_amd64.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition_amd64.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -428,7 +449,7 @@ module "codebuild_ci_arm64" {
         value = module.ecs_service_definition_arm64.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition_arm64.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
@@ -469,7 +490,7 @@ module "codebuild_ci_manifest" {
         value = module.container_image_ecr.repository_url
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition_amd64.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port

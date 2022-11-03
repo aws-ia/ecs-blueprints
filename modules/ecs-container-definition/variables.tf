@@ -17,7 +17,7 @@ variable "command" {
 variable "cpu" {
   description = "The number of cpu units to reserve for the container. This is optional for tasks using Fargate launch type and the total amount of `cpu` of all containers in a task will need to be lower than the task-level cpu value"
   type        = number
-  default     = 2
+  default     = null
 }
 
 variable "dependencies" {
@@ -140,8 +140,17 @@ variable "linux_parameters" {
   default     = {}
 }
 
+# variable "log_configuration" {
+#   type = object({
+#     logDriver = string
+#     options   = map(string)
+#   })
+#   description = "Log configuration options to send to a custom log driver for the container. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html"
+#   default     = null
+# }
+
 variable "log_configuration" {
-  description = "The log configuration specification for the container. For more information about the options for different supported log drivers, see [Configure logging drivers](https://docs.docker.com/engine/admin/logging/overview/) in the Docker documentation"
+  description = "Linux-specific modifications that are applied to the container, such as Linux kernel capabilities. For more information see [KernelCapabilities](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_KernelCapabilities.html)"
   type        = any
   default     = {}
 }
@@ -249,7 +258,8 @@ variable "ulimits" {
 variable "user" {
   description = "The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set"
   type        = string
-  default     = "1001:1001"
+  # default     = "1001:1001"
+  default = null
 }
 
 variable "volumes_from" {

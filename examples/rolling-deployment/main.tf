@@ -99,7 +99,7 @@ module "client_alb" {
 
   http_tcp_listeners = [
     {
-      port               = 80
+      port               = var.listener_port
       protocol           = "HTTP"
       target_group_index = 0
     },
@@ -109,12 +109,12 @@ module "client_alb" {
     {
       name             = "client"
       backend_protocol = "HTTP"
-      backend_port     = 80
+      backend_port     = local.app_client_port
       target_type      = "ip"
       health_check = {
         path    = "/"
         port    = local.app_client_port
-        matcher = "200-299"
+        matcher = var.health_check_matcher
       }
     },
   ]
@@ -158,8 +158,8 @@ module "server_alb" {
 
   http_tcp_listeners = [
     {
-      port               = 80
-      protocol           = "HTTP"
+      port               = var.listener_port
+      protocol           = var.listener_protocol
       target_group_index = 0
     },
   ]
@@ -167,13 +167,13 @@ module "server_alb" {
   target_groups = [
     {
       name             = "server"
-      backend_protocol = "HTTP"
-      backend_port     = 80
+      backend_protocol = var.listener_protocol
+      backend_port     = local.app_client_port
       target_type      = "ip"
       health_check = {
-        path    = "/status"
+        path    = var.health_check_path
         port    = local.app_server_port
-        matcher = "200-299"
+        matcher = var.health_check_matcher
       }
     },
   ]
@@ -288,7 +288,7 @@ module "ecs_service_server" {
   source = "../../modules/ecs-service"
 
   name           = "${local.name}-server"
-  desired_count  = 1
+  desired_count  = var.desired_count
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.server_task_security_group.security_group_id]
@@ -300,29 +300,45 @@ module "ecs_service_server" {
   deployment_controller = "ECS"
 
   # Task Definition
-  container_name     = "${local.name}-server"
-  container_port     = local.app_server_port
-  cpu                = 256
-  memory             = 512
-  image              = module.server_ecr.repository_url
+  lb_container_port  = local.app_server_port
+  lb_container_name  = "${var.container_name}-server"
+  cpu                = var.cpu
+  memory             = var.memory
   task_role_policy   = data.aws_iam_policy_document.task_role.json
   execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  # Autoscalnig
-  enable_autoscaling           = true
-  autoscaling_min_capacity     = 1
-  autoscaling_max_capacity     = 5
-  autoscaling_cpu_threshold    = 75
-  autoscaling_memory_threshold = 75
+  container_definition_defaults = {}
+
+  container_definitions = {
+    main_container = {
+      name                     = "${var.container_name}-server"
+      image                    = module.server_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : local.app_server_port
+        hostPort : local.app_server_port
+      }]
+    }
+  }
 
   tags = local.tags
+
+  enable_scheduled_autoscaling            = var.enable_scheduled_autoscaling
+  scheduled_autoscaling_timezone          = var.scheduled_autoscaling_timezone
+  scheduled_autoscaling_up_time           = var.scheduled_autoscaling_up_time
+  scheduled_autoscaling_down_time         = var.scheduled_autoscaling_down_time
+  scheduled_autoscaling_up_min_capacity   = var.scheduled_autoscaling_up_min_capacity
+  scheduled_autoscaling_up_max_capacity   = var.scheduled_autoscaling_up_max_capacity
+  scheduled_autoscaling_down_min_capacity = var.scheduled_autoscaling_down_min_capacity
+  scheduled_autoscaling_down_max_capacity = var.scheduled_autoscaling_down_max_capacity
 }
 
 module "ecs_service_client" {
   source = "../../modules/ecs-service"
 
   name           = "${local.name}-client"
-  desired_count  = 1
+  desired_count  = var.desired_count
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.client_task_security_group.security_group_id]
@@ -334,22 +350,38 @@ module "ecs_service_client" {
   deployment_controller = "ECS"
 
   # Task Definition
-  container_name     = "${local.name}-client"
-  container_port     = local.app_client_port
-  cpu                = 256
-  memory             = 512
-  image              = module.client_ecr.repository_url
+  lb_container_port  = local.app_client_port
+  lb_container_name  = "${var.container_name}-client"
+  cpu                = var.cpu
+  memory             = var.memory
   task_role_policy   = data.aws_iam_policy_document.task_role.json
   execution_role_arn = data.aws_iam_role.ecs_core_infra_exec_role.arn
 
-  # Autoscaling
-  enable_autoscaling           = true
-  autoscaling_min_capacity     = 1
-  autoscaling_max_capacity     = 5
-  autoscaling_cpu_threshold    = 75
-  autoscaling_memory_threshold = 75
+  container_definition_defaults = {}
+
+  container_definitions = {
+    main_container = {
+      name                     = "${var.container_name}-client"
+      image                    = module.client_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : local.app_client_port
+        hostPort : local.app_client_port
+      }]
+    }
+  }
 
   tags = local.tags
+
+  enable_scheduled_autoscaling            = var.enable_scheduled_autoscaling
+  scheduled_autoscaling_timezone          = var.scheduled_autoscaling_timezone
+  scheduled_autoscaling_up_time           = var.scheduled_autoscaling_up_time
+  scheduled_autoscaling_down_time         = var.scheduled_autoscaling_down_time
+  scheduled_autoscaling_up_min_capacity   = var.scheduled_autoscaling_up_min_capacity
+  scheduled_autoscaling_up_max_capacity   = var.scheduled_autoscaling_up_max_capacity
+  scheduled_autoscaling_down_min_capacity = var.scheduled_autoscaling_down_min_capacity
+  scheduled_autoscaling_down_max_capacity = var.scheduled_autoscaling_down_max_capacity
 }
 
 ################################################################################
@@ -428,7 +460,7 @@ module "codebuild_server" {
         value = module.ecs_service_server.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_server.container_name
+        value = "${var.container_name}-server"
         }, {
         name  = "SERVICE_PORT"
         value = local.app_server_port
@@ -471,7 +503,7 @@ module "codebuild_client" {
         value = module.ecs_service_client.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_client.container_name
+        value = "${var.container_name}-client"
         }, {
         name  = "SERVICE_PORT"
         value = local.app_client_port

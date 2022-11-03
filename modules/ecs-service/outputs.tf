@@ -30,5 +30,5 @@ output "task_role_arn" {
 
 output "container_name" {
   description = "The name of the container"
-  value       = var.container_name # passthrough
+  value       = var.container_definitions.main_container.image # passthrough
 }

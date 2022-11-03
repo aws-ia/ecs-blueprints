@@ -48,7 +48,6 @@
 | <a name="input_autoscaling_min_capacity"></a> [autoscaling\_min\_capacity](#input\_autoscaling\_min\_capacity) | The minimum number of tasks to provision | `number` | `1` | no |
 | <a name="input_container_definition_defaults"></a> [container\_definition\_defaults](#input\_container\_definition\_defaults) | Default values to use on all container definitions created if a specific value is not specified | `any` | `{}` | no |
 | <a name="input_container_definitions"></a> [container\_definitions](#input\_container\_definitions) | Map of maps that define container definitions to create | `any` | `{}` | no |
-| <a name="input_container_port"></a> [container\_port](#input\_container\_port) | The port that the container will use to listen to requests | `number` | `8080` | no |
 | <a name="input_cp_strategy_base"></a> [cp\_strategy\_base](#input\_cp\_strategy\_base) | Base number of tasks to create on Fargate on-demand | `number` | `1` | no |
 | <a name="input_cp_strategy_fg_spot_weight"></a> [cp\_strategy\_fg\_spot\_weight](#input\_cp\_strategy\_fg\_spot\_weight) | Relative number of tasks to put in Fargate Spot | `number` | `0` | no |
 | <a name="input_cp_strategy_fg_weight"></a> [cp\_strategy\_fg\_weight](#input\_cp\_strategy\_fg\_weight) | Relative number of tasks to put in Fargate | `number` | `1` | no |
@@ -64,7 +63,10 @@
 | <a name="input_enable_scheduled_autoscaling"></a> [enable\_scheduled\_autoscaling](#input\_enable\_scheduled\_autoscaling) | Determines whether scheduled autoscaling is enabled for the service | `bool` | `false` | no |
 | <a name="input_execution_role_arn"></a> [execution\_role\_arn](#input\_execution\_role\_arn) | ecs-blueprint-infra ECS execution ARN | `string` | n/a | yes |
 | <a name="input_health_check_grace_period_seconds"></a> [health\_check\_grace\_period\_seconds](#input\_health\_check\_grace\_period\_seconds) | Number of seconds for the task health check | `number` | `30` | no |
+| <a name="input_lb_container_name"></a> [lb\_container\_name](#input\_lb\_container\_name) | The container name for the LB | `string` | `null` | no |
+| <a name="input_lb_container_port"></a> [lb\_container\_port](#input\_lb\_container\_port) | The port that the container will use to listen to requests | `number` | `null` | no |
 | <a name="input_load_balancers"></a> [load\_balancers](#input\_load\_balancers) | A list of load balancer config objects for the ECS service | <pre>list(object({<br>    target_group_arn = string<br>  }))</pre> | `[]` | no |
+| <a name="input_memory"></a> [memory](#input\_memory) | The number of cpu units used by the task. | `number` | `1024` | no |
 | <a name="input_name"></a> [name](#input\_name) | The name for the ecs service | `string` | n/a | yes |
 | <a name="input_operating_system_family"></a> [operating\_system\_family](#input\_operating\_system\_family) | The OS family for task | `string` | `"LINUX"` | no |
 | <a name="input_platform_version"></a> [platform\_version](#input\_platform\_version) | Platform version on which to run your service | `string` | `null` | no |

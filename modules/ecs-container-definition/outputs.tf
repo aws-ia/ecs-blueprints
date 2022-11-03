@@ -2,14 +2,14 @@
 # Container Definition
 ################################################################################
 
-output "definition" {
+output "container_definition" {
   description = "Container definition"
   value       = local.container_definition
 }
 
-output "encoded_definition" {
+output "encoded_container_definition" {
   description = "JSON encoded container definition"
-  value       = local.container_definition
+  value       = jsonencode(local.container_definition)
 }
 
 ################################################################################

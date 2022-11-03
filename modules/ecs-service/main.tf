@@ -36,8 +36,8 @@ resource "aws_ecs_service" "this" {
     for_each = var.load_balancers
     content {
       target_group_arn = load_balancer.value.target_group_arn
-      container_name   = var.container_name
-      container_port   = var.container_port
+      container_name   = var.lb_container_name
+      container_port   = var.lb_container_port
     }
   }
 
@@ -78,7 +78,7 @@ module "container_definition" {
 
   # Container Definition
   command                  = try(each.value.command, var.container_definition_defaults.command, [])
-  cpu                      = try(each.value.cpu, var.container_definition_defaults.cpu, 2)
+  cpu                      = try(each.value.cpu, var.container_definition_defaults.cpu, null)
   dependencies             = try(each.value.dependencies, var.container_definition_defaults.dependencies, []) # depends_on is a reserved word
   disable_networking       = try(each.value.disable_networking, var.container_definition_defaults.disable_networking, null)
   dns_search_domains       = try(each.value.dns_search_domains, var.container_definition_defaults.dns_search_domains, [])
@@ -98,7 +98,7 @@ module "container_definition" {
   links                    = try(each.value.links, var.container_definition_defaults.links, [])
   linux_parameters         = try(each.value.linux_parameters, var.container_definition_defaults.linux_parameters, {})
   log_configuration        = try(each.value.log_configuration, var.container_definition_defaults.log_configuration, {})
-  memory                   = try(each.value.memory, var.container_definition_defaults.memory, 512)
+  memory                   = try(each.value.memory, var.container_definition_defaults.memory, null)
   memory_reservation       = try(each.value.memory_reservation, var.container_definition_defaults.memory_reservation, null)
   mount_points             = try(each.value.mount_points, var.container_definition_defaults.mount_points, [])
   name                     = try(each.value.name, each.key)
@@ -113,7 +113,7 @@ module "container_definition" {
   stop_timeout             = try(each.value.stop_timeout, var.container_definition_defaults.stop_timeout, 30)
   system_controls          = try(each.value.system_controls, var.container_definition_defaults.system_controls, [])
   ulimits                  = try(each.value.ulimits, var.container_definition_defaults.ulimits, [])
-  user                     = try(each.value.user, var.container_definition_defaults.user, "1001:1001")
+  user                     = try(each.value.user, var.container_definition_defaults.user, null)
   volumes_from             = try(each.value.volumes_from, var.container_definition_defaults.volumes_from, [])
   working_directory        = try(each.value.working_directory, var.container_definition_defaults.working_directory, null)
 

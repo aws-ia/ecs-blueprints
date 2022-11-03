@@ -105,30 +105,24 @@ variable "desired_count" {
 ################################################################################
 # Task definition parameters
 ################################################################################
-variable "task_cpu" {
+variable "cpu" {
   description = "The task vCPU size"
   type        = number
 }
 
-variable "task_memory" {
+variable "memory" {
   description = "The task memory size"
-  type        = string
+  type        = number
 }
 
+variable "container_name" {
+  description = "The name of the main container"
+  type        = string
+}
 
 ################################################################################
 # Container definition used in task
 ################################################################################
-
-variable "container_definitions" {
-  description = "Map of maps that define container definitions to create"
-  type        = any
-  default = {
-    default = {
-      image = "ecsdemo-nodejs"
-    }
-  }
-}
 
 variable "container_definition_defaults" {
   description = "Default values to use on all container definitions created if a specific value is not specified"

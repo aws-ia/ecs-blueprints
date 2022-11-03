@@ -42,7 +42,60 @@ variable "ecs_task_execution_role_name" {
   default     = ""
 }
 
-# Application variables
+# application related input parameters
+variable "desired_count" {
+  description = "The number of task replicas for service"
+  type        = number
+  default     = 1
+}
+
+# listener settings for the load balanced service
+variable "listener_port" {
+  description = "The listener port"
+  type        = number
+  default     = 80
+}
+
+variable "listener_protocol" {
+  description = "The listener protocol"
+  type        = string
+  default     = "HTTP"
+}
+
+# target health check
+variable "health_check_path" {
+  description = "The health check path"
+  type        = string
+  default     = "/status"
+}
+
+# variable "health_check_protocol" {
+#   description = "The health check protocol"
+#   type        = string
+#   default     = "http"
+# }
+
+variable "health_check_matcher" {
+  description = "The health check passing codes"
+  type        = string
+  default     = "200-299"
+}
+
+variable "cpu" {
+  description = "The task vCPU size"
+  type        = number
+}
+
+variable "memory" {
+  description = "The task memory size"
+  type        = string
+}
+
+variable "container_name" {
+  description = "The container name to use in service task definition"
+  type        = string
+}
+
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
@@ -76,4 +129,53 @@ variable "repository_branch" {
   description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
   type        = string
   default     = "main"
+}
+
+# schedule scaling
+variable "enable_scheduled_autoscaling" {
+  description = "Determines whether scheduled autoscaling is enabled for the service"
+  type        = bool
+  default     = false
+}
+
+variable "scheduled_autoscaling_timezone" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "America/Los_Angeles"
+}
+
+variable "scheduled_autoscaling_up_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 6 * * ? *)"
+}
+
+variable "scheduled_autoscaling_down_time" {
+  description = "Timezone which scheduled scaling occurs"
+  type        = string
+  default     = "cron(0 20 * * ? *)"
+}
+
+variable "scheduled_autoscaling_up_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 4
+}
+
+variable "scheduled_autoscaling_up_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 6
+}
+
+variable "scheduled_autoscaling_down_min_capacity" {
+  description = "The minimum number of tasks to provision"
+  type        = number
+  default     = 1
+}
+
+variable "scheduled_autoscaling_down_max_capacity" {
+  description = "The maximum number of tasks to provision"
+  type        = number
+  default     = 3
 }
