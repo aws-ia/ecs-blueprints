@@ -141,12 +141,19 @@ variable "linux_parameters" {
 }
 
 # variable "log_configuration" {
+#   default = {
+#     logDriver = "awslogs"
+#     options = {
+#       awslogs-region = null
+#       awslogs-group = null
+#       awslogs-stream-prefix = "ecs"
+#     }
+#   }
 #   type = object({
 #     logDriver = string
 #     options   = map(string)
 #   })
 #   description = "Log configuration options to send to a custom log driver for the container. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html"
-#   default     = null
 # }
 
 variable "log_configuration" {
