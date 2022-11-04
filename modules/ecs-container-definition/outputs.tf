@@ -1,32 +1,27 @@
-output "json_map_encoded_list" {
-  description = "JSON string encoded list of container definitions for use with other terraform resources such as aws_ecs_task_definition"
-  value       = "[${local.json_map}]"
+################################################################################
+# Container Definition
+################################################################################
+
+output "container_definition" {
+  description = "Container definition"
+  value       = local.container_definition
 }
 
-output "json_map_encoded" {
-  description = "JSON string encoded container definitions for use with other terraform resources such as aws_ecs_task_definition"
-  value       = local.json_map
+output "encoded_container_definition" {
+  description = "JSON encoded container definition"
+  value       = jsonencode(local.container_definition)
 }
 
-output "json_map_object" {
-  description = "JSON map encoded container definition"
-  value       = jsondecode(local.json_map)
+################################################################################
+# CloudWatch Log Group
+################################################################################
+
+output "cloudwatch_log_group_name" {
+  description = "Name of cloudwatch log group created"
+  value       = try(aws_cloudwatch_log_group.this[0].name, "")
 }
 
-output "sensitive_json_map_encoded_list" {
-  description = "JSON string encoded list of container definitions for use with other terraform resources such as aws_ecs_task_definition (sensitive)"
-  value       = "[${local.json_map}]"
-  sensitive   = true
-}
-
-output "sensitive_json_map_encoded" {
-  description = "JSON string encoded container definitions for use with other terraform resources such as aws_ecs_task_definition (sensitive)"
-  value       = local.json_map
-  sensitive   = true
-}
-
-output "sensitive_json_map_object" {
-  description = "JSON map encoded container definition (sensitive)"
-  value       = jsondecode(local.json_map)
-  sensitive   = true
+output "cloudwatch_log_group_arn" {
+  description = "Arn of cloudwatch log group created"
+  value       = try(aws_cloudwatch_log_group.this[0].arn, "")
 }

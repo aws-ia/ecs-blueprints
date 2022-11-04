@@ -1,5 +1,3 @@
-data "aws_region" "current" {}
-
 ################################################################################
 # Service
 ################################################################################
@@ -38,8 +36,8 @@ resource "aws_ecs_service" "this" {
     for_each = var.load_balancers
     content {
       target_group_arn = load_balancer.value.target_group_arn
-      container_name   = var.container_name
-      container_port   = var.container_port
+      container_name   = var.lb_container_name
+      container_port   = var.lb_container_port
     }
   }
 
@@ -70,51 +68,61 @@ resource "aws_ecs_service" "this" {
 ################################################################################
 # Task Definition
 ################################################################################
-module "task_sidecar_containers" {
+
+module "container_definition" {
   source = "../ecs-container-definition"
-  count  = length(var.sidecar_container_definitions)
 
-  container_name               = var.sidecar_container_definitions[count.index]["container_name"]
-  container_image              = var.sidecar_container_definitions[count.index]["container_image"]
-  essential                    = lookup(var.sidecar_container_definitions[count.index], "essential", true)
-  port_mappings                = lookup(var.sidecar_container_definitions[count.index], "port_mappings", [])
-  healthcheck                  = lookup(var.sidecar_container_definitions[count.index], "healthcheck", null)
-  container_memory             = lookup(var.sidecar_container_definitions[count.index], "container_memory", null)
-  container_memory_reservation = lookup(var.sidecar_container_definitions[count.index], "container_memory_reservation", null)
-  container_cpu                = lookup(var.sidecar_container_definitions[count.index], "container_cpu", 0)
-  environment_files            = lookup(var.sidecar_container_definitions[count.index], "environment_files", null)
-  map_secrets                  = lookup(var.sidecar_container_definitions[count.index], "map_secrets", null)
-  map_environment              = lookup(var.sidecar_container_definitions[count.index], "map_environment", null)
-  log_configuration = {
-    logDriver : "awslogs",
-    options : {
-      awslogs-region : data.aws_region.current.name,
-      awslogs-group : aws_cloudwatch_log_group.this.name,
-      awslogs-stream-prefix : "ecs"
-    }
-  }
-}
+  for_each = var.container_definitions
 
-module "task_main_app_container" {
-  source          = "../ecs-container-definition"
-  container_image = var.image
-  container_name  = var.container_name
-  port_mappings = [{
-    protocol : "tcp",
-    containerPort : var.container_port,
-    hostPort : var.container_port
-  }]
-  log_configuration = {
-    logDriver : "awslogs",
-    options : {
-      awslogs-region : data.aws_region.current.name,
-      awslogs-group : aws_cloudwatch_log_group.this.name,
-      awslogs-stream-prefix : "ecs"
-    }
-  }
-  map_secrets     = var.map_secrets
-  map_environment = var.map_environment
+  operating_system_family = var.operating_system_family
 
+  # Container Definition
+  command                  = try(each.value.command, var.container_definition_defaults.command, [])
+  cpu                      = try(each.value.cpu, var.container_definition_defaults.cpu, null)
+  dependencies             = try(each.value.dependencies, var.container_definition_defaults.dependencies, []) # depends_on is a reserved word
+  disable_networking       = try(each.value.disable_networking, var.container_definition_defaults.disable_networking, null)
+  dns_search_domains       = try(each.value.dns_search_domains, var.container_definition_defaults.dns_search_domains, [])
+  dns_servers              = try(each.value.dns_servers, var.container_definition_defaults.dns_servers, [])
+  docker_labels            = try(each.value.docker_labels, var.container_definition_defaults.docker_labels, {})
+  docker_security_options  = try(each.value.docker_security_options, var.container_definition_defaults.docker_security_options, [])
+  entrypoint               = try(each.value.entrypoint, var.container_definition_defaults.entrypoint, [])
+  environment              = try(each.value.environment, var.container_definition_defaults.environment, [])
+  environment_files        = try(each.value.environment_files, var.container_definition_defaults.environment_files, [])
+  essential                = try(each.value.essential, var.container_definition_defaults.essential, null)
+  extra_hosts              = try(each.value.extra_hosts, var.container_definition_defaults.extra_hosts, [])
+  firelens_configuration   = try(each.value.firelens_configuration, var.container_definition_defaults.firelens_configuration, {})
+  health_check             = try(each.value.health_check, var.container_definition_defaults.health_check, {})
+  hostname                 = try(each.value.hostname, var.container_definition_defaults.hostname, null)
+  image                    = try(each.value.image, var.container_definition_defaults.image, null)
+  interactive              = try(each.value.interactive, var.container_definition_defaults.interactive, false)
+  links                    = try(each.value.links, var.container_definition_defaults.links, [])
+  linux_parameters         = try(each.value.linux_parameters, var.container_definition_defaults.linux_parameters, {})
+  log_configuration        = try(each.value.log_configuration, var.container_definition_defaults.log_configuration, {})
+  memory                   = try(each.value.memory, var.container_definition_defaults.memory, null)
+  memory_reservation       = try(each.value.memory_reservation, var.container_definition_defaults.memory_reservation, null)
+  mount_points             = try(each.value.mount_points, var.container_definition_defaults.mount_points, [])
+  name                     = try(each.value.name, each.key)
+  port_mappings            = try(each.value.port_mappings, var.container_definition_defaults.port_mappings, [])
+  privileged               = try(each.value.privileged, var.container_definition_defaults.privileged, false)
+  pseudo_terminal          = try(each.value.pseudo_terminal, var.container_definition_defaults.pseudo_terminal, false)
+  readonly_root_filesystem = try(each.value.readonly_root_filesystem, var.container_definition_defaults.readonly_root_filesystem, true)
+  repository_credentials   = try(each.value.repository_credentials, var.container_definition_defaults.repository_credentials, {})
+  resource_requirements    = try(each.value.resource_requirements, var.container_definition_defaults.resource_requirements, [])
+  secrets                  = try(each.value.secrets, var.container_definition_defaults.secrets, [])
+  start_timeout            = try(each.value.start_timeout, var.container_definition_defaults.start_timeout, 30)
+  stop_timeout             = try(each.value.stop_timeout, var.container_definition_defaults.stop_timeout, 30)
+  system_controls          = try(each.value.system_controls, var.container_definition_defaults.system_controls, [])
+  ulimits                  = try(each.value.ulimits, var.container_definition_defaults.ulimits, [])
+  user                     = try(each.value.user, var.container_definition_defaults.user, null)
+  volumes_from             = try(each.value.volumes_from, var.container_definition_defaults.volumes_from, [])
+  working_directory        = try(each.value.working_directory, var.container_definition_defaults.working_directory, null)
+
+  # CloudWatch Log Group
+  service                                = var.name
+  cloudwatch_log_group_retention_in_days = try(each.value.cloudwatch_log_group_retention_in_days, var.container_definition_defaults.cloudwatch_log_group_retention_in_days, 90)
+  cloudwatch_log_group_kms_key_id        = try(each.value.cloudwatch_log_group_kms_key_id, var.container_definition_defaults.cloudwatch_log_group_kms_key_id, null)
+
+  tags = var.tags
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -126,24 +134,12 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = aws_iam_role.task.arn
 
-  container_definitions = jsonencode(
-    concat(
-      [module.task_main_app_container.json_map_object],
-      [for sc in module.task_sidecar_containers : sc.json_map_object]
-    )
-  )
+  container_definitions = jsonencode([for con in module.container_definition : con.container_definition])
 
   runtime_platform {
-    operating_system_family = var.task_os_family
+    operating_system_family = var.operating_system_family
     cpu_architecture        = var.task_cpu_architecture
   }
-  tags = var.tags
-}
-
-resource "aws_cloudwatch_log_group" "this" {
-  name              = "/ecs/${var.name}"
-  retention_in_days = var.log_retention_in_days
-
   tags = var.tags
 }
 

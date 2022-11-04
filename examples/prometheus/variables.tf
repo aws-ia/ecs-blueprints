@@ -70,13 +70,19 @@ variable "desired_count" {
 ################################################################################
 # Task definition parameters
 ################################################################################
-variable "task_cpu" {
+
+variable "cpu" {
   description = "The task vCPU size"
   type        = number
 }
 
-variable "task_memory" {
+variable "memory" {
   description = "The task memory size"
+  type        = number
+}
+
+variable "container_name" {
+  description = "The container name to use in service task definition"
   type        = string
 }
 
@@ -84,9 +90,10 @@ variable "task_memory" {
 # Container definition used in task
 ################################################################################
 
-variable "container_name" {
-  description = "The container name to use in service task definition"
-  type        = string
+variable "container_definition_defaults" {
+  description = "Default values to use on all container definitions created if a specific value is not specified"
+  type        = any
+  default     = {}
 }
 
 variable "container_port" {
@@ -111,10 +118,10 @@ variable "container_image" {
 # ]
 # see modules/ecs-container-definition for full set of parameters
 # map_environment and map_secrets are common to add in container definition
-variable "sidecar_container_definitions" {
+variable "sidecar_container_definition" {
   description = "List of container definitions to add to the task"
-  type        = list(any)
-  default     = []
+  type        = any
+  default     = {}
 }
 
 ################################################################################

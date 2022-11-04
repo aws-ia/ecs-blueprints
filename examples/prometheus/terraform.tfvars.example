@@ -10,19 +10,17 @@ core_stack_name = "ecs-blueprint-infra"
 service_name    = "otel-collector-test"
 namespace       = "default"
 desired_count   = 1
-task_cpu        = 1024
-task_memory     = 2048
+cpu             = 1024
+memory          = 2048
 
 container_name            = "prometheus-sample-app"
 container_image           = "public.ecr.aws/aws-otel-test/prometheus-sample-app:latest"
 container_port            = 8080
 adot_config_ssm_parameter = "otel-collector-config"
 
-sidecar_container_definitions = [
-  {
-    container_name  = "aws-otel-collector",
-    container_image = "public.ecr.aws/aws-observability/aws-otel-collector:v0.21.1",
-    map_secrets     = { "AOT_CONFIG_CONTENT" : "otel-collector-config" },
-    map_environment = { "PROMETHEUS_SAMPLE_APP" : "prometheus-sample-app:8080" }
-  }
-]
+sidecar_container_definition = {
+  name        = "aws-otel-collector",
+  image       = "public.ecr.aws/aws-observability/aws-otel-collector:v0.21.1",
+  secrets     = [{ name = "AOT_CONFIG_CONTENT", valueFrom = "otel-collector-config" }],
+  environment = [{ name = "PROMETHEUS_SAMPLE_APP", value = "prometheus-sample-app:8080" }]
+}

@@ -59,8 +59,7 @@ module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.4"
 
-  repository_name = var.container_name
-
+  repository_name                   = var.container_name
   repository_force_delete           = true
   create_lifecycle_policy           = false
   repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
@@ -114,7 +113,7 @@ resource "aws_service_discovery_service" "sd_service" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name                       = local.name
+  name                       = var.service_name
   desired_count              = var.desired_count
   ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
   cp_strategy_base           = var.cp_strategy_base
@@ -130,16 +129,23 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = false
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  sidecar_container_definitions = var.sidecar_container_definitions
-  enable_execute_command        = true
-  tags                          = local.tags
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  cpu                     = var.cpu
+  memory                  = var.memory
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  enable_execute_command  = true
+
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name  = var.container_name
+      image = module.container_image_ecr.repository_url
+    }
+  }
+
+  tags = local.tags
 }
 
 ################################################################################
@@ -215,7 +221,7 @@ module "codebuild_ci" {
         value = module.ecs_service_definition.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port

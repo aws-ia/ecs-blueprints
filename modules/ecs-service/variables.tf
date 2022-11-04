@@ -98,12 +98,6 @@ variable "deployment_controller" {
   default     = "ECS"
 }
 
-variable "log_retention_in_days" {
-  description = "The number of days for which to retain task logs"
-  type        = number
-  default     = 7
-}
-
 variable "cp_strategy_base" {
   description = "Base number of tasks to create on Fargate on-demand"
   type        = number
@@ -126,28 +120,10 @@ variable "cp_strategy_fg_spot_weight" {
 # Task Definition
 ################################################################################
 
-# Provide a list of map objects
-# Each map object has container definition parameters
-# The required parameters are container_name, container_image, port_mappings
-# [
-#  {
-#    "container_name":"monitoring-agent",
-#    "container_image": "img-repo-url"},
-#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
-#  }
-# ]
-# see modules/ecs-container-definition for full set of parameters
-# map_environment and map_secrets are common to add in container definition
-variable "sidecar_container_definitions" {
-  description = "List of container definitions to add to the task"
-  type        = list(any)
-  default     = []
-}
-
-variable "container_name" {
-  description = "The name of the Container specified in the Task definition"
+variable "lb_container_name" {
+  description = "The container name for the LB"
   type        = string
-  default     = "app"
+  default     = null
 }
 
 variable "cpu" {
@@ -157,20 +133,15 @@ variable "cpu" {
 }
 
 variable "memory" {
-  description = "The MEMORY value to assign to the container, read AWS documentation to available values"
+  description = "The number of cpu units used by the task."
   type        = number
-  default     = 512
+  default     = 1024
 }
 
-variable "image" {
-  description = "The container image"
-  type        = string
-}
-
-variable "container_port" {
+variable "lb_container_port" {
   description = "The port that the container will use to listen to requests"
   type        = number
-  default     = 8080
+  default     = null
 }
 
 variable "attach_task_role_policy" {
@@ -190,7 +161,7 @@ variable "execution_role_arn" {
   type        = string
 }
 
-variable "task_os_family" {
+variable "operating_system_family" {
   description = "The OS family for task"
   type        = string
   default     = "LINUX"
@@ -202,16 +173,20 @@ variable "task_cpu_architecture" {
   default     = "X86_64"
 }
 
-variable "map_environment" {
-  type        = map(string)
-  description = "The environment variables to pass to the container. This is a map of string: {key: value}. map_environment overrides environment"
-  default     = null
+################################################################################
+# Container Definition
+################################################################################
+
+variable "container_definitions" {
+  description = "Map of maps that define container definitions to create"
+  type        = any
+  default     = {}
 }
 
-variable "map_secrets" {
-  type        = map(string)
-  description = "The secrets variables to pass to the container. This is a map of string: {key: value}. map_secrets overrides secrets"
-  default     = null
+variable "container_definition_defaults" {
+  description = "Default values to use on all container definitions created if a specific value is not specified"
+  type        = any
+  default     = {}
 }
 
 ################################################################################

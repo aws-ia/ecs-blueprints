@@ -267,21 +267,34 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy       = false
-  container_name                = var.container_name
-  container_port                = var.container_port
-  cpu                           = var.task_cpu
-  memory                        = var.task_memory
-  image                         = module.container_image_ecr.repository_url
-  sidecar_container_definitions = var.sidecar_container_definitions
-  execution_role_arn            = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  map_secrets = {
-    "GITHUB_TOKEN"      = data.aws_secretsmanager_secret.github_token.arn,
-    "BASE_URL"          = aws_ssm_parameter.base_url.name,
-    "POSTGRES_HOST"     = aws_ssm_parameter.postgres_host.name,
-    "POSTGRES_PORT"     = aws_ssm_parameter.postgres_port.name,
-    "POSTGRES_USER"     = aws_ssm_parameter.postgres_user.name,
-    "POSTGRES_PASSWORD" = data.aws_secretsmanager_secret.postgresdb_master_password.arn
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  lb_container_name       = var.container_name
+  cpu                     = var.cpu
+  memory                  = var.memory
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name  = var.container_name
+      image = module.container_image_ecr.repository_url
+      secrets = [
+        { name = "GITHUB_TOKEN", valueFrom = data.aws_secretsmanager_secret.github_token.arn },
+        { name = "BASE_URL", valueFrom = aws_ssm_parameter.base_url.name },
+        { name = "POSTGRES_HOST", valueFrom = aws_ssm_parameter.postgres_host.name },
+        { name = "POSTGRES_PORT", valueFrom = aws_ssm_parameter.postgres_port.name },
+        { name = "POSTGRES_USER", valueFrom = aws_ssm_parameter.postgres_user.name },
+        { name = "POSTGRES_PASSWORD", valueFrom = data.aws_secretsmanager_secret.postgresdb_master_password.arn }
+      ]
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : var.container_port
+        hostPort : var.container_port
+      }]
+    }
   }
 
   tags = local.tags
@@ -371,7 +384,7 @@ module "codebuild_ci" {
         value = module.ecs_service_definition.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = module.ecs_service_definition.container_name
+        value = var.container_name
         }, {
         name  = "SERVICE_PORT"
         value = var.container_port
