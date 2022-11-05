@@ -95,7 +95,8 @@ data "aws_iam_policy_document" "assume_role_policy" {
 resource "aws_iam_role" "this" {
   count = var.create_iam_role ? 1 : 0
 
-  name               = var.iam_role_name
+  name               = var.iam_role_use_name_prefix ? null : var.iam_role_name
+  name_prefix        = var.iam_role_use_name_prefix ? "${var.iam_role_name}-" : null
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy[0].json
 
   tags = var.tags

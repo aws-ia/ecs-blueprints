@@ -5,19 +5,16 @@ provider "aws" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = var.core_stack_name
-  region = var.aws_region
+  name   = basename(path.cwd)
+  region = "us-west-2"
 
-  vpc_cidr       = var.vpc_cidr
-  num_of_subnets = min(length(data.aws_availability_zones.available.names), 3)
-  azs            = slice(data.aws_availability_zones.available.names, 0, local.num_of_subnets)
+  vpc_cidr = "10.0.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   tags = {
     Blueprint  = local.name
     GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
   }
-  task_execution_role_managed_policy_arn = ["arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
-  "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
 }
 
 ################################################################################
@@ -73,7 +70,7 @@ module "vpc" {
   public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
   private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 10)]
 
-  enable_nat_gateway   = var.enable_nat_gw
+  enable_nat_gateway   = true
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
@@ -99,11 +96,11 @@ resource "aws_cloudwatch_log_group" "this" {
 # Service discovery namespaces
 ################################################################################
 
-resource "aws_service_discovery_private_dns_namespace" "sd_namespaces" {
-  for_each = toset(var.namespaces)
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  for_each = toset(["default", "myapp"])
 
   name        = "${each.key}.${module.ecs.cluster_name}.local"
-  description = "service discovery namespace.clustername.local"
+  description = "Service discovery namespace.clustername.local"
   vpc         = module.vpc.vpc_id
 }
 
@@ -128,31 +125,35 @@ data "aws_iam_policy_document" "execution" {
 }
 
 resource "aws_iam_policy_attachment" "execution" {
-  count      = length(local.task_execution_role_managed_policy_arn)
-  name       = "${local.name}-execution-policy"
+  for_each = toset([
+    "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  ])
+
+  name       = "${local.name}-execution"
   roles      = [aws_iam_role.execution.name]
-  policy_arn = local.task_execution_role_managed_policy_arn[count.index]
+  policy_arn = each.value
 }
 
 resource "aws_iam_policy" "secrets_manager_read_policy" {
   name   = "ECSTaskExecutionReadSecretsManager"
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "secretsmanager:GetSecretValue"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    }
-  ]
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": [
+          "secretsmanager:GetSecretValue"
+        ],
+        "Effect": "Allow",
+        "Resource": "*"
+      }
+    ]
+  }
+  EOF
 }
-EOF
-}
+
 resource "aws_iam_policy_attachment" "secret_manager_read" {
-  count      = var.enable_secerts_manager_read_access ? 1 : 0
   name       = "${local.name}-execution-policy"
   roles      = [aws_iam_role.execution.name]
   policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
