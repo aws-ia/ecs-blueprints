@@ -87,7 +87,7 @@ module "vpc" {
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/aws/ecs/${local.name}"
-  retention_in_days = 7
+  retention_in_days = 90
 
   tags = local.tags
 }

@@ -115,7 +115,7 @@ module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "codepipeline-${local.region}-${data.aws_caller_identity.current.account_id}"
+  bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
@@ -267,6 +267,10 @@ module "codepipeline_ci_cd" {
 ################################################################################
 # Supporting Resources
 ################################################################################
+
+resource "random_id" "this" {
+  byte_length = "2"
+}
 
 data "aws_secretsmanager_secret" "github_token" {
   name = var.github_token_secret_name
