@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  name   = basename(path.cwd)
+  name   = "ecsdemo-backend"
   region = "us-west-2"
 
   container_port = 3000 # Container port is specific to this app example
