@@ -109,7 +109,7 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
 ################################################################################
 
 resource "aws_iam_role" "execution" {
-  name               = "${local.name}-execution"
+  name_prefix        = "${local.name}-execution-"
   assume_role_policy = data.aws_iam_policy_document.execution.json
   tags               = local.tags
 }

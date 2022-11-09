@@ -28,7 +28,7 @@ module "container_image_ecr" {
   repository_name                   = local.container_name
   repository_force_delete           = true
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
+  repository_read_access_arns       = [one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)]
   repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
@@ -94,7 +94,7 @@ module "ecs_service_definition" {
   # Task Definition
   attach_task_role_policy = false
   lb_container_port       = local.container_port
-  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
 
   container_definitions = {
@@ -108,7 +108,7 @@ module "ecs_service_definition" {
 }
 
 ################################################################################
-# CodePipeline
+# CodePipeline and CodeBuild for CI/CD
 ################################################################################
 
 module "codepipeline_s3_bucket" {
@@ -189,7 +189,7 @@ module "codebuild_ci" {
         value = "./application-code/ecsdemo-nodejs/."
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
-        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
       },
     ]
   }
@@ -298,8 +298,8 @@ data "aws_ecs_cluster" "core_infra" {
   cluster_name = "core-infra"
 }
 
-data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = "core-infra-execution"
+data "aws_iam_roles" "ecs_core_infra_exec_role" {
+  name_regex = "core-infra-execution-*"
 }
 
 data "aws_service_discovery_dns_namespace" "this" {
