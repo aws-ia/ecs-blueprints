@@ -1,52 +1,17 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-west-2"
 }
-
-# data "aws_caller_identity" "current" {}
 
 locals {
+  name = "otel-collector-test"
 
-  # this will get the name of the local directory
-  # name   = basename(path.cwd)
-  name = var.service_name
+  container_port = 8080 # Container port is specific to this app example
+  container_name = "prometheus-sample-app"
 
   tags = {
-    Blueprint = local.name
+    Blueprint  = local.name
+    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
   }
-
-  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
-  tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-}
-
-################################################################################
-# Data Sources from ecs-blueprint-infra
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_vpc]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_private_subnet}*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
-}
-
-data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
-}
-
-data "aws_service_discovery_dns_namespace" "sd_namespace" {
-  name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
 }
 
 ################################################################################
@@ -80,7 +45,7 @@ resource "aws_service_discovery_service" "sd_service" {
   name = local.name
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
+    namespace_id = data.aws_service_discovery_dns_namespace.this.id
 
     dns_records {
       ttl  = 10
@@ -98,12 +63,9 @@ resource "aws_service_discovery_service" "sd_service" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name                       = local.name
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
-  cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+  name           = local.name
+  desired_count  = 1
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
@@ -115,28 +77,29 @@ module "ecs_service_definition" {
 
   # Task Definition
   attach_task_role_policy = true
-  lb_container_port       = var.container_port
-  lb_container_name       = var.container_name
-  cpu                     = var.cpu
-  memory                  = var.memory
+  lb_container_port       = local.container_port
+  lb_container_name       = local.container_name
   task_role_policy        = data.aws_iam_policy_document.task_role.json
-  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
-
-  container_definition_defaults = var.container_definition_defaults
 
   container_definitions = {
     main_container = {
-      name                     = var.container_name
-      image                    = var.container_image
+      name                     = local.container_name
+      image                    = "public.ecr.aws/aws-otel-test/prometheus-sample-app:latest"
       readonly_root_filesystem = false
       port_mappings = [{
         protocol : "tcp",
-        containerPort : var.container_port
-        hostPort : var.container_port
+        containerPort : local.container_port
+        hostPort : local.container_port
       }]
     },
-    sidecar_container = var.sidecar_container_definition
+    sidecar_container = {
+      name        = "aws-otel-collector",
+      image       = "public.ecr.aws/aws-observability/aws-otel-collector:v0.21.1",
+      secrets     = [{ name = "AOT_CONFIG_CONTENT", valueFrom = "otel-collector-config" }],
+      environment = [{ name = "PROMETHEUS_SAMPLE_APP", value = "prometheus-sample-app:8080" }]
+    }
   }
 }
 
@@ -178,7 +141,38 @@ data "aws_iam_policy_document" "task_role" {
 ################################################################################
 
 resource "aws_ssm_parameter" "adot_config_ssm_parameter" {
-  name  = var.adot_config_ssm_parameter
+  name  = "otel-collector-config"
   type  = "String"
   value = file("./ecs-adot-config.yaml")
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-*"]
+  }
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = "core-infra"
+}
+
+data "aws_iam_roles" "ecs_core_infra_exec_role" {
+  name_regex = "core-infra-execution-*"
+}
+
+data "aws_service_discovery_dns_namespace" "this" {
+  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  type = "DNS_PRIVATE"
 }
