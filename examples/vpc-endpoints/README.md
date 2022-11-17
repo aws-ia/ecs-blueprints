@@ -43,13 +43,7 @@ VPC Endpoints optimize the network path by avoiding traffic to internet gateways
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS region | `string` | n/a | yes |
-| <a name="input_core_stack_name"></a> [core\_stack\_name](#input\_core\_stack\_name) | The name of core infrastructure stack that you created using core-infra module | `string` | `"ecs-blueprint-infra"` | no |
-| <a name="input_repository_owner"></a> [repository\_owner](#input\_repository\_owner) | The name of the owner of the forked Github repository | `string` | n/a | yes |
-| <a name="input_vpc_tag_key"></a> [vpc\_tag\_key](#input\_vpc\_tag\_key) | The tag key of the VPC and subnets | `string` | `"Name"` | no |
-| <a name="input_vpc_tag_value"></a> [vpc\_tag\_value](#input\_vpc\_tag\_value) | The tag value of the VPC and subnets | `string` | `""` | no |
+No inputs.
 
 ## Outputs
 
