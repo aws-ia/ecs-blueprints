@@ -80,8 +80,6 @@ You can use the ALB URL from terraform output to access the load balanced servic
 * [VPC Endpoints](./examples/vpc-endpoints/README.md)
 * [Backend Service](./examples/backend-service/README.md)
 * [Amazon Managed Prometheus and Grafana](./examples/prometheus/README.md)
-* [2-Tier DynamoDB Application (Rolling Deployment)](./examples/rolling-deployment/README.md)
-* [2-Tier DynamoDB Application (Blue/Green Deployment)](./examples/blue-green-deployment/README.md)
 
 ## Repository overview
 This repository has 3 main folders
