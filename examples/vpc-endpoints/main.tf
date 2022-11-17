@@ -1,47 +1,13 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-west-2"
 }
 
 locals {
-  name = var.core_stack_name
+  name = "core-infra"
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
-  }
-
-  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
-  tag_val_private_subnet = var.vpc_tag_value == "" ? "${var.core_stack_name}-private*" : var.vpc_tag_value
-
-}
-
-################################################################################
-# Data Sources from ecs-blueprint-infra
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_vpc]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_private_subnet}*"]
-  }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
-data "aws_route_table" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_private_subnet]
+    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
   }
 }
 
@@ -137,4 +103,30 @@ resource "aws_security_group" "vpc_endpoints" {
   }
 
   tags = local.tags
+}
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-*"]
+  }
+}
+
+data "aws_subnet" "private_cidr" {
+  for_each = toset(data.aws_subnets.private.ids)
+  id       = each.value
+}
+
+data "aws_route_table" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private"]
+  }
 }

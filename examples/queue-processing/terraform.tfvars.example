@@ -1,5 +1,0 @@
-# You should update the below variables
-
-#The AWS Secrets Manager secret name containing the plaintext Github access token
-github_token_secret_name = "ecs-github-token"
-# repository_owner         = ""
