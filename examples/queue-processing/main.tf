@@ -608,11 +608,6 @@ data "aws_subnets" "private" {
   }
 }
 
-# data "aws_subnet" "private_cidr" {
-#   for_each = toset(data.aws_subnets.private.ids)
-#   id       = each.value
-# }
-
 data "aws_ecs_cluster" "core_infra" {
   cluster_name = "core-infra"
 }
