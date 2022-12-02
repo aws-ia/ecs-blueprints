@@ -64,6 +64,13 @@ data "aws_service_discovery_dns_namespace" "sd_namespace" {
   type = "DNS_PRIVATE"
 }
 
+data "terraform_remote_state" "core_infra" {
+    backend = "local"
+    config = {
+        path = "${path.module}/../core-infra/terraform.tfstate"
+    }
+}
+
 ################################################################################
 # ECS Blueprint
 ################################################################################
@@ -178,6 +185,23 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
+################################################################################
+# Task IAM Role Policy
+################################################################################
+
+data "aws_iam_policy_document" "task_role" {
+  statement {
+    sid = "SSM"
+    actions = [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+    ]
+    resources = ["*"]
+  }
+}
+
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
@@ -202,7 +226,8 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   # Task Definition
-  attach_task_role_policy = false
+  attach_task_role_policy = true
+  task_role_policy        = data.aws_iam_policy_document.task_role.json
   lb_container_port       = var.container_port
   lb_container_name       = var.container_name
   cpu                     = var.cpu
@@ -356,17 +381,16 @@ module "codepipeline_ci_cd" {
     action = [{
       name             = "Source"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       input_artifacts  = []
       output_artifacts = ["SourceArtifact"]
       configuration = {
-        OAuthToken           = data.aws_secretsmanager_secret_version.github_token.secret_string
-        Owner                = var.repository_owner
-        Repo                 = var.repository_name
-        Branch               = var.repository_branch
-        PollForSourceChanges = true
+        ConnectionArn = data.terraform_remote_state.core_infra.outputs.codestar_connection_arn
+        FullRepositoryId = "${var.repository_owner}/terraform-aws-ecs-blueprints"
+        #FullRepositoryId = "allamand/terraform-aws-ecs-blueprints"
+        BranchName = var.repository_branch
       }
     }],
     }, {
