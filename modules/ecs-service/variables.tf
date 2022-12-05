@@ -144,6 +144,12 @@ variable "sidecar_container_definitions" {
   default     = []
 }
 
+variable "command" {
+  type        = list(string)
+  description = "The command that is passed to the container"
+  default     = null
+}
+
 variable "container_name" {
   description = "The name of the Container specified in the Task definition"
   type        = string
