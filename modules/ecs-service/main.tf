@@ -97,6 +97,7 @@ module "task_sidecar_containers" {
 
 module "task_main_app_container" {
   source          = "../ecs-container-definition"
+  command         = var.command
   container_image = var.image
   container_name  = var.container_name
   port_mappings = [{
