@@ -304,3 +304,19 @@ variable "scheduled_autoscaling_down_max_capacity" {
   type        = number
   default     = 3
 }
+
+################################################################################
+# Firelens
+################################################################################
+
+variable "enable_firelens" {
+  description = "Whether or not to enable Firelens"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_domain" {
+  description = "Domain name of Opensearch cluster to send logs to"
+  type        = string
+  default     = null
+}
