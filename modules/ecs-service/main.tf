@@ -1,5 +1,30 @@
 data "aws_region" "current" {}
 
+locals {
+  firelens_log_config = {
+    logDriver : "awsfirelens",
+    "options" : {
+      "Name" : "es",
+      "Host" : var.opensearch_domain,
+      "Port" : "443",
+      "Index" : "application-",
+      "Type" : "_doc",
+      "Aws_Auth" : "On",
+      "Aws_Region" : data.aws_region.current.name,
+      "tls" : "On",
+      "retry_limit" : "2"
+    }
+  }
+  default_log_config = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : aws_cloudwatch_log_group.this.name,
+      awslogs-stream-prefix : "ecs"
+    }
+  }
+  main_task_log_config = var.enable_firelens ? local.firelens_log_config : local.default_log_config
+}
 ################################################################################
 # Service
 ################################################################################
@@ -96,6 +121,25 @@ module "task_sidecar_containers" {
   }
 }
 
+module "task_firelens_container" {
+  source = "../ecs-container-definition"
+  count  = var.enable_firelens ? 1 : 0
+
+  container_name               = "firelens"
+  container_image              = "public.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable"
+  essential                    = true
+  container_memory_reservation = 50
+
+  log_configuration = {
+    logDriver : "awslogs",
+    options : {
+      awslogs-region : data.aws_region.current.name,
+      awslogs-group : aws_cloudwatch_log_group.this.name,
+      awslogs-stream-prefix : "firelens"
+    }
+  }
+}
+
 module "task_main_app_container" {
   source          = "../ecs-container-definition"
   command         = var.command
@@ -106,14 +150,8 @@ module "task_main_app_container" {
     containerPort : var.container_port,
     hostPort : var.container_port
   }]
-  log_configuration = {
-    logDriver : "awslogs",
-    options : {
-      awslogs-region : data.aws_region.current.name,
-      awslogs-group : aws_cloudwatch_log_group.this.name,
-      awslogs-stream-prefix : "ecs"
-    }
-  }
+  log_configuration = local.main_task_log_config
+
   map_secrets     = var.map_secrets
   map_environment = var.map_environment
 
@@ -132,6 +170,7 @@ resource "aws_ecs_task_definition" "this" {
   container_definitions = jsonencode(
     concat(
       [module.task_main_app_container.json_map_object],
+      [for fl in module.task_firelens_container : fl.json_map_object],
       [for sc in module.task_sidecar_containers : sc.json_map_object]
     )
   )
