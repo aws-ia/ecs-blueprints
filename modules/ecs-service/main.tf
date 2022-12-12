@@ -126,7 +126,7 @@ module "task_firelens_container" {
   count  = var.enable_firelens ? 1 : 0
 
   container_name               = "log_router"
-  container_image              = "public.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable"
+  container_image              = "public.ecr.aws/aws-observability/aws-for-fluent-bit:stable"
   essential                    = true
   container_memory_reservation = 50
   firelens_configuration       = { "type" : "fluentbit", "options" : {} }
