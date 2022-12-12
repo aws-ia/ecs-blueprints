@@ -34,7 +34,7 @@ resource "aws_ecs_service" "this" {
   cluster = var.ecs_cluster_id
   # launch_type                        = "FARGATE"
   platform_version        = var.platform_version
-  task_definition         = aws_ecs_task_definition.this.arn
+  task_definition         = nonsensitive(aws_ecs_task_definition.this.arn)
   desired_count           = var.desired_count
   enable_ecs_managed_tags = var.enable_ecs_managed_tags
   propagate_tags          = var.propagate_tags
@@ -129,6 +129,7 @@ module "task_firelens_container" {
   container_image              = "public.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable"
   essential                    = true
   container_memory_reservation = 50
+  firelens_configuration       = { "type" : "fluentbit", "options" : {} }
 
   log_configuration = {
     logDriver : "awslogs",
@@ -167,11 +168,13 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn            = aws_iam_role.task.arn
   skip_destroy             = true
 
-  container_definitions = jsonencode(
-    concat(
-      [module.task_main_app_container.json_map_object],
-      [for fl in module.task_firelens_container : fl.json_map_object],
-      [for sc in module.task_sidecar_containers : sc.json_map_object]
+  container_definitions = nonsensitive(
+    jsonencode(
+      concat(
+        [module.task_main_app_container.json_map_object],
+        [for fl in module.task_firelens_container : fl.json_map_object],
+        [for sc in module.task_sidecar_containers : sc.json_map_object]
+      )
     )
   )
 

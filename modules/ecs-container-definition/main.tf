@@ -92,6 +92,7 @@ locals {
     pseudoTerminal         = var.pseudo_terminal
     dockerSecurityOptions  = var.docker_security_options
     resourceRequirements   = var.resource_requirements
+    firelensConfiguration  = var.firelens_configuration
   }
 
   container_definition_without_null = {
