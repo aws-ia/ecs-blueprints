@@ -170,14 +170,14 @@ variable "log_configuration" {
 }
 
 # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html
-# variable "firelens_configuration" {
-#   type = object({
-#     type    = string
-#     options = map(string)
-#   })
-#   description = "The FireLens configuration for the container. This is used to specify and configure a log router for container logs. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html"
-#   default     = null
-# }
+ variable "firelens_configuration" {
+   type = object({
+     type    = string
+     options = map(string)
+   })
+   description = "The FireLens configuration for the container. This is used to specify and configure a log router for container logs. For more details, see https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_FirelensConfiguration.html"
+   default     = null
+ }
 
 # variable "mount_points" {
 #   type = list(any)
