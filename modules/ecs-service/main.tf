@@ -129,7 +129,7 @@ module "task_firelens_container" {
   container_image              = "public.dkr.ecr.us-east-1.amazonaws.com/aws-for-fluent-bit:stable"
   essential                    = true
   container_memory_reservation = 50
-  firelens_configuration       = { "type" : "fluentbit" }
+  firelens_configuration       = { "type" : "fluentbit", "options": {} }
 
   log_configuration = {
     logDriver : "awslogs",
