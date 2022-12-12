@@ -167,11 +167,13 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn            = aws_iam_role.task.arn
   skip_destroy             = true
 
-  container_definitions = jsonencode(
-    concat(
-      [module.task_main_app_container.json_map_object],
-      [for fl in module.task_firelens_container : fl.json_map_object],
-      [for sc in module.task_sidecar_containers : sc.json_map_object]
+  container_definitions = nonsensitive(
+    jsonencode(
+      concat(
+        [module.task_main_app_container.json_map_object],
+        [for fl in module.task_firelens_container : fl.json_map_object],
+        [for sc in module.task_sidecar_containers : sc.json_map_object]
+      )
     )
   )
 
