@@ -12,7 +12,9 @@ locals {
       "Aws_Auth" : "On",
       "Aws_Region" : data.aws_region.current.name,
       "tls" : "On",
-      "retry_limit" : "2"
+      "retry_limit" : "2",
+      "Logstash_Format": true,
+      "Logstash_Prefix": "application"
     }
   }
   default_log_config = {
