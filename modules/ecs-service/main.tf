@@ -14,7 +14,9 @@ locals {
       "tls" : "On",
       "retry_limit" : "2",
       "Logstash_Format": true,
-      "Logstash_Prefix": "application"
+      "Logstash_Prefix": "application",
+      "config-file-type": var.config_file_type,
+      "config-file-value": var.config_file_value
     }
   }
   default_log_config = {
