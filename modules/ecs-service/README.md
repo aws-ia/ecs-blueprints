@@ -51,8 +51,8 @@
 | <a name="input_autoscaling_memory_threshold"></a> [autoscaling\_memory\_threshold](#input\_autoscaling\_memory\_threshold) | The desired threashold for memory consumption | `number` | `75` | no |
 | <a name="input_autoscaling_min_capacity"></a> [autoscaling\_min\_capacity](#input\_autoscaling\_min\_capacity) | The minimum number of tasks to provision | `number` | `1` | no |
 | <a name="input_command"></a> [command](#input\_command) | The command that is passed to the container | `list(string)` | `null` | no |
-| <a name="input_config_file_type"></a> [config\_file\_type](#input\_config\_file\_type) | The source location of the custom configuration file. The available options are s3 or file. | `string` | `""` | no |
-| <a name="input_config_file_value"></a> [config\_file\_value](#input\_config\_file\_value) | The source for the custom configuration file. | `string` | `""` | no |
+| <a name="input_config_file_type"></a> [config\_file\_type](#input\_config\_file\_type) | The source location of the custom configuration file. The available options are s3 or file. | `string` | `null` | no |
+| <a name="input_config_file_value"></a> [config\_file\_value](#input\_config\_file\_value) | The source for the custom configuration file. | `string` | `null` | no |
 | <a name="input_container_name"></a> [container\_name](#input\_container\_name) | The name of the Container specified in the Task definition | `string` | `"app"` | no |
 | <a name="input_container_port"></a> [container\_port](#input\_container\_port) | The port that the container will use to listen to requests | `number` | `8080` | no |
 | <a name="input_cp_strategy_base"></a> [cp\_strategy\_base](#input\_cp\_strategy\_base) | Base number of tasks to create on Fargate on-demand | `number` | `1` | no |

@@ -25,6 +25,12 @@ locals {
       awslogs-stream-prefix : "ecs"
     }
   }
+
+  fluentbit_options = var.config_file_type ? {
+    "config-file-type" : var.config_file_type,
+    "config-file-value" : var.config_file_value
+  } : {}
+
   main_task_log_config = var.enable_firelens ? local.firelens_log_config : local.default_log_config
 }
 ################################################################################
@@ -133,10 +139,7 @@ module "task_firelens_container" {
   container_memory_reservation = 50
   firelens_configuration = {
     "type" : "fluentbit",
-    "options" : {
-      "config-file-type" : var.config_file_type,
-      "config-file-value" : var.config_file_value
-    }
+    "options" : local.fluentbit_options
   }
 
   log_configuration = {

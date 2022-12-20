@@ -324,11 +324,11 @@ variable "opensearch_domain" {
 variable "config_file_type" {
   description = "The source location of the custom configuration file. The available options are s3 or file."
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "config_file_value" {
   description = "The source for the custom configuration file."
   type        = string
-  default     = ""
+  default     = null
 }
