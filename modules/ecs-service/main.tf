@@ -26,11 +26,12 @@ locals {
     }
   }
 
-  fluentbit_options = var.config_file_type ? {
+  default_fluentbit_options = {
     "config-file-type" : var.config_file_type,
     "config-file-value" : var.config_file_value
-  } : {}
+  }
 
+  fluentbit_options    = var.config_file_type != null ? local.default_fluentbit_options : {}
   main_task_log_config = var.enable_firelens ? local.firelens_log_config : local.default_log_config
 }
 ################################################################################
