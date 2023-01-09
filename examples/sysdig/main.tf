@@ -59,6 +59,8 @@ data "aws_service_discovery_dns_namespace" "sd_namespace" {
 # ECS Blueprint
 ################################################################################
 
+# Sysdig Orchestrator Agent
+
 module "sysdig_orchestrator_agent" {
   source = "sysdiglabs/fargate-orchestrator-agent/aws"
 
@@ -70,6 +72,38 @@ module "sysdig_orchestrator_agent" {
   collector_port   = "6443"                       # TODO -> Convert in a TF var
   access_key       = var.sysdig_access_key
   assign_public_ip = true # If using Internet Gateway
+}
+
+# Sysdig Workload Agent
+
+data "sysdig_fargate_workload_agent" "instrumented" {
+  container_definitions = jsonencode([
+    {
+      "image" : "quay.io/rehman0288/busyboxplus:latest",
+      "name" : "busybox",
+      "EntryPoint" : [
+        "watch",
+        "-n60",
+        "cat",
+        "/etc/shadow"
+      ],
+      "logConfiguration" : {
+        "logDriver" : "awslogs",
+        "options" : {
+          "awslogs-group" : local.name,
+          "awslogs-region" : "us-east-1",
+          "awslogs-stream-prefix" : "ecs"
+        }
+      }
+    }
+  ])
+
+  sysdig_access_key = var.sysdig_access_key
+
+  workload_agent_image = "quay.io/sysdig/workload-agent:latest"
+
+  orchestrator_host = module.sysdig_orchestrator_agent.orchestrator_host
+  orchestrator_port = module.sysdig_orchestrator_agent.orchestrator_port
 }
 
 module "container_image_ecr" {
@@ -155,12 +189,14 @@ module "ecs_service_definition" {
 
   container_definition_defaults = var.container_definition_defaults
 
-  container_definitions = {
-    main_container = {
-      name  = var.container_name
-      image = module.container_image_ecr.repository_url
-    }
-  }
+  container_definitions = data.sysdig_fargate_workload_agent.instrumented.output_container_definitions
+
+  #container_definitions = {
+  #  main_container = {
+  #    name  = var.container_name
+  #    image = module.container_image_ecr.repository_url
+  #  }
+  #}
 
   tags = local.tags
 }
