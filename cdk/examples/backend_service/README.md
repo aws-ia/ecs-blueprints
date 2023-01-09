@@ -6,7 +6,7 @@ This solution blueprint creates a backend service that **does not** sit behind a
 * Modify the variables inside `cdk.json` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use example `application-code`, then fork [this repository](https://github.com/aws-ia/ecs-blueprints).
 * Deploy the CDK templates in this repository using `cdk deploy`.
 ```bash
-# backend-service is CDK stack name 
+# backend-service is CDK stack name
 cdk deploy backend-service
 ```
 

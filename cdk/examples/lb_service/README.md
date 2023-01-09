@@ -6,7 +6,7 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
 * Modify the variables inside `cdk.json` so that CDK can import your VPC, ECS Cluster, your task execution role and other variables like backend service. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use example `application-code`, then fork [this repository](https://github.com/aws-ia/ecs-blueprints).
 * Deploy the CDK templates in this repository using `cdk deploy`.
 ```bash
-# frontend-service is CDK stack name 
+# frontend-service is CDK stack name
 cdk deploy frontend-service
 ```
 

@@ -31,7 +31,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 pip install aws-cdk-lib
-# or you can run the command below 
+# or you can run the command below
 # make sure that your folder's current location is cdk/examples/core_infra
 python -m pip install -r ../../requirements.txt
 ```
@@ -52,7 +52,7 @@ cdk ls
 ```
 * Review the CDK synth output, take a look at the changes that CDK will execute, and then apply them:
 ```bash
-# ecs-blueprint-infra is CDK stack name 
+# ecs-blueprint-infra is CDK stack name
 cdk deploy ecs-blueprint-infra
 ```
 
@@ -64,10 +64,10 @@ After the execution of the CDK code you will get an output with needed IDs and v
 
 Run the following command if you want to delete all the resources created before. If you have created other blueprints and they use these infrastructure then destroy those blueprint resources first.
 ```bash
-cdk destroy 
+cdk destroy
 ```
 
-## Inputs 
+## Inputs
 
 The input values ​​below can be modified in the `cdk.json` file.
 | Name | Description | Type | Default | Required |

@@ -48,5 +48,5 @@ def test_core_infra_has_cluster(template):
                     }
                 ]
             }
-        } 
+        }
     )

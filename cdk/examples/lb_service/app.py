@@ -237,7 +237,7 @@ class LoadBalancedServiceStack(Stack):
             cloud_map_options=ecs.CloudMapOptions(
                 cloud_map_namespace=self.base_platform.sd_namespace,
                 name="ecsdemo-frontend",
-            ),            
+            ),
             task_image_options=fargate_task_image
         ).service
 
