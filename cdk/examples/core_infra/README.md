@@ -53,12 +53,12 @@ cdk ls
 * Review the CDK synth output, take a look at the changes that CDK will execute, and then apply them:
 ```bash
 # ecs-blueprint-infra is CDK stack name
-cdk deploy ecs-blueprint-infra
+cdk deploy ecs-blueprint-infra --outputs-file output.json
 ```
 
 ## Outputs
 
-After the execution of the CDK code you will get an output with needed IDs and values needed as input for the next CDK modules. You can use this infrastructure to run other example blueprints.
+After the execution of the CDK code, the outputs will be in the `output.json` file. The IDs and values can be used as input for the next CDK modules. You can use this infrastructure to run other example blueprints.
 
 ## Cleanup
 
