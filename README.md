@@ -39,11 +39,11 @@ aws secretsmanager create-secret --name ecs-github-token --secret-string <your-g
 ```
 * Clone your forked repository to your laptop/Cloud9 VM.
 ```shell
-git clone https://github.com/<your-repo>/terraform-aws-ecs-blueprints.git
+git clone https://github.com/<your-repo>/ecs-blueprints.git
 ```
 * Start with `core-infra` to create cluster, VPC, and require IAM
 ```shell
-cd terraform-aws-ecs-blueprints/examples/core-infra/
+cd ecs-blueprints/examples/core-infra/
 
 terraform init
 

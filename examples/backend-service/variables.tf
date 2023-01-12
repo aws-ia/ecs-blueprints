@@ -64,7 +64,7 @@ variable "repository_owner" {
 variable "repository_name" {
   description = "The name of the Github repository"
   type        = string
-  default     = "terraform-aws-ecs-blueprints"
+  default     = "ecs-blueprints"
 }
 
 variable "repository_branch" {
