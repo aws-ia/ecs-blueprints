@@ -14,7 +14,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
   task_execution_role_managed_policy_arn = ["arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
   "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
