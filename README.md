@@ -39,11 +39,11 @@ aws secretsmanager create-secret --name ecs-github-token --secret-string <your-g
 ```
 * Clone your forked repository to your laptop/Cloud9 VM.
 ```shell
-git clone https://github.com/<your-repo>/terraform-aws-ecs-blueprints.git
+git clone https://github.com/<your-repo>/ecs-blueprints.git
 ```
 * Start with `core-infra` to create cluster, VPC, and require IAM
 ```shell
-cd terraform-aws-ecs-blueprints/examples/core-infra/
+cd ecs-blueprints/examples/core-infra/
 
 terraform init
 
@@ -77,9 +77,10 @@ terraform apply --auto-approve
   * Again, once this is created, you will not have to complete these steps for the other examples.
 
 You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
-* [VPC Endpoints](./examples/vpc-endpoints/README.md)
 * [Backend Service](./examples/backend-service/README.md)
 * [Amazon Managed Prometheus and Grafana](./examples/prometheus/README.md)
+* [VPC Endpoints for cost-saving](./examples/vpc-endpoints/README.md)
+* [Graviton](./examples/graviton/README.md)
 
 ## Repository overview
 This repository has 3 main folders
@@ -91,7 +92,7 @@ This repository has 3 main folders
 
 ECS Blueprints for Terraform is maintained by AWS Solution Architects. It is not part of an AWS service and support is provided best-effort by the ECS Blueprints community.
 
-To post feedback, submit feature ideas, or report bugs, please use the [Issues](https://github.com/aws-ia/terraform-aws-ecs-blueprints/issues) section of this GitHub repository.
+To post feedback, submit feature ideas, or report bugs, please use the [Issues](https://github.com/aws-ia/ecs-blueprints/issues) section of this GitHub repository.
 
 For architectural details, step-by-step instructions, and customization options, see our documentation under each folder.
 

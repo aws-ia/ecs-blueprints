@@ -15,7 +15,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
   }
 }
 

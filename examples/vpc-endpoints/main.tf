@@ -4,11 +4,14 @@ provider "aws" {
 
 locals {
   name = "core-infra"
-
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
+
+  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
+  tag_val_private_subnet = var.vpc_tag_value == "" ? "${var.core_stack_name}-private*" : var.vpc_tag_value
+
 }
 
 ################################################################################
