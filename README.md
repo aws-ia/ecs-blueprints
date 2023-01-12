@@ -77,7 +77,6 @@ terraform apply --auto-approve
   * Again, once this is created, you will not have to complete these steps for the other examples.
 
 You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
-* [VPC Endpoints](./examples/vpc-endpoints/README.md)
 * [Backend Service](./examples/backend-service/README.md)
 * [Amazon Managed Prometheus and Grafana](./examples/prometheus/README.md)
 * [VPC Endpoints for cost-saving](./examples/vpc-endpoints/README.md)
