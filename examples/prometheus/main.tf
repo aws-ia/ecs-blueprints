@@ -11,7 +11,8 @@ locals {
   name = var.service_name
 
   tags = {
-    Blueprint = local.name
+    Blueprint  = local.name
+    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
   }
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
