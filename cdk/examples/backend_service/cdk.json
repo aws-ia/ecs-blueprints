@@ -23,7 +23,7 @@
     "buildspec_path": "./application-code/ecsdemo-nodejs/templates/buildspec.yml",
     "folder_path": "./application-code/ecsdemo-nodejs/.",
     "repository_owner": "<REPO-OWNER>",
-    "repository_name": "terraform-aws-ecs-blueprints",
+    "repository_name": "ecs-blueprints",
     "repository_branch": "main",
     "github_token_secret_name": "ecs-github-token",
     "service_name": "ecsdemo-backend",
