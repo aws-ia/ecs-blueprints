@@ -26,10 +26,14 @@ class CoreInfrastructureStack(Stack):
         else:
             nat_gateways = 0
 
+        cidr_block = self.node.try_get_context("vpc_cidr")
+        if cidr_block is None:
+            cidr_block = "10.0.0.0/16"
+
         vpc = ec2.Vpc(
             self,
             "Ecs-Vpc",
-            cidr=self.node.try_get_context("vpc_cidr"),
+            ip_addresses=ec2.IpAddresses.cidr(cidr_block),
             max_azs=self.node.try_get_context("number_of_azs"),
             nat_gateways=nat_gateways,
         )
