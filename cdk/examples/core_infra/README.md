@@ -63,8 +63,18 @@ After the execution of the CDK code, the outputs will be in the `output.json` fi
 ## Cleanup
 
 Run the following command if you want to delete all the resources created before. If you have created other blueprints and they use these infrastructure then destroy those blueprint resources first.
+
+In case of cleaning up `backend_service` and `lb_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing `cdk destroy` command, executing `aws ecr delete-repository` is needed.
+
 ```bash
-cdk destroy
+# backend_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-nodejs --force
+# lb_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-frontend --force
+```
+
+```bash
+cdk destroy [cdk-stack-name]
 ```
 
 ## Inputs
