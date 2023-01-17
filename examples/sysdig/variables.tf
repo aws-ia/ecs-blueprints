@@ -145,6 +145,17 @@ variable "sysdig_access_key" {
   type        = string
 }
 
+variable "sysdig_collector_url" {
+  description = "Sysdig Collector Url"
+  type        = string
+}
+
+variable "sysdig_collector_port" {
+  description = "Sysdig Collector Port"
+  type        = string
+}
+
+
 ################################################################################
 # Capacity provider strategy setting
 # to distribute tasks between Fargate

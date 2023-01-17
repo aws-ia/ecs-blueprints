@@ -21,7 +21,6 @@ locals {
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
   tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-
 }
 
 ################################################################################
@@ -58,53 +57,6 @@ data "aws_service_discovery_dns_namespace" "sd_namespace" {
 ################################################################################
 # ECS Blueprint
 ################################################################################
-
-# Sysdig Orchestrator Agent
-
-module "sysdig_orchestrator_agent" {
-  source = "sysdiglabs/fargate-orchestrator-agent/aws"
-
-  name = "${local.name}-sysdig-orchestrator-agent"
-
-  vpc_id           = data.aws_vpc.vpc.id
-  subnets          = data.aws_subnets.private.ids
-  collector_host   = "collector.sysdigcloud.com " # TODO -> Covert in a TF var
-  collector_port   = "6443"                       # TODO -> Convert in a TF var
-  access_key       = var.sysdig_access_key
-  assign_public_ip = true # If using Internet Gateway
-}
-
-# Sysdig Workload Agent
-
-data "sysdig_fargate_workload_agent" "instrumented" {
-  container_definitions = jsonencode([
-    {
-      "image" : "quay.io/rehman0288/busyboxplus:latest",
-      "name" : "busybox",
-      "EntryPoint" : [
-        "watch",
-        "-n60",
-        "cat",
-        "/etc/shadow"
-      ],
-      "logConfiguration" : {
-        "logDriver" : "awslogs",
-        "options" : {
-          "awslogs-group" : local.name,
-          "awslogs-region" : "us-east-1",
-          "awslogs-stream-prefix" : "ecs"
-        }
-      }
-    }
-  ])
-
-  sysdig_access_key = var.sysdig_access_key
-
-  workload_agent_image = "quay.io/sysdig/workload-agent:latest"
-
-  orchestrator_host = module.sysdig_orchestrator_agent.orchestrator_host
-  orchestrator_port = module.sysdig_orchestrator_agent.orchestrator_port
-}
 
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
@@ -161,7 +113,23 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
+
+module "sysdig_orchestrator_agent" {
+
+  source = "sysdiglabs/fargate-orchestrator-agent/aws"
+
+  name = "${local.name}-sysdig-orchestrator-agent"
+
+  vpc_id           = data.aws_vpc.vpc.id
+  subnets          = data.aws_subnets.private.ids
+  collector_host   = var.sysdig_collector_url
+  collector_port   = var.sysdig_collector_port
+  access_key       = var.sysdig_access_key
+  assign_public_ip = true # If using Internet Gateway
+}
+
 module "ecs_service_definition" {
+
   source = "../../modules/ecs-service"
 
   name                       = var.service_name
@@ -189,14 +157,54 @@ module "ecs_service_definition" {
 
   container_definition_defaults = var.container_definition_defaults
 
-  container_definitions = data.sysdig_fargate_workload_agent.instrumented.output_container_definitions
-
-  #container_definitions = {
-  #  main_container = {
-  #    name  = var.container_name
-  #    image = module.container_image_ecr.repository_url
-  #  }
-  #}
+  container_definitions = {
+    main_container = {
+      image      = module.container_image_ecr.repository_url
+      name       = var.container_name
+      entrypoint = ["/opt/draios/bin/instrument"],
+      linux_parameters = {
+        capabilities = {
+          add = ["SYS_PTRACE"]
+        }
+      }
+      environment = [
+        {
+          name  = "SYSDIG_ORCHESTRATOR"
+          value = module.sysdig_orchestrator_agent.orchestrator_host
+        },
+        {
+          name  = "SYSDIG_ORCHESTRATOR_PORT"
+          value = module.sysdig_orchestrator_agent.orchestrator_port
+        },
+        {
+          name  = "SYSDIG_ACCESS_KEY"
+          value = module.sysdig_orchestrator_agent.orchestrator_host
+        },
+        {
+          name  = "SYSDIG_COLLECTOR"
+          value = module.sysdig_orchestrator_agent.orchestrator_host
+        },
+        {
+          name  = "SYSDIG_COLLECTOR_PORT"
+          value = module.sysdig_orchestrator_agent.orchestrator_host
+        },
+        {
+          name  = "SYSDIG_LOGGING"
+          value = module.sysdig_orchestrator_agent.orchestrator_host
+        }
+      ],
+      volumesFrom = [
+        {
+          sourceContainer = "SysdigInstrumentation"
+          readOnly        = true
+        }
+      ]
+    }
+    sysdig_instrumentation = {
+      name  = "SysdigInstrumentation"
+      image = "quay.io/sysdig/workload-agent:latest"
+    }
+  }
 
   tags = local.tags
 }
