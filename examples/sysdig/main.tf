@@ -16,7 +16,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/terraform-aws-ecs-blueprints"
+    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
   }
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
@@ -128,6 +128,7 @@ module "sysdig_orchestrator_agent" {
   assign_public_ip = true # If using Internet Gateway
 }
 
+# ECS Service Definition for the instrumented
 module "ecs_service_definition" {
 
   source = "../../modules/ecs-service"
@@ -178,19 +179,19 @@ module "ecs_service_definition" {
         },
         {
           name  = "SYSDIG_ACCESS_KEY"
-          value = module.sysdig_orchestrator_agent.orchestrator_host
+          value = var.sysdig_access_key
         },
         {
           name  = "SYSDIG_COLLECTOR"
-          value = module.sysdig_orchestrator_agent.orchestrator_host
+          value = var.sysdig_collector_url
         },
         {
           name  = "SYSDIG_COLLECTOR_PORT"
-          value = module.sysdig_orchestrator_agent.orchestrator_host
+          value = var.sysdig_collector_port
         },
         {
           name  = "SYSDIG_LOGGING"
-          value = module.sysdig_orchestrator_agent.orchestrator_host
+          value = ""
         }
       ],
       volumesFrom = [
