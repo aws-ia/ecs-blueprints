@@ -2,10 +2,6 @@ provider "aws" {
   region = var.aws_region
 }
 
-provider "sysdig" {
-  sysdig_secure_api_token = var.sysdig_access_key
-}
-
 data "aws_caller_identity" "current" {}
 
 locals {
@@ -21,6 +17,7 @@ locals {
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
   tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
+
 }
 
 ################################################################################
@@ -159,10 +156,15 @@ module "ecs_service_definition" {
   container_definition_defaults = var.container_definition_defaults
 
   container_definitions = {
+    sysdigInstrumentation = {
+      image      = "quay.io/sysdig/workload-agent:latest"
+      name       = "SysdigInstrumentation"
+      entrypoint = ["/opt/draios/bin/logwriter"]
+    },
     main_container = {
       image      = module.container_image_ecr.repository_url
       name       = var.container_name
-      entrypoint = ["/opt/draios/bin/instrument"],
+      entrypoint = ["/opt/draios/bin/instrument", "bash", "/usr/src/app/startup.sh"]
       linux_parameters = {
         capabilities = {
           add = ["SYS_PTRACE"]
@@ -191,25 +193,60 @@ module "ecs_service_definition" {
         },
         {
           name  = "SYSDIG_LOGGING"
-          value = ""
+          value = "debug"
         }
       ],
-      volumesFrom = [
+      volumes_from = [
         {
           sourceContainer = "SysdigInstrumentation"
           readOnly        = true
         }
       ]
     }
-    sysdig_instrumentation = {
-      name  = "SysdigInstrumentation"
-      image = "quay.io/sysdig/workload-agent:latest"
-    }
   }
 
   tags = local.tags
 }
 
+/*
+module "ecs_service_definition" {
+  source = "../../modules/ecs-service"
+
+  name                       = var.service_name
+  desired_count              = var.desired_count
+  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
+  cp_strategy_base           = var.cp_strategy_base
+  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
+  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+
+  security_groups = [module.service_task_security_group.security_group_id]
+  subnets         = data.aws_subnets.private.ids
+
+  service_registry_list = [{
+    registry_arn = aws_service_discovery_service.sd_service.arn
+  }]
+  deployment_controller = "ECS"
+
+  # Task Definition
+  attach_task_role_policy = false
+  lb_container_port       = var.container_port
+  cpu                     = var.cpu
+  memory                  = var.memory
+  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  enable_execute_command  = true
+
+  container_definition_defaults = var.container_definition_defaults
+
+  container_definitions = {
+    main_container = {
+      name  = var.container_name
+      image = module.container_image_ecr.repository_url
+    }
+  }
+
+  tags = local.tags
+}
+*/
 ################################################################################
 # CodePipeline
 ################################################################################

@@ -11,11 +11,3 @@ output "service_discovery_namespace" {
   value       = aws_service_discovery_service.sd_service.namespace_id
   description = "Service discovery namespace"
 }
-output "agent_orch_host" {
-  value       = module.sysdig_orchestrator_agent.orchestrator_host
-  description = "Agent Orchestrator Host"
-}
-output "agent_orch_port" {
-  value       = module.sysdig_orchestrator_agent.orchestrator_port
-  description = "Agent Orchestrator Port"
-}

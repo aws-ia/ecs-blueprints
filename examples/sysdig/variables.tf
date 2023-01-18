@@ -120,21 +120,6 @@ variable "container_name" {
   type        = string
 }
 
-################################################################################
-# Container definition used in task
-################################################################################
-
-variable "container_definition_defaults" {
-  description = "Default values to use on all container definitions created if a specific value is not specified"
-  type        = any
-  default     = {}
-}
-
-variable "container_port" {
-  description = "The container port to serve traffic"
-  type        = number
-  default     = 3000
-}
 
 ################################################################################
 # Sysdig specific parameters
@@ -155,6 +140,21 @@ variable "sysdig_collector_port" {
   type        = string
 }
 
+################################################################################
+# Container definition used in task
+################################################################################
+
+variable "container_definition_defaults" {
+  description = "Default values to use on all container definitions created if a specific value is not specified"
+  type        = any
+  default     = {}
+}
+
+variable "container_port" {
+  description = "The container port to serve traffic"
+  type        = number
+  default     = 3000
+}
 
 ################################################################################
 # Capacity provider strategy setting
