@@ -47,13 +47,13 @@ variable "ecs_task_execution_role_name" {
 variable "buildspec_path" {
   description = "The location of the buildspec file"
   type        = string
-  default     = "./application-code/ecsdemo-nodejs-instrumented-sysdig/templates/buildspec.yml"
+  default     = "./application-code/ecsdemo-nodejs/templates/buildspec.yml"
 }
 
 variable "folder_path" {
   description = "The location of the application code and Dockerfile files"
   type        = string
-  default     = "./application-code/ecsdemo-nodejs-instrumented-sysdig/."
+  default     = "./application-code/ecsdemo-nodejs/."
 }
 
 variable "repository_owner" {
@@ -64,7 +64,7 @@ variable "repository_owner" {
 variable "repository_name" {
   description = "The name of the Github repository"
   type        = string
-  default     = "terraform-aws-ecs-blueprints"
+  default     = "ecs-blueprints"
 }
 
 variable "repository_branch" {
