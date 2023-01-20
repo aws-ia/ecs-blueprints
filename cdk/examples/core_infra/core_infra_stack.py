@@ -1,4 +1,4 @@
-from aws_cdk import CfnOutput, RemovalPolicy, Stack, StackProps
+from aws_cdk import CfnOutput, PhysicalName, RemovalPolicy, Stack, StackProps
 from aws_cdk.aws_ec2 import IpAddresses, Vpc
 from aws_cdk.aws_ecs import (
     Cluster,
@@ -46,7 +46,7 @@ class CoreInfrastructureStack(Stack):
         self.ecs_cluster_security_groups = None
         self.sd_namespaces = None
 
-        vpc = Vpc(
+        self.vpc = Vpc(
             self,
             "EcsVpc",
             ip_addresses=IpAddresses.cidr(core_infra_props.vpc_cidr),
@@ -71,11 +71,11 @@ class CoreInfrastructureStack(Stack):
             ),
         )
 
-        cluster = Cluster(
+        self.cluster = Cluster(
             self,
             "EcsCluster",
             cluster_name=core_infra_props.core_stack_name,
-            vpc=vpc,
+            vpc=self.vpc,
             container_insights=True,
             execute_command_configuration=execute_command_configuration,
         )
@@ -87,25 +87,26 @@ class CoreInfrastructureStack(Stack):
             private_dns_namespace = PrivateDnsNamespace(
                 self,
                 f"{namespace}-namespace",
-                vpc=vpc,
-                name=f"{namespace}.{cluster.cluster_name}.local",
+                vpc=self.vpc,
+                name=f"{namespace}.{self.cluster.cluster_name}.local",
             )
             service_discovery[
-                f"{namespace}.{self.node.try_get_context('core_stack_name')}.local"
+                f"{namespace}.{core_infra_props.core_stack_name}.local"
             ] = {}
-            service_discovery[
-                f"{namespace}.{self.node.try_get_context('core_stack_name')}.local"
-            ]["arn"] = private_dns_namespace.namespace_arn
-            service_discovery[
-                f"{namespace}.{self.node.try_get_context('core_stack_name')}.local"
-            ]["name"] = private_dns_namespace.namespace_name
-            service_discovery[
-                f"{namespace}.{self.node.try_get_context('core_stack_name')}.local"
-            ]["id"] = private_dns_namespace.namespace_id
+            service_discovery[f"{namespace}.{core_infra_props.core_stack_name}.local"][
+                "arn"
+            ] = private_dns_namespace.namespace_arn
+            service_discovery[f"{namespace}.{core_infra_props.core_stack_name}.local"][
+                "name"
+            ] = private_dns_namespace.namespace_name
+            service_discovery[f"{namespace}.{core_infra_props.core_stack_name}.local"][
+                "id"
+            ] = private_dns_namespace.namespace_id
 
-        task_execution_role = Role(
+        self.task_execution_role = Role(
             self,
             "FargateContainerRole",
+            role_name=PhysicalName.GENERATE_IF_NEEDED,
             assumed_by=ServicePrincipal("ecs-tasks.amazonaws.com"),
             managed_policies=[
                 ManagedPolicy.from_aws_managed_policy_name(
@@ -114,47 +115,49 @@ class CoreInfrastructureStack(Stack):
             ],
         )
 
-        cluster_outputs = {"SECGRPS": str(cluster.connections.security_groups)}
+        cluster_outputs = {"SECGRPS": str(self.cluster.connections.security_groups)}
 
-        if cluster.connections.security_groups:
+        if self.cluster.connections.security_groups:
             cluster_outputs["SECGRPS"] = str(
-                [x.security_group_id for x in cluster.connections.security_groups][0]
+                [x.security_group_id for x in self.cluster.connections.security_groups][
+                    0
+                ]
             )
 
         # All Outputs required for other stacks to build
-        CfnOutput(self, "vpc_id", value=vpc.vpc_id)
-        self.vpc_id = vpc.vpc_id
-        self.public_subnets = [i.subnet_id for i in vpc.public_subnets]
-        self.private_subnets = [i.subnet_id for i in vpc.private_subnets]
-        self.ecs_cluster_name = cluster.cluster_name
-        self.ecs_cluster_id = cluster.cluster_arn
-        self.ecs_task_execution_role_arn = task_execution_role.role_arn
-        self.ecs_task_execution_role_name = task_execution_role.role_name
-        self.sd_namespaces = str(service_discovery)
+        self.vpc_id = self.vpc.vpc_id
+        self.public_subnets = [i.subnet_id for i in self.vpc.public_subnets]
+        self.private_subnets = [i.subnet_id for i in self.vpc.private_subnets]
+        self.ecs_cluster_name = self.cluster.cluster_name
+        self.ecs_cluster_id = self.cluster.cluster_arn
+        self.ecs_task_execution_role_arn = self.task_execution_role.role_arn
+        self.ecs_task_execution_role_name = self.task_execution_role.role_name
+        self.sd_namespaces = service_discovery
         self.ecs_cluster_security_groups = cluster_outputs["SECGRPS"]
 
+        CfnOutput(self, "vpc_id", value=self.vpc.vpc_id)
         CfnOutput(
             self,
             "public_subnets",
-            value=str([i.subnet_id for i in vpc.public_subnets]),
+            value=str([i.subnet_id for i in self.vpc.public_subnets]),
         )
         CfnOutput(
             self,
             "private_subnets",
-            value=str([i.subnet_id for i in vpc.private_subnets]),
+            value=str([i.subnet_id for i in self.vpc.private_subnets]),
         )
 
-        CfnOutput(self, "ecs_cluster_name", value=cluster.cluster_name)
-        CfnOutput(self, "ecs_cluster_id", value=cluster.cluster_arn)
+        CfnOutput(self, "ecs_cluster_name", value=self.cluster.cluster_name)
+        CfnOutput(self, "ecs_cluster_id", value=self.cluster.cluster_arn)
         CfnOutput(
             self,
             "ecs_task_execution_role_name",
-            value=task_execution_role.role_name,
+            value=self.task_execution_role.role_name,
         )
         CfnOutput(
             self,
             "ecs_task_execution_role_arn",
-            value=task_execution_role.role_arn,
+            value=self.task_execution_role.role_arn,
         )
         CfnOutput(self, "sd_namespaces", value=str(service_discovery))
 
