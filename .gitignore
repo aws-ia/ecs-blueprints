@@ -65,3 +65,9 @@ pnpm-debug.log*
 *.sln
 *.sw?
 .envrc
+
+# CDK directories
+cdk.out/
+
+# Python
+__pycache__/

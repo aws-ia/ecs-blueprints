@@ -1,4 +1,6 @@
-from aws_cdk import CfnOutput, PhysicalName, RemovalPolicy, Stack, StackProps
+from distutils import util
+
+from aws_cdk import CfnOutput, PhysicalName, RemovalPolicy, StackProps
 from aws_cdk.aws_ec2 import IpAddresses, Vpc
 from aws_cdk.aws_ecs import (
     Cluster,
@@ -15,9 +17,9 @@ from constructs import Construct
 class CoreInfraProps(StackProps):
     def __init__(
         self,
-        core_stack_name,
-        aws_region,
-        namespaces,
+        core_stack_name="a_core_stack",
+        aws_region="us-east-1",
+        namespaces="ns1,ns2",
         vpc_cidr="10.0.0.0/16",
         enable_nat_gw=False,
         az_count=3,
@@ -25,12 +27,12 @@ class CoreInfraProps(StackProps):
         self.core_stack_name = core_stack_name
         self.aws_region = aws_region
         self.vpc_cidr = vpc_cidr
-        self.namespaces = namespaces
-        self.enable_nat_gw = enable_nat_gw
-        self.az_count = az_count
+        self.namespaces = namespaces.split(",")
+        self.enable_nat_gw = bool(util.strtobool(enable_nat_gw))
+        self.az_count = int(az_count)
 
 
-class CoreInfrastructureStack(Stack):
+class CoreInfrastructureStack(Construct):
     def __init__(
         self, scope: Construct, id: str, core_infra_props: CoreInfraProps, **kwargs
     ) -> None:

@@ -1,5 +1,5 @@
 {
-  "app": "python3 app.py",
+  "app": "PYTHONPATH=../ python3 app.py",
   "watch": {
     "include": [
       "**"
@@ -15,12 +15,6 @@
     ]
   },
   "context": {
-    "core_stack_name": "ecs-blueprint-infra",
-    "aws_region": "us-west-2",
-    "vpc_cidr": "10.0.0.0/16",
-    "namespaces": ["default", "myapp"],
-    "enable_nat_gw": true,
-    "number_of_azs": 3,
     "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
     "@aws-cdk/core:stackRelativeExports": true,
     "@aws-cdk/aws-rds:lowercaseDbIdentifier": true,
