@@ -148,7 +148,6 @@ module "service_task_security_group" {
   tags = local.tags
 }
 
-
 resource "aws_service_discovery_service" "sd_service" {
   name = local.name
 

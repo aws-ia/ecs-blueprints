@@ -20,6 +20,7 @@ variable "github_token_secret_name" {
 }
 
 variable "postgresdb_master_password" {
-  type        = string
   description = "AWS secrets manager secret name that stores the db master password"
+  type        = string
+  sensitive   = true
 }
