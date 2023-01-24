@@ -33,6 +33,12 @@ variable "iam_role_name" {
   type        = string
 }
 
+variable "iam_role_use_name_prefix" {
+  description = "Determines whether the IAM role name (`iam_role_name`) is used as a prefix"
+  type        = bool
+  default     = true
+}
+
 variable "create_iam_role" {
   description = "Set this variable to true if you want to create a role for AWS DevOps Tools"
   type        = bool

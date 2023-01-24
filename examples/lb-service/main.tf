@@ -1,72 +1,41 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-west-2"
 }
 
 data "aws_caller_identity" "current" {}
 
 locals {
+  name   = "ecsdemo-frontend"
+  region = "us-west-2"
 
-  # this will get the name of the local directory
-  # name   = basename(path.cwd)
-  name = var.service_name
+  container_port = 3000 # Container port is specific to this app example
+  container_name = "ecsdemo-frontend"
+
+  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local:3000"
 
   tags = {
     Blueprint  = local.name
     GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
   }
-
-  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
-  tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-  tag_val_public_subnet  = var.public_subnets_tag_value == "" ? "${var.core_stack_name}-public-" : var.public_subnets_tag_value
-
-}
-
-################################################################################
-# Data Sources from ecs-blueprint-infra
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_vpc]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_private_subnet}*"]
-  }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_public_subnet}*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
-}
-
-data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
-}
-
-data "aws_service_discovery_dns_namespace" "sd_namespace" {
-  name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
 }
 
 ################################################################################
 # ECS Blueprint
 ################################################################################
+
+module "container_image_ecr" {
+  source  = "terraform-aws-modules/ecr/aws"
+  version = "~> 1.4"
+
+  repository_name = local.container_name
+
+  repository_force_delete           = true
+  create_lifecycle_policy           = false
+  repository_read_access_arns       = [one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)]
+  repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
+
+  tags = local.tags
+}
 
 module "service_alb_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -99,8 +68,8 @@ module "service_alb" {
 
   http_tcp_listeners = [
     {
-      port               = var.listener_port
-      protocol           = var.listener_protocol
+      port               = "80"
+      protocol           = "HTTP"
       target_group_index = 0
     },
   ]
@@ -108,30 +77,16 @@ module "service_alb" {
   target_groups = [
     {
       name             = "${local.name}-tg"
-      backend_protocol = var.container_protocol
-      backend_port     = var.container_port
+      backend_protocol = "HTTP"
+      backend_port     = local.container_port
       target_type      = "ip"
       health_check = {
-        path    = var.health_check_path
-        port    = var.container_port
-        matcher = var.health_check_matcher
+        path    = "/"
+        port    = local.container_port
+        matcher = "200-299"
       }
     },
   ]
-
-  tags = local.tags
-}
-
-module "container_image_ecr" {
-  source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.4"
-
-  repository_name = var.container_name
-
-  repository_force_delete           = true
-  create_lifecycle_policy           = false
-  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
-  repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
 }
@@ -146,8 +101,8 @@ module "service_task_security_group" {
 
   ingress_with_source_security_group_id = [
     {
-      from_port                = var.container_port
-      to_port                  = var.container_port
+      from_port                = local.container_port
+      to_port                  = local.container_port
       protocol                 = "tcp"
       source_security_group_id = module.service_alb_security_group.security_group_id
     },
@@ -163,7 +118,7 @@ resource "aws_service_discovery_service" "sd_service" {
   name = local.name
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
+    namespace_id = data.aws_service_discovery_dns_namespace.this.id
 
     dns_records {
       ttl  = 10
@@ -181,12 +136,9 @@ resource "aws_service_discovery_service" "sd_service" {
 module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
-  name                       = local.name
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
-  cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
+  name           = local.name
+  desired_count  = 3
+  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.service_task_security_group.security_group_id]
   subnets         = data.aws_subnets.private.ids
@@ -203,40 +155,26 @@ module "ecs_service_definition" {
 
   # Task Definition
   attach_task_role_policy = false
-  lb_container_port       = var.container_port
-  lb_container_name       = var.container_name
-  cpu                     = var.cpu
-  memory                  = var.memory
-  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  lb_container_port       = local.container_port
+  lb_container_name       = local.container_name
+  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
-
-  container_definition_defaults = var.container_definition_defaults
 
   container_definitions = {
     main_container = {
-      name                     = var.container_name
+      name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
       port_mappings = [{
         protocol : "tcp",
-        containerPort : var.container_port
-        hostPort : var.container_port
+        containerPort : local.container_port
+        hostPort : local.container_port
       }]
     }
   }
 
   tags = local.tags
-
-  enable_scheduled_autoscaling            = var.enable_scheduled_autoscaling
-  scheduled_autoscaling_timezone          = var.scheduled_autoscaling_timezone
-  scheduled_autoscaling_up_time           = var.scheduled_autoscaling_up_time
-  scheduled_autoscaling_down_time         = var.scheduled_autoscaling_down_time
-  scheduled_autoscaling_up_min_capacity   = var.scheduled_autoscaling_up_min_capacity
-  scheduled_autoscaling_up_max_capacity   = var.scheduled_autoscaling_up_max_capacity
-  scheduled_autoscaling_down_min_capacity = var.scheduled_autoscaling_down_min_capacity
-  scheduled_autoscaling_down_max_capacity = var.scheduled_autoscaling_down_max_capacity
 }
-
 
 ################################################################################
 # CodePipeline and CodeBuild for CI/CD
@@ -246,7 +184,7 @@ module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "codepipeline-${var.aws_region}-${random_id.this.hex}"
+  bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
@@ -281,7 +219,7 @@ resource "aws_sns_topic" "codestar_notification" {
         Sid      = "WriteAccess"
         Effect   = "Allow"
         Action   = "sns:Publish"
-        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.name}"
+        Resource = "arn:aws:sns:${local.region}:${data.aws_caller_identity.current.account_id}:${local.name}"
         Principal = {
           Service = "codestar-notifications.amazonaws.com"
         }
@@ -297,7 +235,7 @@ module "codebuild_ci" {
 
   name           = "codebuild-${module.ecs_service_definition.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
-  buildspec_path = var.buildspec_path
+  buildspec_path = "./application-code/ecsdemo-frontend/templates/buildspec.yml"
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
@@ -311,19 +249,19 @@ module "codebuild_ci" {
         value = module.ecs_service_definition.task_definition_family
         }, {
         name  = "CONTAINER_NAME"
-        value = var.container_name
+        value = local.container_name
         }, {
         name  = "SERVICE_PORT"
-        value = var.container_port
+        value = local.container_port
         }, {
         name  = "FOLDER_PATH"
-        value = var.folder_path
+        value = "./application-code/ecsdemo-frontend/."
         }, {
         name  = "ECS_EXEC_ROLE_ARN"
-        value = data.aws_iam_role.ecs_core_infra_exec_role.arn
+        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
         }, {
         name  = "BACKEND_SVC_ENDPOINT"
-        value = var.backend_svc_endpoint
+        value = local.backend_svc_endpoint
       },
     ]
   }
@@ -333,14 +271,6 @@ module "codebuild_ci" {
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
-}
-
-data "aws_secretsmanager_secret" "github_token" {
-  name = var.github_token_secret_name
-}
-
-data "aws_secretsmanager_secret_version" "github_token" {
-  secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
 module "codepipeline_ci_cd" {
@@ -412,4 +342,51 @@ module "codepipeline_ci_cd" {
 
 resource "random_id" "this" {
   byte_length = "2"
+}
+
+data "aws_secretsmanager_secret" "github_token" {
+  name = var.github_token_secret_name
+}
+
+data "aws_secretsmanager_secret_version" "github_token" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
+}
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_subnets" "public" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-public-*"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-*"]
+  }
+}
+
+data "aws_subnet" "private_cidr" {
+  for_each = toset(data.aws_subnets.private.ids)
+  id       = each.value
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = "core-infra"
+}
+
+data "aws_iam_roles" "ecs_core_infra_exec_role" {
+  name_regex = "core-infra-execution-*"
+}
+
+data "aws_service_discovery_dns_namespace" "this" {
+  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  type = "DNS_PRIVATE"
 }
