@@ -57,6 +57,12 @@ variable "iam_role_name" {
   type        = string
 }
 
+variable "iam_role_use_name_prefix" {
+  description = "Determines whether the IAM role name (`iam_role_name`) is used as a prefix"
+  type        = bool
+  default     = true
+}
+
 variable "service_role" {
   description = "Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account"
   type        = string

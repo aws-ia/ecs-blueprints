@@ -1,49 +1,20 @@
 provider "aws" {
-  region = var.aws_region
+  region = "us-west-2"
 }
 
 data "aws_caller_identity" "current" {}
 
 locals {
 
-  # this will get the name of the local directory
-  # name   = basename(path.cwd)
-  name = var.service_name
+  name   = "ecsdemo-queue-proc"
+  region = "us-west-2"
+
+  container_name = "ecsdemo-queue-proc"
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
-
-  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
-  tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-
-}
-
-################################################################################
-# Data Sources from ecs-blueprint-infra
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_vpc]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_private_subnet}*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
-}
-
-data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
 }
 
 ################################################################################
@@ -68,32 +39,32 @@ module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
   version = "~> 1.4"
 
-  repository_name = var.container_name
+  repository_name = local.container_name
 
   repository_force_delete           = true
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [data.aws_iam_role.ecs_core_infra_exec_role.arn]
+  repository_read_access_arns       = [one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)]
   repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
 }
 
 resource "aws_ecs_task_definition" "this" {
-  family                   = var.container_name
+  family                   = local.container_name
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
+  cpu                      = 256
+  memory                   = 512
   task_role_arn            = aws_iam_role.task.arn
-  execution_role_arn       = data.aws_iam_role.ecs_core_infra_exec_role.arn
+  execution_role_arn       = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   container_definitions = jsonencode([
     {
-      name  = var.container_name
+      name  = local.container_name
       image = module.container_image_ecr.repository_url
       logConfiguration = {
         "logDriver" : "awslogs",
         "options" : {
-          "awslogs-region" : var.aws_region,
+          "awslogs-region" : local.region,
           "awslogs-group" : aws_cloudwatch_log_group.this.name,
           "awslogs-stream-prefix" : "ecs"
         }
@@ -110,7 +81,7 @@ resource "aws_ecs_task_definition" "this" {
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${local.name}"
-  retention_in_days = var.log_retention_in_days
+  retention_in_days = 90
 
   tags = local.tags
 }
@@ -129,9 +100,9 @@ module "lambda_function" {
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
-  source_path        = var.lambda_source
+  source_path        = "../../application-code/lambda-function-queue-trigger/"
 
-  cloudwatch_logs_retention_in_days = var.log_retention_in_days
+  cloudwatch_logs_retention_in_days = 90
 
   allowed_triggers = {
     PollSSMScale = {
@@ -168,7 +139,7 @@ module "source_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "${local.name}-source-${var.aws_region}-${random_id.this.hex}"
+  bucket = "${local.name}-source-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please evaluate for your environment
@@ -197,7 +168,7 @@ module "destination_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "${local.name}-destination-${var.aws_region}-${random_id.this.hex}"
+  bucket = "${local.name}-destination-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please evaluate for your environment
@@ -235,7 +206,7 @@ module "processing_queue" {
         Sid      = "SQSSendMessageS3"
         Effect   = "Allow"
         Action   = "SQS:SendMessage"
-        Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.name}-processing-queue"
+        Resource = "arn:aws:sqs:${local.region}:${data.aws_caller_identity.current.account_id}:${local.name}-processing-queue"
         Principal = {
           Service = "s3.amazonaws.com"
         }
@@ -264,7 +235,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
   name  = "PIPELINE_ENABLED"
   type  = "String"
-  value = var.pipeline_enabled
+  value = 1
 
   tags = local.tags
 }
@@ -272,7 +243,7 @@ resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
 resource "aws_ssm_parameter" "ecs_pipeline_max_tasks" {
   name  = "PIPELINE_ECS_MAX_TASKS"
   type  = "String"
-  value = var.pipeline_max_tasks
+  value = 10
 
   tags = local.tags
 }
@@ -296,7 +267,7 @@ resource "aws_ssm_parameter" "s3_destination_bucket" {
 resource "aws_ssm_parameter" "s3_destination_prefix" {
   name  = "PIPELINE_S3_DEST_PREFIX"
   type  = "String"
-  value = var.pipeline_s3_dest_prefix
+  value = "processed"
 
   tags = local.tags
 }
@@ -320,7 +291,7 @@ resource "aws_ssm_parameter" "ecs_task_definition" {
 resource "aws_ssm_parameter" "ecs_task_container_name" {
   name  = "PIPELINE_ECS_TASK_CONTAINER"
   type  = "String"
-  value = var.container_name
+  value = local.container_name
 
   tags = local.tags
 }
@@ -349,7 +320,7 @@ module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.0"
 
-  bucket = "codepipeline-${var.aws_region}-${random_id.this.hex}"
+  bucket = "codepipeline-${local.region}-${random_id.this.hex}"
   acl    = "private"
 
   # For example only - please re-evaluate for your environment
@@ -384,7 +355,7 @@ resource "aws_sns_topic" "codestar_notification" {
         Sid      = "WriteAccess"
         Effect   = "Allow"
         Action   = "sns:Publish"
-        Resource = "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${local.name}"
+        Resource = "arn:aws:sns:${local.region}:${data.aws_caller_identity.current.account_id}:${local.name}"
         Principal = {
           Service = "codestar-notifications.amazonaws.com"
         }
@@ -400,7 +371,7 @@ module "codebuild_ci" {
 
   name           = "codebuild-${local.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
-  buildspec_path = var.buildspec_path
+  buildspec_path = "./application-code/container-queue-proc/templates/buildspec.yml"
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
@@ -414,10 +385,10 @@ module "codebuild_ci" {
         value = aws_ecs_task_definition.this.family
         }, {
         name  = "CONTAINER_NAME"
-        value = var.container_name
+        value = local.container_name
         }, {
         name  = "FOLDER_PATH"
-        value = var.folder_path
+        value = "./application-code/container-queue-proc/."
         }, {
         name  = "QUEUE_NAME"
         value = module.processing_queue.this_sqs_queue_name
@@ -433,14 +404,6 @@ module "codebuild_ci" {
   ecr_repository  = module.container_image_ecr.repository_arn
 
   tags = local.tags
-}
-
-data "aws_secretsmanager_secret" "github_token" {
-  name = var.github_token_secret_name
-}
-
-data "aws_secretsmanager_secret_version" "github_token" {
-  secret_id = data.aws_secretsmanager_secret.github_token.id
 }
 
 module "codepipeline_ci_cd" {
@@ -562,8 +525,8 @@ data "aws_iam_policy_document" "task_role" {
       "ssm:DescribeParameters"
     ]
     resources = [
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter",
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
+      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter",
+      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*",
     ]
   }
 }
@@ -609,8 +572,8 @@ data "aws_iam_policy_document" "lambda_role" {
       "ssm:DescribeParameters"
     ]
     resources = [
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter",
-      "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/*",
+      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter",
+      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*",
     ]
   }
 }
@@ -621,4 +584,34 @@ data "aws_iam_policy_document" "lambda_role" {
 
 resource "random_id" "this" {
   byte_length = "2"
+}
+
+data "aws_secretsmanager_secret" "github_token" {
+  name = var.github_token_secret_name
+}
+
+data "aws_secretsmanager_secret_version" "github_token" {
+  secret_id = data.aws_secretsmanager_secret.github_token.id
+}
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-*"]
+  }
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = "core-infra"
+}
+
+data "aws_iam_roles" "ecs_core_infra_exec_role" {
+  name_regex = "core-infra-execution-*"
 }
