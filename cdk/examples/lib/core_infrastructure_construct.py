@@ -14,7 +14,7 @@ from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from constructs import Construct
 
 
-class CoreInfraProps(StackProps):
+class CoreInfrastructureProps(StackProps):
     def __init__(
         self,
         core_stack_name="a_core_stack",
@@ -34,7 +34,11 @@ class CoreInfraProps(StackProps):
 
 class CoreInfrastructureConstruct(Construct):
     def __init__(
-        self, scope: Construct, id: str, core_infra_props: CoreInfraProps, **kwargs
+        self,
+        scope: Construct,
+        id: str,
+        core_infra_props: CoreInfrastructureProps,
+        **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
