@@ -32,7 +32,7 @@ class CoreInfraProps(StackProps):
         self.az_count = int(az_count)
 
 
-class CoreInfrastructureStack(Construct):
+class CoreInfrastructureConstruct(Construct):
     def __init__(
         self, scope: Construct, id: str, core_infra_props: CoreInfraProps, **kwargs
     ) -> None:
