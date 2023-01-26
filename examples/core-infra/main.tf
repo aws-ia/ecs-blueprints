@@ -22,8 +22,8 @@ locals {
 ################################################################################
 
 module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 4.0"
+  source = "github.com/clowdhaus/terraform-aws-ecs"
+  # version = "~> 4.0"
 
   cluster_name = local.name
 
@@ -36,20 +36,15 @@ module "ecs" {
     }
   }
 
-  # Capacity provider
+  cluster_service_connect_defaults = {
+      namespace = aws_service_discovery_private_dns_namespace.this.arn
+  }
+
+  default_capacity_provider_use_fargate = true
+
   fargate_capacity_providers = {
-    FARGATE = {
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
-      }
-    }
-    FARGATE_SPOT = {
-      default_capacity_provider_strategy = {
-        weight = 0
-        base   = 0
-      }
-    }
+    FARGATE      = {}
+    FARGATE_SPOT = {}
   }
 
   tags = local.tags
@@ -97,11 +92,11 @@ resource "aws_cloudwatch_log_group" "this" {
 ################################################################################
 
 resource "aws_service_discovery_private_dns_namespace" "this" {
-  for_each = toset(["default", "myapp"])
-
-  name        = "${each.key}.${module.ecs.cluster_name}.local"
+  name        = "default.${local.name}.local"
   description = "Service discovery namespace.clustername.local"
   vpc         = module.vpc.vpc_id
+
+  tags = local.tags
 }
 
 ################################################################################
@@ -130,13 +125,13 @@ resource "aws_iam_policy_attachment" "execution" {
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
   ])
 
-  name       = "${local.name}-execution"
+  name       = "${aws_iam_role.execution.name}-execution-policy"
   roles      = [aws_iam_role.execution.name]
   policy_arn = each.value
 }
 
 resource "aws_iam_policy" "secrets_manager_read_policy" {
-  name   = "ECSTaskExecutionReadSecretsManager"
+  name   = "${aws_iam_role.execution.name}-sm-read-policy"
   policy = <<-EOF
   {
     "Version": "2012-10-17",
@@ -154,7 +149,7 @@ resource "aws_iam_policy" "secrets_manager_read_policy" {
 }
 
 resource "aws_iam_policy_attachment" "secret_manager_read" {
-  name       = "${local.name}-execution-policy"
+  name       = "${aws_iam_role.execution.name}-execution-policy"
   roles      = [aws_iam_role.execution.name]
   policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
 }
