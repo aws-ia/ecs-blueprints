@@ -167,6 +167,8 @@ module "ecs_service_definition" {
       name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
+      environment              = [{ name = "NODEJS_URL", value = local.backend_svc_endpoint }]
+      
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port

@@ -16,7 +16,6 @@ RUN apt-get update && apt-get -y install iproute2 curl jq libgmp3-dev ruby-dev b
 COPY . /usr/src/app
 RUN chmod +x /usr/src/app/startup-cdk.sh
 
-ENV NODEJS_URL <BACKEND_SVC_ENDPOINT>
 # helpful when trying to update gems -> bundle update, remove the Gemfile.lock, start ruby
 # RUN bundle update
 # RUN rm -vf /usr/src/app/Gemfile.lock
