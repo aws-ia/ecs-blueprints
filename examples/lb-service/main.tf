@@ -175,6 +175,8 @@ module "ecs_service_definition" {
     }
   }
 
+  ignore_task_definition_changes = true
+
   tags = local.tags
 }
 

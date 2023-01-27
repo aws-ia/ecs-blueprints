@@ -77,24 +77,26 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = local.name
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
-
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
-
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.this.arn
-  }]
   deployment_controller = "ECS"
 
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+
+  network_configuration = {
+  security_groups = [module.service_task_security_group.security_group_id]
+  subnets         = data.aws_subnets.private.ids
+  }
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
+
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  create_iam_role = false
+  task_exec_iam_role_arn  = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
 
   container_definitions = {
@@ -103,6 +105,8 @@ module "ecs_service_definition" {
       image = module.container_image_ecr.repository_url
     }
   }
+
+  ignore_task_definition_changes = true
 
   tags = local.tags
 }
@@ -176,20 +180,11 @@ module "codebuild_ci" {
         name  = "REPO_URL"
         value = module.container_image_ecr.repository_url
         }, {
-        name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
-        }, {
         name  = "CONTAINER_NAME"
         value = local.container_name
         }, {
-        name  = "SERVICE_PORT"
-        value = local.container_port
-        }, {
         name  = "FOLDER_PATH"
         value = "./application-code/ecsdemo-nodejs/."
-        }, {
-        name  = "ECS_EXEC_ROLE_ARN"
-        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
       },
     ]
   }
