@@ -47,7 +47,10 @@ class CoreInfraStack(Stack):
             self,
             "sd_namespaces",
             value=str(
-                {n.namespace_name: n.namespace_arn for n in self.private_dns_namespaces}
+                {
+                    n.namespace_name: {"arn": n.namespace_arn, "id": n.namespace_id}
+                    for n in self.private_dns_namespaces
+                }
             ),
         )
         CfnOutput(

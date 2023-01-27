@@ -13,14 +13,14 @@ env_config = dotenv_values(".env")
 
 deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 
-core_config = {
-    i
-    for i in list(env_config.items())
-    if i[0] in CoreInfrastructureProps().__dict__.keys()
-}
 lb_stack_props = LoadBalancedServiceStackProps(**env_config)
 
 if deploy_core:
+    core_config = {
+        i
+        for i in list(env_config.items())
+        if i[0] in CoreInfrastructureProps().__dict__.keys()
+    }
     core_props = CoreInfrastructureProps(**dict(core_config))
     core_stack = CoreInfraStack(
         app,
