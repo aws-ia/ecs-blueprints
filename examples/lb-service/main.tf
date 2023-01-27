@@ -114,7 +114,7 @@ module "service_task_security_group" {
 }
 
 
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
@@ -154,7 +154,7 @@ module "ecs_service_definition" {
   }]
 
   service_registries = {
-    registry_arn = aws_service_discovery_service.sd_service.arn
+    registry_arn = aws_service_discovery_service.this.arn
   }
 
   # Task Definition
