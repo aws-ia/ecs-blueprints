@@ -68,6 +68,10 @@ pnpm-debug.log*
 
 # CDK directories
 cdk.out/
+cdk.context.json
 
 # Python
 __pycache__/
+
+# Customized ENV files
+.env*

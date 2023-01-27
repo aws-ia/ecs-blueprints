@@ -1,4 +1,6 @@
-from aws_cdk import RemovalPolicy, SecretValue, Stack, StackProps
+from distutils import util
+
+from aws_cdk import PhysicalName, RemovalPolicy, SecretValue, Stack, StackProps
 from aws_cdk.aws_codebuild import (
     BuildEnvironment,
     BuildEnvironmentVariable,
@@ -14,6 +16,7 @@ from aws_cdk.aws_codepipeline_actions import (
     EcsDeployAction,
     GitHubSourceAction,
 )
+from aws_cdk.aws_ec2 import Vpc
 from aws_cdk.aws_ecr import Repository
 from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver
 from aws_cdk.aws_ecs_patterns import (
@@ -35,45 +38,81 @@ from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 class LoadBalancedServiceStackProps(StackProps):
     def __init__(
         self,
+        account_number=None,
+        aws_region=None,
+        az_count=None,
+        backend_svc_endpoint=None,
+        buildspec_path=None,
+        container_name=None,
+        container_port="3000",
+        core_stack_name=None,
+        desired_count="2",
+        deploy_core_stack=True,
+        ecr_repository_name=None,
+        ecs_cluster_name=None,
+        ecs_task_execution_role_arn=None,
+        enable_nat_gw=None,
+        folder_path=None,
+        github_token_secret_name=None,
+        namespaces="a,b",
         namespace_name=None,
         namespace_arn=None,
         namespace_id=None,
-        ecs_cluster_name=None,
-        ecs_task_execution_role_arn=None,
-        container_name=None,
-        container_port=None,
-        folder_path=None,
-        backend_svc_endpoint=None,
         repository_owner=None,
         repository_name=None,
         repository_branch=None,
-        buildspec_path=None,
         service_name=None,
-        task_cpu=None,
-        task_memory=None,
-        desired_count=None,
-        github_token_secret_name=None,
-        aws_region=None,
+        task_cpu="256",
+        task_memory="512",
+        vpc_id=None,
+        vpc_cidr=None,
     ):
+        self.account_number = account_number
+        self.aws_region = aws_region
+        self.backend_svc_endpoint = backend_svc_endpoint
+        self.buildspec_path = buildspec_path
+        self.container_name = container_name
+        self.container_port = int(container_port)
+        self.core_stack_name = core_stack_name
+        self.desired_count = int(desired_count)
+        self.ecr_repository_name = ecr_repository_name
+        self.ecs_cluster_name = ecs_cluster_name
+        self.ecs_task_execution_role_arn = ecs_task_execution_role_arn
+        self.folder_path = folder_path
+        self.github_token_secret_name = github_token_secret_name
+        self.namespaces = namespaces.split(",")
         self.namespace_name = namespace_name
         self.namespace_arn = namespace_arn
         self.namespace_id = namespace_id
-        self.ecs_cluster_name = ecs_cluster_name
-        self.ecs_task_execution_role_arn = ecs_task_execution_role_arn
-        self.container_name = container_name
-        self.container_port = container_port
-        self.folder_path = folder_path
-        self.backend_svc_endpoint = backend_svc_endpoint
         self.repository_owner = repository_owner
         self.repository_name = repository_name
         self.repository_branch = repository_branch
-        self.buildspec_path = buildspec_path
         self.service_name = service_name
-        self.task_cpu = task_cpu
-        self.task_memory = task_memory
-        self.desired_count = desired_count
-        self.github_token_secret_name = github_token_secret_name
-        self.aws_region = aws_region
+        self.task_cpu = int(task_cpu)
+        self.task_memory = int(task_memory)
+        self.vpc_id = vpc_id
+
+        self._vpc = None
+        self._sd_namespace = None
+
+    @property
+    def vpc(self):
+        return self._vpc
+
+    @vpc.setter
+    def vpc(self, value: Vpc) -> None:
+        self._vpc = value
+        self.vpc_id = value.vpc_id
+
+    @property
+    def sd_namespace(self):
+        return self._sd_namespace
+
+    @sd_namespace.setter
+    def sd_namespace(self, value: PrivateDnsNamespace) -> None:
+        self._sd_namespace = value
+        self.namespace_arn = value.namespace_arn
+        self.namespace_id = value.namespace_arn
 
 
 class LoadBalancedServiceStack(Stack):
@@ -82,16 +121,18 @@ class LoadBalancedServiceStack(Stack):
         scope: Stack,
         id: str,
         lb_service_stack_prop: LoadBalancedServiceStackProps,
-        core_infra_stack: Stack,
         **kwargs
     ):
         super().__init__(scope, id, **kwargs)
 
         self.stack_props = lb_service_stack_prop
-        self.core_infra_stack = core_infra_stack
-        self.ecs_task_execution_role = Role.from_role_arn(
-            self, "EcsTaskRoleFromArn", self.stack_props.ecs_task_execution_role_arn
+        self._ecs_cluster = None
+        self._ecs_task_execution_role = None
+        self._vpc = self.stack_props.vpc if self.stack_props.vpc else None
+        self._sd_namespace = (
+            self.stack_props.sd_namespace if self.stack_props.sd_namespace else None
         )
+
         self._create_codebuild_role()
         self._create_ecr_repository()
         self._create_codebuild_project()
@@ -215,6 +256,7 @@ class LoadBalancedServiceStack(Stack):
                 ),
             },
         )
+
         self.git_hub_repo = Source.git_hub(
             owner=self.stack_props.repository_owner,
             repo=self.stack_props.repository_name,
@@ -234,7 +276,7 @@ class LoadBalancedServiceStack(Stack):
         self.ecr_repository = Repository(
             self,
             "EcrRepository",
-            repository_name=self.stack_props.container_name,
+            repository_name=self.stack_props.ecr_repository_name,
             removal_policy=RemovalPolicy.DESTROY,
         )
 
@@ -246,6 +288,7 @@ class LoadBalancedServiceStack(Stack):
             self,
             "LBServiceLogGroup",
             retention=RetentionDays.ONE_WEEK,
+            log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
 
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
@@ -264,25 +307,11 @@ class LoadBalancedServiceStack(Stack):
             },
         )
 
-        self.sd_namespace = PrivateDnsNamespace.from_private_dns_namespace_attributes(
-            self,
-            "SDNamespace",
-            namespace_name=self.stack_props.namespace_name,
-            namespace_arn=self.stack_props.namespace_arn,
-            namespace_id=self.stack_props.namespace_id,
-        )
         self.fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "FrontendFargateLBService",
             service_name=self.stack_props.service_name,
-            cluster=Cluster.from_cluster_attributes(
-                self,
-                "EcsClusterFromArn",
-                cluster_arn=self.core_infra_stack.cluster.cluster_arn,
-                vpc=self.core_infra_stack.vpc,
-                security_groups=[],
-                cluster_name=self.core_infra_stack.cluster.cluster_name,
-            ),
+            cluster=self.ecs_cluster,
             cpu=int(self.stack_props.task_cpu),
             memory_limit_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
@@ -351,3 +380,52 @@ class LoadBalancedServiceStack(Stack):
                 ),
             ],
         )
+
+    @property
+    def vpc(self):
+        if not self._vpc:
+            self._vpc = Vpc.from_lookup(
+                self, "VpcLookup", vpc_id=self.stack_props.vpc_id
+            )
+
+        return self._vpc
+
+    @property
+    def sd_namespace(self):
+        if not self._sd_namespace:
+            self._sd_namespace = (
+                PrivateDnsNamespace.from_private_dns_namespace_attributes(
+                    self,
+                    "SDNamespaceLookup",
+                    namespace_name=self.stack_props.namespace_name,
+                    namespace_arn=self.stack_props.namespace_arn,
+                    namespace_id=self.stack_props.namespace_id,
+                )
+            )
+
+        return self._sd_namespace
+
+    @property
+    def ecs_cluster(self):
+        if not self._ecs_cluster:
+            self._ecs_cluster = Cluster.from_cluster_attributes(
+                self,
+                "EcsClusterLookup",
+                cluster_name=self.stack_props.ecs_cluster_name,
+                security_groups=[],
+                vpc=self.vpc,
+                default_cloud_map_namespace=self.sd_namespace,
+            )
+
+        return self._ecs_cluster
+
+    @property
+    def ecs_task_execution_role(self) -> Role:
+        if not self._ecs_task_execution_role:
+            self._ecs_task_execution_role = Role.from_role_arn(
+                self,
+                "EcsTaskRoleFromArn",
+                self.stack_props.ecs_task_execution_role_arn,
+            )
+
+        return self._ecs_task_execution_role

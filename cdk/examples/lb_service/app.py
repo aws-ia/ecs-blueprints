@@ -1,68 +1,51 @@
+from distutils import util
 from os import getenv
 
-from aws_cdk import App, Environment
-from core_infra.core_infra_stack import CoreInfraProps, CoreInfrastructureStack
+from aws_cdk import App, Environment, Stack
+from core_infra.core_infra_stack import CoreInfraStack
+from dotenv import dotenv_values
 from lb_service_stack import LoadBalancedServiceStack, LoadBalancedServiceStackProps
+from lib.core_infrastructure_construct import CoreInfrastructureProps
 
 app = App()
 
-core_props = CoreInfraProps(
-    core_stack_name="ecs-blueprint-infra",
-    aws_region="us-east-2",
-    namespaces=["default", "myapp"],
-    enable_nat_gw=True,
-    vpc_cidr="10.0.23.0/16",
-)
+env_config = dotenv_values(".env")
 
-core_stack = CoreInfrastructureStack(
-    app,
-    "CoreStackForLBService",
-    core_infra_props=core_props,
-    env=Environment(
-        account=getenv("CDK_DEFAULT_ACCOUNT"),
-        region=core_props.aws_region,
-    ),
-)
+deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 
-lb_stack_props = LoadBalancedServiceStackProps()
+core_config = {
+    i
+    for i in list(env_config.items())
+    if i[0] in CoreInfrastructureProps().__dict__.keys()
+}
+lb_stack_props = LoadBalancedServiceStackProps(**env_config)
 
-lb_stack_props.namespace_name = "default.ecs-blueprint-infra.local"
-lb_stack_props.namespace_arn = core_stack.sd_namespaces[lb_stack_props.namespace_name][
-    "arn"
-]
-lb_stack_props.namespace_id = core_stack.sd_namespaces[lb_stack_props.namespace_name][
-    "id"
-]
+if deploy_core:
+    core_props = CoreInfrastructureProps(**dict(core_config))
+    core_stack = CoreInfraStack(
+        app,
+        "CoreInfraStack",
+        core_infra_props=core_props,
+        env=Environment(
+            account=core_props.account_number,
+            region=core_props.aws_region,
+        ),
+    )
+    lb_stack_props.vpc = core_stack.vpc
+    lb_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
+    lb_stack_props.sd_namespace = [
+        ns
+        for ns in core_stack.private_dns_namespaces
+        if ns.namespace_name == lb_stack_props.namespace_name
+    ][0]
+    lb_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
 
-
-lb_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
-lb_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
-lb_stack_props.container_name = "ecsdemo-frontend"
-lb_stack_props.container_port = 3000
-lb_stack_props.folder_path = "./application-code/ecsdemo-frontend/."
-lb_stack_props.backend_svc_endpoint = (
-    "http://ecsdemo-nodejs.default.ecs-blueprint-infra.local:3000"
-)
-lb_stack_props.repository_owner = "umairishaq"
-lb_stack_props.repository_name = "ecs-blueprints"
-lb_stack_props.repository_branch = "main"
-lb_stack_props.buildspec_path = (
-    "./application-code/ecsdemo-frontend/templates/buildspec.yml"
-)
-lb_stack_props.service_name = "ecsdemo-frontend"
-lb_stack_props.task_cpu = "256"
-lb_stack_props.task_memory = "512"
-lb_stack_props.desired_count = 3
-lb_stack_props.github_token_secret_name = "ecs-github-token"
-lb_stack_props.aws_region = "us-east-2"
-
-LoadBalancedServiceStack(
+lb_service_stack = LoadBalancedServiceStack(
     app,
     "FrontendService",
     lb_stack_props,
-    core_stack,
     env=Environment(
-        account=getenv("CDK_DEFAULT_ACCOUNT"),
+        account=lb_stack_props.account_number,
         region=lb_stack_props.aws_region,
     ),
 )
