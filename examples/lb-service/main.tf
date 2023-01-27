@@ -134,30 +134,32 @@ resource "aws_service_discovery_service" "sd_service" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-service"
-
-  name           = local.name
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
-
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
-
-  load_balancers = [{
-    target_group_arn = element(module.service_alb.target_group_arns, 0)
-  }]
-
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
   deployment_controller = "ECS"
 
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+
+  network_configuration = {
+    security_groups = [module.service_task_security_group.security_group_id]
+    subnets         = data.aws_subnets.private.ids
+  }
+
+  load_balancer = [{
+    container_name   = local.container_name
+    container_port   = local.container_port
+    target_group_arn = element(module.service_alb.target_group_arns, 0)
+  }]
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.sd_service.arn
+  }
+
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  create_iam_role = false
+  task_exec_iam_role_arn  = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
 
   container_definitions = {
@@ -246,7 +248,7 @@ module "codebuild_ci" {
         value = module.container_image_ecr.repository_url
         }, {
         name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
+        value = module.ecs_service_definition.task_definition_revision
         }, {
         name  = "CONTAINER_NAME"
         value = local.container_name
