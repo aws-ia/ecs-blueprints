@@ -1,9 +1,9 @@
 from aws_cdk import CfnOutput, Stack
-from constructs import Construct
-from lib.core_infrastructure_construct import (
+from components.core_infrastructure_construct import (
     CoreInfrastructureConstruct,
     CoreInfrastructureProps,
 )
+from constructs import Construct
 
 
 class CoreInfraStack(Stack):

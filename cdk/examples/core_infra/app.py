@@ -1,7 +1,7 @@
 from aws_cdk import App
-from core_infra_stack import CoreInfraStack
+from components.core_infrastructure_construct import CoreInfrastructureProps
 from dotenv import dotenv_values
-from lib.core_infrastructure_construct import CoreInfrastructureProps
+from lib.core_infra_stack import CoreInfraStack
 
 config = dotenv_values(".env")
 core_props = CoreInfrastructureProps(**config)

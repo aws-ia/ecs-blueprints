@@ -1,11 +1,11 @@
 from distutils import util
-from os import getenv
 
-from aws_cdk import App, Environment, Stack
-from core_infra.core_infra_stack import CoreInfraStack
+from aws_cdk import App, Environment
+from components.core_infrastructure_construct import CoreInfrastructureProps
+from core_infra.lib.core_infra_stack import CoreInfraStack
 from dotenv import dotenv_values
-from lb_service_stack import LoadBalancedServiceStack, LoadBalancedServiceStackProps
-from lib.core_infrastructure_construct import CoreInfrastructureProps
+from lib.lb_service_stack import LoadBalancedServiceStack
+from lib.lb_service_stack_props import LoadBalancedServiceStackProps
 
 app = App()
 
