@@ -168,7 +168,7 @@ module "ecs_service_definition" {
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
       environment              = [{ name = "NODEJS_URL", value = local.backend_svc_endpoint }]
-      
+
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -251,23 +251,11 @@ module "codebuild_ci" {
         name  = "REPO_URL"
         value = module.container_image_ecr.repository_url
         }, {
-        name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_revision
-        }, {
         name  = "CONTAINER_NAME"
         value = local.container_name
         }, {
-        name  = "SERVICE_PORT"
-        value = local.container_port
-        }, {
         name  = "FOLDER_PATH"
         value = "./application-code/ecsdemo-frontend/."
-        }, {
-        name  = "ECS_EXEC_ROLE_ARN"
-        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-        }, {
-        name  = "BACKEND_SVC_ENDPOINT"
-        value = local.backend_svc_endpoint
       },
     ]
   }
