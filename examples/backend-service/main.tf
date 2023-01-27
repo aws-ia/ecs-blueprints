@@ -6,7 +6,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   name   = "ecsdemo-backend"
-  region = "us-west-2"
+  region = "eu-west-3"
 
   container_port = 3000 # Container port is specific to this app example
   container_name = "ecsdemo-nodejs"
@@ -94,6 +94,31 @@ module "ecs_service_definition" {
     registry_arn = aws_service_discovery_service.this.arn
   }
 
+  service_connect_configuration = {
+    enabled = "true"
+    namespace = data.aws_service_discovery_dns_namespace.this.id
+    #aws_service_discovery_private_dns_namespace.this.arn
+    #namespace = data.aws_service_discovery_http_namespace.this.id 
+    service = {
+      port_name = "nodejs",
+      discovery_name = "nodejs"
+      client_alias = [{
+        port = 3000
+        dns_name = "nodejs"
+      }]
+    }
+    log_configuration = {
+      log_driver = "awslogs"
+      options = {
+        "awslogs-create-group" : "true"
+        "awslogs-group" : "/ecs/ecsdemo-nodejs"
+        "awslogs-region" : var.aws_region
+        "awslogs-stream-prefix" : "ecs"
+      }
+    }
+  }
+  
+
   # Task Definition
   create_iam_role = false
   task_exec_iam_role_arn  = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
@@ -103,6 +128,15 @@ module "ecs_service_definition" {
     main_container = {
       name  = local.container_name
       image = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
+      port_mappings = [{
+        protocol : "tcp",
+        containerPort : 3000
+        #hostPort : var.container_port
+      }]
+      linux_parameters = {
+          initProcessEnabled = true
+      }            
     }
   }
 

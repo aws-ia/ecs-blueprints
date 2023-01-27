@@ -1,3 +1,9 @@
+variable "aws_region" {
+  description = "The region to deploy"
+  type        = string
+  default = "us-west-2"
+}
+
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
