@@ -168,7 +168,7 @@ resource "aws_sns_topic" "codestar_notification" {
 module "codebuild_ci" {
   source = "../../modules/codebuild"
 
-  name           = module.ecs_service_definition.name
+  name           = "codebuild-${module.ecs_service_definition.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
   buildspec_path = "./application-code/ecsdemo-nodejs/templates/buildspec.yml"
   s3_bucket      = module.codepipeline_s3_bucket
