@@ -18,29 +18,7 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
-  egress_rules        = ["all-all"]
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = 0
-      to_port     = 10000
-      protocol    = "tcp"
-      description = "User-service ports"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
-  tags = local.tags
-}
-
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
@@ -60,26 +38,39 @@ resource "aws_service_discovery_service" "sd_service" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = local.name
-  desired_count  = 1
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
+  name          = local.name
+  desired_count = 1
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_user_service = {
+      type                     = "ingress"
+      from_port                = 0
+      to_port                  = 10000
+      protocol                 = "tcp"
+      description              = "User-service ports"
+      source_security_group_id = "0.0.0.0/0"
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
-  deployment_controller = "ECS"
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
 
   # Task Definition
-  attach_task_role_policy = true
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  task_role_policy        = data.aws_iam_policy_document.task_role.json
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  create_iam_role         = false
+  task_exec_iam_role_arn  = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  tasks_iam_role_policies = { ADOT = aws_iam_policy.policy.arn }
   enable_execute_command  = true
 
   container_definitions = {
@@ -100,13 +91,23 @@ module "ecs_service_definition" {
       environment = [{ name = "PROMETHEUS_SAMPLE_APP", value = "prometheus-sample-app:8080" }]
     }
   }
+
+  tags = local.tags
 }
 
 ################################################################################
 # Task IAM Role Policy
 ################################################################################
 
-data "aws_iam_policy_document" "task_role" {
+resource "aws_iam_policy" "policy" {
+  name_prefix = "${local.name}-adot"
+  description = "ADOT IAM permissions"
+  policy      = data.aws_iam_policy_document.adot.json
+
+  tags = local.tags
+}
+
+data "aws_iam_policy_document" "adot" {
   statement {
     sid = "OTELPolicy"
     actions = [
@@ -148,13 +149,6 @@ resource "aws_ssm_parameter" "adot_config_ssm_parameter" {
 ################################################################################
 # Supporting Resources
 ################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra"]
-  }
-}
 
 data "aws_subnets" "private" {
   filter {

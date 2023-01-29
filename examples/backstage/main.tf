@@ -122,29 +122,7 @@ module "container_image_ecr" {
   tags = local.tags
 }
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      source_security_group_id = module.service_alb_security_group.security_group_id
-    },
-  ]
-
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
-
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
@@ -164,36 +142,51 @@ resource "aws_service_discovery_service" "sd_service" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = local.name
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_alb_service = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb_security_group.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  load_balancers = [{
+  load_balancer = [{
+    container_name   = local.container_name
+    container_port   = local.container_port
     target_group_arn = element(module.service_alb.target_group_arns, 0)
   }]
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
-
-  deployment_controller = "ECS"
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
 
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command  = true
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
 
   container_definitions = {
     main_container = {
-      name  = local.container_name
-      image = module.container_image_ecr.repository_url
+      name                     = local.container_name
+      image                    = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
       secrets = [
         { name = "GITHUB_TOKEN", valueFrom = data.aws_secretsmanager_secret.github_token.arn },
         { name = "BASE_URL", valueFrom = aws_ssm_parameter.base_url.name },
@@ -202,7 +195,7 @@ module "ecs_service_definition" {
         { name = "POSTGRES_USER", valueFrom = aws_ssm_parameter.postgres_user.name },
         { name = "POSTGRES_PASSWORD", valueFrom = data.aws_secretsmanager_secret.postgresdb_master_password.arn }
       ]
-      readonly_root_filesystem = false
+
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -210,6 +203,8 @@ module "ecs_service_definition" {
       }]
     }
   }
+
+  ignore_task_definition_changes = true
 
   tags = local.tags
 }

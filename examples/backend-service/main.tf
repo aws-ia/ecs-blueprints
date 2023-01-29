@@ -34,29 +34,6 @@ module "container_image_ecr" {
   tags = local.tags
 }
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
-  egress_rules        = ["all-all"]
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = local.container_port
-      to_port     = local.container_port
-      protocol    = "tcp"
-      description = "User-service ports"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
-
-  tags = local.tags
-}
-
 resource "aws_service_discovery_service" "this" {
   name = local.name
 
@@ -85,9 +62,23 @@ module "ecs_service_definition" {
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  network_configuration = {
-    security_groups = [module.service_task_security_group.security_group_id]
-    subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_all_service = {
+      type        = "ingress"
+      from_port   = local.container_port
+      to_port     = local.container_port
+      protocol    = "tcp"
+      description = "Service port"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   service_registries = {
@@ -273,13 +264,6 @@ data "aws_secretsmanager_secret" "github_token" {
 
 data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
-}
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra"]
-  }
 }
 
 data "aws_subnets" "private" {

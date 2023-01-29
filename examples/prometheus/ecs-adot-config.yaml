@@ -5,9 +5,9 @@ receivers:
         scrape_interval: 15s
         scrape_timeout: 10s
       scrape_configs:
-      - job_name: "test-prometheus-sample-app"
-        static_configs:
-        - targets: [ $PROMETHEUS_SAMPLE_APP ]
+        - job_name: 'test-prometheus-sample-app'
+          static_configs:
+            - targets: [$PROMETHEUS_SAMPLE_APP]
   awsecscontainermetrics:
     collection_interval: 20s
 
@@ -28,7 +28,7 @@ processors:
 
 exporters:
   prometheusremotewrite:
-    endpoint: "AMP_WORKSPACE_REMOTE_WRITE_ENDPOINT"
+    endpoint: 'AMP_WORKSPACE_REMOTE_WRITE_ENDPOINT'
     auth:
       authenticator: sigv4auth
   logging:
@@ -40,7 +40,7 @@ extensions:
   zpages:
     endpoint: :55679
   sigv4auth:
-    region: "AMP_WORKSPACE_REGION"
+    region: 'AMP_WORKSPACE_REGION'
 
 service:
   extensions: [pprof, zpages, health_check, sigv4auth]

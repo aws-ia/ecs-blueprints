@@ -91,29 +91,6 @@ module "service_alb" {
   tags = local.tags
 }
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      source_security_group_id = module.service_alb_security_group.security_group_id
-    },
-  ]
-
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
-
-
 resource "aws_service_discovery_service" "this" {
   name = local.name
 
@@ -136,15 +113,27 @@ resource "aws_service_discovery_service" "this" {
 module "ecs_service_definition" {
   source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  deployment_controller = "ECS"
-
   name          = local.name
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  network_configuration = {
-    security_groups = [module.service_task_security_group.security_group_id]
-    subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_alb_service = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb_security_group.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
 
   load_balancer = [{

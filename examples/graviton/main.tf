@@ -52,7 +52,7 @@ module "service_alb_security_group" {
   tags = local.tags
 }
 
-module "service_alb" {
+module "service_alb_amd64" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 7.0"
 
@@ -89,7 +89,7 @@ module "service_alb" {
   tags = local.tags
 }
 
-module "service_alb_arm" {
+module "service_alb_arm64" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 7.0"
 
@@ -126,29 +126,7 @@ module "service_alb_arm" {
   tags = local.tags
 }
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      source_security_group_id = module.service_alb_security_group.security_group_id
-    },
-  ]
-
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
-
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "amd64" {
   name = local.name
 
   dns_config {
@@ -167,8 +145,8 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
-resource "aws_service_discovery_service" "sd_service_arm" {
-  name = "${local.name}-arm"
+resource "aws_service_discovery_service" "arm64" {
+  name = "${local.name}-arm64"
 
   dns_config {
     namespace_id = data.aws_service_discovery_dns_namespace.this.id
@@ -187,37 +165,52 @@ resource "aws_service_discovery_service" "sd_service_arm" {
 }
 
 module "ecs_service_definition_amd64" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = local.name
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_alb_service = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb_security_group.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  load_balancers = [{
-    target_group_arn = element(module.service_alb.target_group_arns, 0)
+  load_balancer = [{
+    container_name   = local.container_name
+    container_port   = local.container_port
+    target_group_arn = element(module.service_alb_amd64.target_group_arns, 0)
   }]
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
-
-  deployment_controller = "ECS"
+  service_registries = {
+    registry_arn = aws_service_discovery_service.amd64.arn
+  }
 
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command  = true
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
 
   container_definitions = {
     main_container = {
       name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
+
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -230,38 +223,54 @@ module "ecs_service_definition_amd64" {
 }
 
 module "ecs_service_definition_arm64" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = "${local.name}-arm"
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_alb_service = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb_security_group.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  load_balancers = [{
-    target_group_arn = element(module.service_alb_arm.target_group_arns, 0)
+  load_balancer = [{
+    container_name   = local.container_name
+    container_port   = local.container_port
+    target_group_arn = element(module.service_alb_arm64.target_group_arns, 0)
   }]
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service_arm.arn
-  }]
-
-  deployment_controller = "ECS"
+  service_registries = {
+    registry_arn = aws_service_discovery_service.arm64.arn
+  }
 
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  task_cpu_architecture   = "ARM64"
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command  = true
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
 
   container_definitions = {
     main_container = {
       name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
+      runtime_platform = {
+        cpu_architecture = "ARM64"
+      }
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -427,7 +436,7 @@ module "codebuild_ci_manifest" {
 
   environment = {
     privileged_mode = true
-    image           = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+    image           = "aws/codebuild/amazonlinux2-amd64_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
