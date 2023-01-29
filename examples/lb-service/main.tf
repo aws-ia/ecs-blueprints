@@ -158,9 +158,9 @@ module "ecs_service_definition" {
   }
 
   # Task Definition
-  create_iam_role = false
-  task_exec_iam_role_arn  = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command  = true
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
 
   container_definitions = {
     main_container = {

@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
@@ -26,7 +27,6 @@ module "ecs" {
   # version = "~> 4.0"
 
   cluster_name = local.name
-
   cluster_configuration = {
     execute_command_configuration = {
       logging = "OVERRIDE"
@@ -37,15 +37,20 @@ module "ecs" {
   }
 
   cluster_service_connect_defaults = {
-      namespace = aws_service_discovery_private_dns_namespace.this.arn
+    namespace = aws_service_discovery_private_dns_namespace.this.arn
   }
-
-  default_capacity_provider_use_fargate = true
 
   fargate_capacity_providers = {
     FARGATE      = {}
     FARGATE_SPOT = {}
   }
+
+  # Shared task execution role
+  create_task_exec_iam_role = true
+  # Allow read access to all SSM params in current account for demo
+  task_exec_ssm_param_arns = ["arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*"]
+  # Allow read access to all secrets in current account for demo
+  task_exec_secret_arns = ["arn:aws:secretsmanager:${local.region}:${data.aws_caller_identity.current.account_id}:secret:*"]
 
   tags = local.tags
 }
@@ -97,59 +102,4 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
   vpc         = module.vpc.vpc_id
 
   tags = local.tags
-}
-
-################################################################################
-# Task Execution Role
-################################################################################
-
-resource "aws_iam_role" "execution" {
-  name_prefix        = "${local.name}-execution-"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
-  tags               = local.tags
-}
-
-data "aws_iam_policy_document" "execution" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_policy_attachment" "execution" {
-  for_each = toset([
-    "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  ])
-
-  name       = "${aws_iam_role.execution.name}-execution-policy"
-  roles      = [aws_iam_role.execution.name]
-  policy_arn = each.value
-}
-
-resource "aws_iam_policy" "secrets_manager_read_policy" {
-  name   = "${aws_iam_role.execution.name}-sm-read-policy"
-  policy = <<-EOF
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Action": [
-          "secretsmanager:GetSecretValue"
-        ],
-        "Effect": "Allow",
-        "Resource": "*"
-      }
-    ]
-  }
-  EOF
-}
-
-resource "aws_iam_policy_attachment" "secret_manager_read" {
-  name       = "${aws_iam_role.execution.name}-execution-policy"
-  roles      = [aws_iam_role.execution.name]
-  policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
 }
