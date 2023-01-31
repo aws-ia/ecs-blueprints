@@ -14,7 +14,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
 
   tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
@@ -99,6 +99,7 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
+# Sysdig Orchestrator Agent ECS Service Definition
 module "sysdig_orchestrator_agent" {
 
   source = "sysdiglabs/fargate-orchestrator-agent/aws"
@@ -151,8 +152,7 @@ module "ecs_service_definition" {
       name                     = var.container_name
       readonly_root_filesystem = false
       entrypoint               = ["/opt/draios/bin/instrument"]
-      command                  = ["/usr/bin/demo-writer-c", "/usr/bin/oh-no-i-wrote-in-bin"]
-
+      command                  = var.container_command
       linux_parameters = {
         capabilities = {
           add = ["SYS_PTRACE"]
@@ -205,8 +205,8 @@ data "aws_iam_policy_document" "task_role" {
   statement {
     sid = "SysdigPolicy"
     actions = [
-      "ec2:DescribeVolumes",
-      "ec2:DescribeTags"
+      "ecs:DescribeVolumes",
+      "ecs:DescribeTags"
     ]
     resources = ["*"]
   }

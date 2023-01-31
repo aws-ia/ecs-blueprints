@@ -43,11 +43,6 @@ variable "ecs_task_execution_role_name" {
   default     = ""
 }
 
-variable "repository_owner" {
-  description = "The name of the owner of the Github repository"
-  type        = string
-}
-
 ################################################################################
 # Servie definition parameters
 ################################################################################
@@ -92,6 +87,12 @@ variable "container_name" {
 variable "container_image" {
   description = "Namespace/name of the main container"
   type        = string
+}
+
+variable "container_command" {
+  description = "Container command (optional)"
+  type        = list(any)
+  default     = []
 }
 
 ################################################################################
@@ -139,7 +140,7 @@ variable "container_port" {
 # The required parameters are container_name, container_image, port_mappings
 # [
 #  {
-#    "container_name":"monitoring-agent",
+#    "container_name":"workload-agent",
 #    "container_image": "img-repo-url"},
 #    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
 #  }
