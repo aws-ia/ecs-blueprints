@@ -17,7 +17,21 @@ desired_count   = 3
 cpu             = 256
 memory          = 512
 container_name  = "ecsdemo-nodejs"
+container_image = "sysdiglabs/writer-to-bin"    // Sample "backend" workload that we want to secure
 
 #Don't change the container port as it is specific to this app example
 
 container_port = 3000
+
+#Sysdig Access Token
+sysdig_access_key     = "provide-agent-token-here"          # Sysdig UI > Settings > Agent Installation > Your Access Key
+sysdig_collector_url  = "ingest-us2.app.sysdig.com"         # https://docs.sysdig.com/en/docs/administration/saas-regions-and-ip-ranges
+sysdig_collector_port = "6443"
+sysdig_secure_api_token = "provide-apikey-here"             # Sysdig UI > Settings > User Profile > Sysdig Secure API Token"
+
+#Sysdig workload agent configured as a sidecar
+sidecar_container_definition = {
+  image      = "quay.io/sysdig/workload-agent:latest"
+  name       = "SysdigInstrumentation"
+  entrypoint = ["/opt/draios/bin/logwriter"]
+}

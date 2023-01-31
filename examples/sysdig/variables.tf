@@ -43,40 +43,9 @@ variable "ecs_task_execution_role_name" {
   default     = ""
 }
 
-# Application variables
-variable "buildspec_path" {
-  description = "The location of the buildspec file"
-  type        = string
-  default     = "./application-code/ecsdemo-nodejs/templates/buildspec.yml"
-}
-
-variable "folder_path" {
-  description = "The location of the application code and Dockerfile files"
-  type        = string
-  default     = "./application-code/ecsdemo-nodejs/."
-}
-
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
-}
-
-variable "repository_name" {
-  description = "The name of the Github repository"
-  type        = string
-  default     = "ecs-blueprints"
-}
-
-variable "repository_branch" {
-  description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
-  type        = string
-  default     = "main"
-}
-
-variable "github_token_secret_name" {
-  description = "The name of branch the Github repository, which is going to trigger a new CodePipeline excecution"
-  type        = string
-  default     = "ecs-github-token"
 }
 
 ################################################################################
@@ -120,13 +89,22 @@ variable "container_name" {
   type        = string
 }
 
+variable "container_image" {
+  description = "Namespace/name of the main container"
+  type        = string
+}
 
 ################################################################################
 # Sysdig specific parameters
 ################################################################################
 
 variable "sysdig_access_key" {
-  description = "Sysdig Access Token"
+  description = "Sysdig Agent Token"
+  type        = string
+}
+
+variable "sysdig_secure_api_token" {
+  description = "Sysdig API Token"
   type        = string
 }
 
@@ -154,6 +132,24 @@ variable "container_port" {
   description = "The container port to serve traffic"
   type        = number
   default     = 3000
+}
+
+# Provide a list of map objects
+# Each map object has container definition parameters
+# The required parameters are container_name, container_image, port_mappings
+# [
+#  {
+#    "container_name":"monitoring-agent",
+#    "container_image": "img-repo-url"},
+#    "port_mappings" : [{ containerPort = 9090, hostPort =9090, protocol = tcp}]
+#  }
+# ]
+# see modules/ecs-container-definition for full set of parameters
+# map_environment and map_secrets are common to add in container definition
+variable "sidecar_container_definition" {
+  description = "List of container definitions to add to the task"
+  type        = any
+  default     = {}
 }
 
 ################################################################################
