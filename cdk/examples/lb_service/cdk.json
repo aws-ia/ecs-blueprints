@@ -1,5 +1,5 @@
 {
-  "app": "python3 app.py",
+  "app": "PYTHONPATH=../ python3 app.py",
   "watch": {
     "include": [
       "**"
@@ -15,27 +15,6 @@
     ]
   },
   "context": {
-    "aws_region": "us-west-2",
-    "vpc_id": "<VPC-ID>",
-    "core_stack_name": "ecs-blueprint-infra",
-    "ecs_cluster_name": "ecs-blueprint-infra",
-    "ecs_task_execution_role_arn": "<TASK-EXECUTION-ROLE-ARN>",
-    "buildspec_path": "./application-code/ecsdemo-frontend/templates/buildspec.yml",
-    "folder_path": "./application-code/ecsdemo-frontend/.",
-    "repository_owner": "<REPO-OWNER>",
-    "repository_name": "ecs-blueprints",
-    "repository_branch": "main",
-    "backend_svc_endpoint": "http://ecsdemo-nodejs.default.ecs-blueprint-infra.local:3000",
-    "github_token_secret_name": "ecs-github-token",
-    "service_name": "ecsdemo-frontend",
-    "namespace_name": "default.ecs-blueprint-infra.local",
-    "namespace_id": "<NAMESPACE-ID>",
-    "namespace_arn": "<NAMESPACE-ARN>",
-    "desired_count": 3,
-    "task_cpu": "256",
-    "task_memory": "512",
-    "container_name": "ecsdemo-frontend",
-    "container_port": 3000,
     "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": true,
     "@aws-cdk/core:stackRelativeExports": true,
     "@aws-cdk/aws-rds:lowercaseDbIdentifier": true,
