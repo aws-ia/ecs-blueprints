@@ -50,4 +50,6 @@ lb_service_stack = LoadBalancedServiceStack(
     ),
 )
 
+lb_service_stack.validate_stack_props()
+
 app.synth()

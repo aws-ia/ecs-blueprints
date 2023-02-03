@@ -143,3 +143,12 @@ class LoadBalancedServiceStack(Stack):
             )
 
         return self._ecs_task_execution_role
+
+    def validate_stack_props(self):
+        if (
+            self.stack_props.repository_owner == "<REPO_OWNER>"
+            or self.stack_props.vpc_id == "<VPC_ID>"
+        ):
+            raise ValueError(
+                "Environment values needs to be set for repository_owner, account_number, aws_region"
+            )
