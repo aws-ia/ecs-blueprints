@@ -147,7 +147,8 @@ class LoadBalancedServiceStack(Stack):
     def validate_stack_props(self):
         if (
             self.stack_props.repository_owner == "<REPO_OWNER>"
-            or self.stack_props.vpc_id == "<VPC_ID>"
+            or self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            or self.stack_props.aws_region == "<REGION>"
         ):
             raise ValueError(
                 "Environment values needs to be set for repository_owner, account_number, aws_region"

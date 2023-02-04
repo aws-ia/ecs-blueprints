@@ -15,4 +15,7 @@ core_stack = CoreInfraStack(
         region=core_props.aws_region,
     ),
 )
+
+core_stack.validate_stack_props()
+
 app.synth()

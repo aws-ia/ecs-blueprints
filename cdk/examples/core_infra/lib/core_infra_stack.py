@@ -91,3 +91,12 @@ class CoreInfraStack(Stack):
     @property
     def private_dns_namespaces(self):
         return self._core_construct.private_dns_namespaces
+
+    def validate_stack_props(self):
+        if (
+            self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            or self.stack_props.aws_region == "<REGION>"
+        ):
+            raise ValueError(
+                "Environment values need to be set for account_number, aws_region"
+            )
