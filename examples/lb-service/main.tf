@@ -37,34 +37,33 @@ module "container_image_ecr" {
   tags = local.tags
 }
 
-module "service_alb_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-alb-sg"
-  description = "Security group for client application"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_rules       = ["http-80-tcp"]
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-
-  egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
-
-  tags = local.tags
-}
-
 module "service_alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "~> 7.0"
+  version = "~> 8.3"
 
   name = "${local.name}-alb"
 
   load_balancer_type = "application"
 
-  vpc_id          = data.aws_vpc.vpc.id
-  subnets         = data.aws_subnets.public.ids
-  security_groups = [module.service_alb_security_group.security_group_id]
+  vpc_id  = data.aws_vpc.vpc.id
+  subnets = data.aws_subnets.public.ids
+  security_group_rules = {
+    ingress_all_http = {
+      type        = "ingress"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "http"
+      description = "HTTP web traffic"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+    }
+  }
 
   http_tcp_listeners = [
     {
@@ -125,7 +124,7 @@ module "ecs_service_definition" {
       to_port                  = local.container_port
       protocol                 = "tcp"
       description              = "Service port"
-      source_security_group_id = module.service_alb_security_group.security_group_id
+      source_security_group_id = module.service_alb.security_group_id
     }
     egress_all = {
       type        = "egress"
