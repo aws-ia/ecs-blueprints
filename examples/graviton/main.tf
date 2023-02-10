@@ -50,7 +50,7 @@ module "service_alb_amd64" {
       type        = "ingress"
       from_port   = 80
       to_port     = 80
-      protocol    = "http"
+      protocol    = "tcp"
       description = "HTTP web traffic"
       cidr_blocks = ["0.0.0.0/0"]
     }
@@ -103,7 +103,7 @@ module "service_alb_arm64" {
       type        = "ingress"
       from_port   = 80
       to_port     = 80
-      protocol    = "http"
+      protocol    = "tcp"
       description = "HTTP web traffic"
       cidr_blocks = ["0.0.0.0/0"]
     }
