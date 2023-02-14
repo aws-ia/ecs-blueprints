@@ -7,14 +7,14 @@ locals {
       "Name" : "es",
       "Host" : var.opensearch_domain,
       "Port" : "443",
-      "Index" : "application-",
+      "Index" : "${var.name}-",
       "Type" : "_doc",
       "Aws_Auth" : "On",
       "Aws_Region" : data.aws_region.current.name,
       "tls" : "On",
       "retry_limit" : "2",
       "Logstash_Format" : true,
-      "Logstash_Prefix" : "application"
+      "Logstash_Prefix" : var.name
     }
   }
   default_log_config = {
