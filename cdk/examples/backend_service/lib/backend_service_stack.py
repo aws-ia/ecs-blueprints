@@ -1,6 +1,6 @@
 from aws_cdk import PhysicalName, Stack
 from aws_cdk.aws_ec2 import Vpc, Peer, Port
-from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver, TaskDefinition, Compatibility, FargateService, PortMapping 
+from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver, TaskDefinition, Compatibility, FargateService, PortMapping
 from aws_cdk.aws_iam import Role, PolicyStatement
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
@@ -31,7 +31,7 @@ class BackendServiceStack(Stack):
             retention=RetentionDays.ONE_WEEK,
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
-        
+
         fargate_task_def = TaskDefinition(
             self,
             self.stack_props.container_name,
@@ -60,7 +60,7 @@ class BackendServiceStack(Stack):
                 log_group=log_group,
             ),
         )
-        
+
         container.add_port_mappings(
             PortMapping(
                 container_port=self.stack_props.container_port
@@ -79,12 +79,12 @@ class BackendServiceStack(Stack):
                 name="ecsdemo-backend",
             ),
         )
-        
+
         self.fargate_service.connections.allow_from(
             Peer.ipv4(self.vpc.vpc_cidr_block),
             Port.all_tcp(),
         )
-        
+
         self.fargate_service.connections.allow_from_any_ipv4(Port.tcp(3000))
 
         self.fargate_service.connections.allow_to_any_ipv4(Port.all_tcp())
@@ -92,7 +92,7 @@ class BackendServiceStack(Stack):
         autoscale = self.fargate_service.auto_scale_task_count(
             min_capacity=3, max_capacity=10
         )
-        
+
         autoscale.scale_on_cpu_utilization(
             "CpuScaling", target_utilization_percent=50
         )
@@ -113,7 +113,7 @@ class BackendServiceStack(Stack):
         )
 
         CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
-        
+
     @property
     def vpc(self):
         if not self._vpc:

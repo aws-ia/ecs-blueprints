@@ -39,7 +39,7 @@ if deploy_core:
         if ns.namespace_name == backend_stack_props.namespace_name
     ][0]
     backend_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
-    
+
 backend_service_stack = BackendServiceStack(
     app,
     "BackendService",
