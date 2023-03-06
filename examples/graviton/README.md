@@ -5,10 +5,6 @@ AWS Graviton processors are custom built by Amazon Web Services using 64-bit Arm
 This solution blueprint focuses on how to build multi-architecture images, store them in ECR, and most importantly launch tasks on both Fargate x86 and ARM without juggling architecture specific container images.
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-* Set the input variables in terraform.tfvars
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 
@@ -16,7 +12,7 @@ cp terraform.tfvars.example terraform.tfvars
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
   * Again, once this is created, you will not have to complete these steps for the other examples.  
-* Now you can deploy this blueprint
+* Now you can deploy this blueprint. When prompted for `repository_owner` provide the github username where you have forked this repository.
 ```shell
 terraform init
 terraform plan

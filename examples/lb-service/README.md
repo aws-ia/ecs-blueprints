@@ -11,7 +11,7 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
   * Again, once this is created, you will not have to complete these steps for the other examples.  
-* Now you can deploy this blueprint
+* Now you can deploy this blueprint. When prompted for `repository_owner` provide the github username where you have forked this repository.
 ```shell
 terraform init
 terraform plan

@@ -1,0 +1,51 @@
+ssm_parameters = [
+  {
+    "name" = "/backend-cfgmap/nodejs_url",
+    "value" = "http://ecsdemo-nodejs.default.svc.cluster.local/"
+  }
+]
+ssm_secrets = []
+listener_port = 80
+listener_protocol = "HTTP"
+lb_container_port = 3000
+containers = {
+  "k8s-to-ECS" = {
+    "name" = "k8s-to-ECS",
+    "image" = "public.ecr.aws/aws-containers/ecsdemo-frontend:latest",
+    "port_mappings" = [
+      {
+        "containerPort" = 3000,
+        "protocol" = "TCP"
+      }
+    ],
+    "environment" = [
+      {
+        "name" = "CRYSTAL_URL",
+        "value" = "http://ecsdemo-crystal.default.svc.cluster.local/crystal"
+      }
+    ],
+    "secrets" = [
+      {
+        "name" = "NODEJS_URL",
+        "valueFrom" = "/backend-cfgmap/nodejs_url"
+      }
+    ]
+  }
+}
+lb_container_name = "k8s-to-ECS"
+deployment_name = "k8s-to-ECS"
+deployment_tags = {
+  "cost-center" = 1098,
+  "app" = "k8s-to-ECS"
+}
+desired_count = 3
+task_tags = {
+  "app" = "k8s-to-ECS"
+}
+deployment_minimum_healthy_percent = 75
+deployment_maximum_percent = 125
+service_name = "k8s-to-ECS"
+label_selector = {
+  "app" = "k8s-to-ECS"
+}
+service_type = "LoadBalancer"

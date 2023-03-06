@@ -30,17 +30,15 @@ cd examples/core-infra/
 ```shell
 terraform init
 ```
-* Copy the `terraform.tfvars.example` to `terraform.tfvars` and change as needed especially note the region.
-```shell
-cp terraform.tfvars.example terraform.tfvars
-```
+* In `main.tf` file `locals` section at the top has variables such as cluster `name`, `region`, `dns_namespaces`. You can change them as needed.
+
 * Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 ```shell
 terraform plan
 terraform apply --auto-approve
 ```
 ## Outputs
-After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies. You can use this infrastructure to run other example blueprints, all you need is the `cluster_name`.
+After the execution of the Terraform code you will get an output with needed IDs and values needed as input for the nexts Terraform applies. You can use this infrastructure to run other example blueprints.
 
 ## Cleanup
 Run the following command if you want to delete all the resources created before. If you have created other blueprints and they use these infrastructure then destroy those blueprint resources first.

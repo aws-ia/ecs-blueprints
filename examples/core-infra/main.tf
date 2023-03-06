@@ -7,7 +7,7 @@ data "aws_availability_zones" "available" {}
 locals {
   name   = basename(path.cwd)
   region = "us-west-2"
-
+  dns_namespaces = ["default"]
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
@@ -97,7 +97,7 @@ resource "aws_cloudwatch_log_group" "this" {
 ################################################################################
 
 resource "aws_service_discovery_private_dns_namespace" "this" {
-  for_each = toset(["default", "myapp"])
+  for_each = toset(local.dns_namespaces)
 
   name        = "${each.key}.${module.ecs.cluster_name}.local"
   description = "Service discovery namespace.clustername.local"

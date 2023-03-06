@@ -28,7 +28,3 @@ output "task_role_arn" {
   value       = aws_iam_role.task.arn
 }
 
-output "container_name" {
-  description = "The name of the container"
-  value       = var.container_definitions.main_container.image # passthrough
-}
