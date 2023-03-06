@@ -90,7 +90,6 @@
 | Name | Description |
 |------|-------------|
 | <a name="output_arn"></a> [arn](#output\_arn) | The ECS Service ARN |
-| <a name="output_container_name"></a> [container\_name](#output\_container\_name) | The name of the container |
 | <a name="output_id"></a> [id](#output\_id) | The ECS Service ID |
 | <a name="output_name"></a> [name](#output\_name) | The ECS Service Name |
 | <a name="output_task_definition_arn"></a> [task\_definition\_arn](#output\_task\_definition\_arn) | The ARN of the task definition |

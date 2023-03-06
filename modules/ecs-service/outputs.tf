@@ -27,4 +27,3 @@ output "task_role_arn" {
   description = "The ARN of the task role"
   value       = aws_iam_role.task.arn
 }
-

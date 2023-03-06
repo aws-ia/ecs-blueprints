@@ -1,7 +1,7 @@
 variable "region" {
   description = "The aws region for the service"
-  type = string 
-  default = "us-west-2"
+  type        = string
+  default     = "us-west-2"
 }
 
 variable "ecs_cluster_name" {
@@ -60,14 +60,14 @@ variable "desired_count" {
 
 variable "listener_port" {
   description = "Listener port for the load balancer"
-  type = number
-  default = 80
+  type        = number
+  default     = 80
 }
 
 variable "listener_protocol" {
   description = "Listener protocol"
-  type = string
-  default = "HTTP"
+  type        = string
+  default     = "HTTP"
 }
 
 variable "deployment_minimum_healthy_percent" {
@@ -136,14 +136,13 @@ variable "containers" {
 # {"name"="", value=""}
 variable "ssm_parameters" {
   description = "To create SSM String Parameters used in container env variables"
-  type = list
-  default = []
+  type        = list(any)
+  default     = []
 }
 
-# values are expected to be base64encoded 
+# values are expected to be base64encoded
 variable "ssm_secrets" {
   description = "To create SSM SecureString Parameters used in container env variables"
-  type = list
-  default = []
+  type        = list(any)
+  default     = []
 }
-

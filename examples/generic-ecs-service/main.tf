@@ -1,14 +1,11 @@
 provider "aws" {
-  region = "us-west-2"
+  region = var.region
 }
 
-data "aws_caller_identity" "current" {}
-
 locals {
-  name   = var.service_name
-  region = var.region
-  k8s_objs = {"k8s_service":var.service_name, "k8s_deployment":var.deployment_name, "k8s_service_type":var.service_type}
-  tags = merge(var.label_selector, var.deployment_tags, var.task_tags, local.k8s_objs)
+  name     = var.service_name
+  k8s_objs = { "k8s_service" : var.service_name, "k8s_deployment" : var.deployment_name, "k8s_service_type" : var.service_type }
+  tags     = merge(var.label_selector, var.deployment_tags, var.task_tags, local.k8s_objs)
 }
 
 ################################################################################
@@ -16,8 +13,8 @@ locals {
 ################################################################################
 
 module "service_alb_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  source      = "terraform-aws-modules/security-group/aws"
+  version     = "~> 4.0"
   name        = "${local.name}-alb-sg"
   description = "Security group for client application"
   vpc_id      = data.aws_vpc.vpc.id
@@ -34,7 +31,7 @@ module "service_alb_security_group" {
 module "service_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 7.0"
-  name = "${local.name}-alb"
+  name    = "${local.name}-alb"
 
   load_balancer_type = "application"
 
@@ -113,7 +110,7 @@ module "ecs_service_definition" {
   source = "../../modules/ecs-service"
 
   name           = local.name
-  desired_count  = 3
+  desired_count  = var.desired_count
   ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
 
   security_groups = [module.service_task_security_group.security_group_id]
@@ -127,17 +124,21 @@ module "ecs_service_definition" {
     registry_arn = aws_service_discovery_service.sd_service.arn
   }]
 
-  deployment_controller = "ECS"
+  deployment_controller              = "ECS"
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
 
   # Task Definition
+  cpu                     = var.cpu
+  memory                  = var.memory
   attach_task_role_policy = false
   lb_container_port       = var.lb_container_port
   lb_container_name       = var.lb_container_name
   execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command  = true
 
-  container_definitions = var.containers
-  container_definition_defaults = {"readonly_root_filesystem":false}
+  container_definitions         = var.containers
+  container_definition_defaults = { "readonly_root_filesystem" : false }
 
   tags = local.tags
 }

@@ -1,11 +1,11 @@
 # ECS load-balanced service
 
-This solution blueprint creates a generic ECS service with load balancer. The blueprint also creates SSM Parameter Store for both plain text configurations and sensitive secrets. This blueprint **does not** provide CI/CD and **does not** connect to any application repository. You need to provide the image repository URLs in container definitions. 
+This solution blueprint creates a generic ECS service with load balancer. The blueprint also creates SSM Parameter Store for both plain text configurations and sensitive secrets. This blueprint **does not** provide CI/CD and **does not** connect to any application repository. You need to provide the image repository URLs in container definitions.
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well. The `core-infra` example creates `default.core-infra.local` DNS namespace in CloudMap. You can create more by editing the `dns_namespaces` list in [main.tf](../core-infra/main.tf). 
+* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well. The `core-infra` example creates `default.core-infra.local` DNS namespace in CloudMap. You can create more by editing the `dns_namespaces` list in [main.tf](../core-infra/main.tf).
 
 * In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
- 
+
 * Now you can deploy this blueprint
 ```shell
 terraform init
@@ -33,7 +33,7 @@ The solution has following key components:
     * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
 ## Cleanup
-Run the following command if you want to delete all the resources created before. 
+Run the following command if you want to delete all the resources created before.
 ```shell
 terraform destroy
 ```
