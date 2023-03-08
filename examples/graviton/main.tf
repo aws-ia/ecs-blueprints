@@ -240,7 +240,7 @@ module "ecs_service_definition_amd64" {
 module "ecs_service_definition_arm64" {
   source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name          = local.name
+  name          = "${local.name}-arm64"
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
@@ -278,14 +278,15 @@ module "ecs_service_definition_arm64" {
   task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command = true
 
+  runtime_platform = {
+    cpu_architecture = "ARM64"
+  }
+
   container_definitions = {
     main_container = {
       name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
-      runtime_platform = {
-        cpu_architecture = "ARM64"
-      }
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -451,7 +452,7 @@ module "codebuild_ci_manifest" {
 
   environment = {
     privileged_mode = true
-    image           = "aws/codebuild/amazonlinux2-amd64_64-standard:4.0"
+    image           = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
