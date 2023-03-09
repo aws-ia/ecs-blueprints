@@ -81,8 +81,16 @@ module "ecs_service_definition" {
     }
   }
 
-  service_registries = {
-    registry_arn = aws_service_discovery_service.this.arn
+  service_connect_configuration = {
+    enabled = true
+    service = {
+      client_alias = [{ 
+			  port = local.container_port
+			  dns_name = local.container_name
+		  }], 
+      port_name = "${local.container_name}-${local.container_port}"
+      discovery_name = local.container_name
+    }
   }
 
   # Task Definition
@@ -94,10 +102,17 @@ module "ecs_service_definition" {
     main_container = {
       name  = local.container_name
       image = module.container_image_ecr.repository_url
+
+      port_mappings = [{
+        name : "${local.container_name}-${local.container_port}"
+        protocol : "tcp",
+        containerPort : local.container_port
+        hostPort : local.container_port
+      }]
     }
   }
 
-  ignore_task_definition_changes = true
+  ignore_task_definition_changes = false
 
   tags = local.tags
 }

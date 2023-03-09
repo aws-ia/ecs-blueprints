@@ -11,7 +11,7 @@ locals {
   container_port = 3000 # Container port is specific to this app example
   container_name = "ecsdemo-frontend"
 
-  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local:3000"
+  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local"
 
   tags = {
     Blueprint  = local.name
@@ -143,6 +143,10 @@ module "ecs_service_definition" {
 
   service_registries = {
     registry_arn = aws_service_discovery_service.this.arn
+  }
+
+  service_connect_configuration = {
+    enabled = true
   }
 
   # Task Definition
