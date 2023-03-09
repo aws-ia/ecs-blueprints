@@ -30,10 +30,6 @@ cd examples/core-infra/
 ```shell
 terraform init
 ```
-* Copy the `terraform.tfvars.example` to `terraform.tfvars` and change as needed especially note the region.
-```shell
-cp terraform.tfvars.example terraform.tfvars
-```
 * Review the terraform plan output, take a look at the changes that terraform will execute, and then apply them:
 ```shell
 terraform plan
