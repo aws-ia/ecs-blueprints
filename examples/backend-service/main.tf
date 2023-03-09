@@ -84,11 +84,11 @@ module "ecs_service_definition" {
   service_connect_configuration = {
     enabled = true
     service = {
-      client_alias = [{ 
-			  port = local.container_port
-			  dns_name = local.container_name
-		  }], 
-      port_name = "${local.container_name}-${local.container_port}"
+      client_alias = [{
+        port     = local.container_port
+        dns_name = local.container_name
+      }],
+      port_name      = "${local.container_name}-${local.container_port}"
       discovery_name = local.container_name
     }
   }
