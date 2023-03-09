@@ -110,7 +110,7 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source = "github.com/nvpnathan/terraform-aws-ecs//modules/service"
 
   name          = local.name
   desired_count = 3
@@ -365,7 +365,7 @@ data "aws_ecs_cluster" "core_infra" {
 }
 
 data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-execution-*"
+  name_regex = "core-infra-*"
 }
 
 data "aws_service_discovery_dns_namespace" "this" {
