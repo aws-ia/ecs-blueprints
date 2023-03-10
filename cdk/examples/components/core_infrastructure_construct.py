@@ -20,9 +20,9 @@ class CoreInfrastructureProps(StackProps):
         core_stack_name="a_core_stack",
         aws_region="us-east-1",
         account_number=None,
-        namespaces="ns1,ns2",
+        namespaces="ns1",
         vpc_cidr="10.0.0.0/16",
-        enable_nat_gw="False",
+        enable_nat_gw="True",
         az_count="3",
     ) -> None:
         self.account_number = account_number
