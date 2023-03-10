@@ -11,7 +11,7 @@ locals {
   container_port = 3000 # Container port is specific to this app example
   container_name = "ecsdemo-frontend"
 
-  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local"
+  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local:3000"
 
   tags = {
     Blueprint  = local.name
@@ -146,7 +146,7 @@ module "ecs_service_definition" {
   }
 
   service_connect_configuration = {
-    enabled = true
+    enabled = false
   }
 
   # Task Definition
@@ -248,6 +248,9 @@ module "codebuild_ci" {
         }, {
         name  = "FOLDER_PATH"
         value = "./application-code/ecsdemo-frontend/."
+        }, {
+        name  = "BACKEND_SVC_ENDPOINT"
+        value = "http://ecsdemo-backend.default.core-infra.local:3000"
       },
     ]
   }
