@@ -32,7 +32,7 @@ class CICDConstructProps(StackProps):
         backend_svc_endpoint=None,
         buildspec_path=None,
         container_name=None,
-        container_port="3000",
+        container_port=None,
         ecr_repository_name=None,
         ecs_task_execution_role=None,
         fargate_service=None,
@@ -109,30 +109,35 @@ class CodeStarCICDConstruct(Construct):
         self.ecr_repository.grant_pull_push(self.codebuild_role)
 
     def _create_codebuild_project(self):
+        
+        build_environment_variables = {
+            "REPO_URL": BuildEnvironmentVariable(
+                value=self.ecr_repository.repository_uri
+            ),
+            "CONTAINER_NAME": BuildEnvironmentVariable(
+                value=self.cicd_props.container_name
+            ),
+            "SERVICE_PORT": BuildEnvironmentVariable(
+                value=self.cicd_props.container_port
+            ),
+            "FOLDER_PATH": BuildEnvironmentVariable(
+                value=self.cicd_props.folder_path
+            ),
+            "ECS_EXEC_ROLE_ARN": BuildEnvironmentVariable(
+                value=self.codebuild_role.role_arn
+            ),
+        }
+        
+        if self.cicd_props.backend_svc_endpoint:
+            build_environment_variables["BACKEND_SVC_ENDPOINT"] =  BuildEnvironmentVariable(
+                value=self.cicd_props.backend_svc_endpoint
+            )
+
         environment = BuildEnvironment(
             build_image=LinuxBuildImage.STANDARD_5_0,
             compute_type=ComputeType.SMALL,
             privileged=True,
-            environment_variables={
-                "REPO_URL": BuildEnvironmentVariable(
-                    value=self.ecr_repository.repository_uri
-                ),
-                "CONTAINER_NAME": BuildEnvironmentVariable(
-                    value=self.cicd_props.container_name
-                ),
-                "SERVICE_PORT": BuildEnvironmentVariable(
-                    value=self.cicd_props.container_port
-                ),
-                "FOLDER_PATH": BuildEnvironmentVariable(
-                    value=self.cicd_props.folder_path
-                ),
-                "ECS_EXEC_ROLE_ARN": BuildEnvironmentVariable(
-                    value=self.codebuild_role.role_arn
-                ),
-                "BACKEND_SVC_ENDPOINT": BuildEnvironmentVariable(
-                    value=self.cicd_props.backend_svc_endpoint
-                ),
-            },
+            environment_variables=build_environment_variables
         )
 
         self.git_hub_repo = Source.git_hub(
@@ -159,6 +164,8 @@ class CodeStarCICDConstruct(Construct):
             "ArtifactsBucket",
             encryption=BucketEncryption.S3_MANAGED,
             block_public_access=BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True
         )
 
         deny_unencrypted_object_uploads = PolicyStatement(
