@@ -2,8 +2,6 @@ provider "aws" {
   region = local.region
 }
 
-data "aws_caller_identity" "current" {}
-
 locals {
   name   = "ecsdemo-backend"
   region = "us-west-2"
@@ -13,7 +11,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
 }
 
@@ -107,18 +105,6 @@ module "ecs_service_definition" {
 ################################################################################
 # Supporting Resources
 ################################################################################
-
-resource "random_id" "this" {
-  byte_length = "2"
-}
-
-data "aws_secretsmanager_secret" "github_token" {
-  name = var.github_token_secret_name
-}
-
-data "aws_secretsmanager_secret_version" "github_token" {
-  secret_id = data.aws_secretsmanager_secret.github_token.id
-}
 
 data "aws_subnets" "private" {
   filter {

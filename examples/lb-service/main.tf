@@ -1,11 +1,9 @@
 provider "aws" {
-  region = "us-west-2"
+  region = local.region
 }
 
-data "aws_caller_identity" "current" {}
-
 locals {
-  name   = "nodejs-frontend"
+  name   = "ecsdemo-frontend"
   region = "us-west-2"
 
   container_port = 3000 # Container port is specific to this app example
@@ -13,7 +11,7 @@ locals {
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/${var.repository_owner}/ecs-blueprints"
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
 }
 
@@ -160,14 +158,6 @@ module "ecs_service_definition" {
 ################################################################################
 # Supporting Resources
 ################################################################################
-
-data "aws_secretsmanager_secret" "github_token" {
-  name = var.github_token_secret_name
-}
-
-data "aws_secretsmanager_secret_version" "github_token" {
-  secret_id = data.aws_secretsmanager_secret.github_token.id
-}
 
 data "aws_vpc" "vpc" {
   filter {
