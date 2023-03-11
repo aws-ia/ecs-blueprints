@@ -6,9 +6,6 @@ This solution blueprint focuses on how to build multi-architecture images, store
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * Set the input variables in terraform.tfvars
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 
@@ -22,6 +19,11 @@ terraform init
 terraform plan
 terraform apply -auto-approve
 ```
+
+<p align="center">
+  <img src="../../docs/graviton-service.png"/>
+</p>
+
 ## Solution Details
 The solution has following key components:
 * AWS CodePipeline: The CodePipeline for building and storing the multi-architecture images has 2 AWS CodeBuild build projects (as shown in picture below):

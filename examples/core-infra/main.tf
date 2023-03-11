@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
@@ -22,35 +23,26 @@ locals {
 ################################################################################
 
 module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 4.0"
+  source = "github.com/clowdhaus/terraform-aws-ecs"
+  # version = "~> 4.0"
 
   cluster_name = local.name
 
-  cluster_configuration = {
-    execute_command_configuration = {
-      logging = "OVERRIDE"
-      log_configuration = {
-        cloud_watch_log_group_name = aws_cloudwatch_log_group.this.name
-      }
-    }
+  cluster_service_connect_defaults = {
+    namespace = aws_service_discovery_private_dns_namespace.this.arn
   }
 
-  # Capacity provider
   fargate_capacity_providers = {
-    FARGATE = {
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
-      }
-    }
-    FARGATE_SPOT = {
-      default_capacity_provider_strategy = {
-        weight = 0
-        base   = 0
-      }
-    }
+    FARGATE      = {}
+    FARGATE_SPOT = {}
   }
+
+  # Shared task execution role
+  create_task_exec_iam_role = true
+  # Allow read access to all SSM params in current account for demo
+  task_exec_ssm_param_arns = ["arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*"]
+  # Allow read access to all secrets in current account for demo
+  task_exec_secret_arns = ["arn:aws:secretsmanager:${local.region}:${data.aws_caller_identity.current.account_id}:secret:*"]
 
   tags = local.tags
 }
@@ -85,76 +77,14 @@ module "vpc" {
   tags = local.tags
 }
 
-resource "aws_cloudwatch_log_group" "this" {
-  name              = "/aws/ecs/${local.name}"
-  retention_in_days = 90
-
-  tags = local.tags
-}
-
 ################################################################################
 # Service discovery namespaces
 ################################################################################
 
 resource "aws_service_discovery_private_dns_namespace" "this" {
-  for_each = toset(["default", "myapp"])
-
-  name        = "${each.key}.${module.ecs.cluster_name}.local"
+  name        = "default.${local.name}.local"
   description = "Service discovery namespace.clustername.local"
   vpc         = module.vpc.vpc_id
-}
 
-################################################################################
-# Task Execution Role
-################################################################################
-
-resource "aws_iam_role" "execution" {
-  name_prefix        = "${local.name}-execution-"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
-  tags               = local.tags
-}
-
-data "aws_iam_policy_document" "execution" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_policy_attachment" "execution" {
-  for_each = toset([
-    "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  ])
-
-  name       = "${local.name}-execution"
-  roles      = [aws_iam_role.execution.name]
-  policy_arn = each.value
-}
-
-resource "aws_iam_policy" "secrets_manager_read_policy" {
-  name   = "ECSTaskExecutionReadSecretsManager"
-  policy = <<-EOF
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Action": [
-          "secretsmanager:GetSecretValue"
-        ],
-        "Effect": "Allow",
-        "Resource": "*"
-      }
-    ]
-  }
-  EOF
-}
-
-resource "aws_iam_policy_attachment" "secret_manager_read" {
-  name       = "${local.name}-execution-policy"
-  roles      = [aws_iam_role.execution.name]
-  policy_arn = aws_iam_policy.secrets_manager_read_policy.arn
+  tags = local.tags
 }
