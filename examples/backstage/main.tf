@@ -177,9 +177,13 @@ module "ecs_service_definition" {
   }
 
   # Task Definition
+  enable_execute_command = true
   create_iam_role        = false
   task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command = true
+  task_exec_secret_arns  = [data.aws_secretsmanager_secret.github_token.arn, data.aws_secretsmanager_secret.postgresdb_master_password.arn]
+  task_exec_ssm_param_arns = [aws_ssm_parameter.base_url.arn, aws_ssm_parameter.postgres_host.arn,
+  aws_ssm_parameter.postgres_port.arn, aws_ssm_parameter.postgres_user.arn]
+
 
   container_definitions = {
     main_container = {
