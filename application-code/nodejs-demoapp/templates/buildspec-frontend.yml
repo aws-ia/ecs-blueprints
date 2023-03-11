@@ -29,8 +29,8 @@ phases:
       - sed -i "s|<REPO_URL>|$REPO_URL:$IMAGE_TAG|g" artifacts/imagedefinition.json
       - cat artifacts/imagedefinition.json
 
- artifacts:
-   files:
-     - '**/*'
-   base-directory: 'artifacts'
-   discard-paths: yes
+  artifacts:
+    files:
+      - '**/*'
+    base-directory: 'artifacts'
+    discard-paths: yes
