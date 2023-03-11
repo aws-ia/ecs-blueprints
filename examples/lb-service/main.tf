@@ -6,9 +6,9 @@ locals {
   name   = "ecsdemo-frontend"
   region = "us-west-2"
 
-  container_image= "public.ecr.aws/aws-containers/ecsdemo-frontend"
-  container_port = 3000 # Container port is specific to this app example
-  container_name = "ecsdemo-frontend"
+  container_image = "public.ecr.aws/aws-containers/ecsdemo-frontend"
+  container_port  = 3000 # Container port is specific to this app example
+  container_name  = "ecsdemo-frontend"
 
   tags = {
     Blueprint  = local.name
@@ -95,9 +95,9 @@ resource "aws_service_discovery_service" "this" {
 module "ecs_service_definition" {
   source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name          = local.name
-  desired_count = 3
-  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  name               = local.name
+  desired_count      = 3
+  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
@@ -141,7 +141,7 @@ module "ecs_service_definition" {
   container_definitions = {
     main_container = {
       name                     = local.container_name
-      image                    = local.container_image 
+      image                    = local.container_image
       readonly_root_filesystem = false
 
       port_mappings = [{
@@ -150,7 +150,7 @@ module "ecs_service_definition" {
         hostPort : local.container_port
       }],
       "environment" = [{
-        "name" = "NODEJS_URL",
+        "name"  = "NODEJS_URL",
         "value" = "http://ecsdemo-backend.default.core-infra.local:3000"
       }]
     }

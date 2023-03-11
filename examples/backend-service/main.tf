@@ -7,8 +7,8 @@ locals {
   region = "us-west-2"
 
   container_image = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
-  container_port = 3000 # Container port is specific to this app example
-  container_name = "ecsdemo-nodejs"
+  container_port  = 3000 # Container port is specific to this app example
+  container_name  = "ecsdemo-nodejs"
 
   tags = {
     Blueprint  = local.name
@@ -44,9 +44,9 @@ module "ecs_service_definition" {
 
   deployment_controller = "ECS"
 
-  name          = local.name
-  desired_count = 3
-  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  name               = local.name
+  desired_count      = 3
+  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
