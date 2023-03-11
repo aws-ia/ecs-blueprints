@@ -6,6 +6,7 @@ locals {
   name   = "ecsdemo-frontend"
   region = "us-west-2"
 
+  container_image= "public.ecr.aws/aws-containers/ecsdemo-frontend"
   container_port = 3000 # Container port is specific to this app example
   container_name = "ecsdemo-frontend"
 
@@ -97,6 +98,7 @@ module "ecs_service_definition" {
   name          = local.name
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
@@ -127,9 +129,9 @@ module "ecs_service_definition" {
     registry_arn = aws_service_discovery_service.this.arn
   }
 
-  service_connect_configuration = {
-    enabled = false
-  }
+  # service_connect_configuration = {
+  #   enabled = false
+  # }
 
   # Task Definition
   create_iam_role        = false
@@ -139,13 +141,17 @@ module "ecs_service_definition" {
   container_definitions = {
     main_container = {
       name                     = local.container_name
-      image                    = "public.ecr.aws/aws-containers/ecsdemo-frontend"
+      image                    = local.container_image 
       readonly_root_filesystem = false
 
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
         hostPort : local.container_port
+      }],
+      "environment" = [{
+        "name" = "NODEJS_URL",
+        "value" = "http://ecsdemo-backend.default.core-infra.local:3000"
       }]
     }
   }

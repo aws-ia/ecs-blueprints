@@ -6,6 +6,7 @@ locals {
   name   = "ecsdemo-backend"
   region = "us-west-2"
 
+  container_image = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
   container_port = 3000 # Container port is specific to this app example
   container_name = "ecsdemo-nodejs"
 
@@ -46,6 +47,7 @@ module "ecs_service_definition" {
   name          = local.name
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
@@ -65,18 +67,21 @@ module "ecs_service_definition" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
-
-  service_connect_configuration = {
-    enabled = false
-    service = {
-      client_alias = [{
-        port     = local.container_port
-        dns_name = local.container_name
-      }],
-      port_name      = "${local.container_name}-${local.container_port}"
-      discovery_name = local.container_name
-    }
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
   }
+
+  # service_connect_configuration = {
+  #   enabled = false
+  #   service = {
+  #     client_alias = [{
+  #       port     = local.container_port
+  #       dns_name = local.container_name
+  #     }],
+  #     port_name      = "${local.container_name}-${local.container_port}"
+  #     discovery_name = local.container_name
+  #   }
+  # }
 
   # Task Definition
   create_iam_role        = false
@@ -86,7 +91,7 @@ module "ecs_service_definition" {
   container_definitions = {
     main_container = {
       name  = local.container_name
-      image = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
+      image = local.container_image
 
       port_mappings = [{
         name : "${local.container_name}-${local.container_port}"
