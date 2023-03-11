@@ -47,12 +47,12 @@ module "ecs_service_definition" {
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
     ingress_user_service = {
-      type                     = "ingress"
-      from_port                = 0
-      to_port                  = 10000
-      protocol                 = "tcp"
-      description              = "User-service ports"
-      source_security_group_id = "0.0.0.0/0"
+      type        = "ingress"
+      from_port   = 0
+      to_port     = 10000
+      protocol    = "tcp"
+      description = "User-service ports"
+      cidr_blocks = ["0.0.0.0/0"]
     }
     egress_all = {
       type        = "egress"
@@ -73,10 +73,14 @@ module "ecs_service_definition" {
   tasks_iam_role_policies = { ADOT = aws_iam_policy.policy.arn }
   enable_execute_command  = true
 
+  cpu    = 512
+  memory = 1024
+
   container_definitions = {
     main_container = {
       name                     = local.container_name
       image                    = "public.ecr.aws/aws-otel-test/prometheus-sample-app:latest"
+      cpu                      = 256
       readonly_root_filesystem = false
       port_mappings = [{
         protocol : "tcp",
@@ -87,6 +91,7 @@ module "ecs_service_definition" {
     sidecar_container = {
       name        = "aws-otel-collector",
       image       = "public.ecr.aws/aws-observability/aws-otel-collector:v0.21.1",
+      cpu         = 256
       secrets     = [{ name = "AOT_CONFIG_CONTENT", valueFrom = "otel-collector-config" }],
       environment = [{ name = "PROMETHEUS_SAMPLE_APP", value = "prometheus-sample-app:8080" }]
     }
