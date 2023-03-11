@@ -28,7 +28,7 @@ processors:
 
 exporters:
   prometheusremotewrite:
-    endpoint: https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-24828b37-0903-47b9-8e17-b1f3322a009b/api/v1/remote_write
+    endpoint: <AMP_REMOTE_WRITE_ENDPOINT>
     auth:
       authenticator: sigv4auth
   logging:
@@ -40,7 +40,7 @@ extensions:
   zpages:
     endpoint: :55679
   sigv4auth:
-    region: us-west-2
+    region: <REGION>
 
 service:
   extensions: [pprof, zpages, health_check, sigv4auth]
