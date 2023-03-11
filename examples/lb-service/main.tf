@@ -5,13 +5,11 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  name   = "ecsdemo-frontend"
+  name   = "nodejs-frontend"
   region = "us-west-2"
 
   container_port = 3000 # Container port is specific to this app example
-  container_name = "ecsdemo-frontend"
-
-  backend_svc_endpoint = "http://ecsdemo-backend.default.core-infra.local:3000"
+  container_name = "nodejs-frontend"
 
   tags = {
     Blueprint  = local.name
@@ -159,7 +157,6 @@ module "ecs_service_definition" {
       name                     = local.container_name
       image                    = module.container_image_ecr.repository_url
       readonly_root_filesystem = false
-      environment              = [{ name = "NODEJS_URL", value = local.backend_svc_endpoint }]
 
       port_mappings = [{
         protocol : "tcp",
@@ -233,11 +230,12 @@ module "codebuild_ci" {
 
   name           = "codebuild-${module.ecs_service_definition.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
-  buildspec_path = "./application-code/ecsdemo-frontend/templates/buildspec.yml"
+  buildspec_path = "./application-code/nodejs-demoapp/templates/buildspec-frontend.yml"
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
     privileged_mode = true
+    image           = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
     environment_variables = [
       {
         name  = "REPO_URL"
@@ -247,11 +245,8 @@ module "codebuild_ci" {
         value = local.container_name
         }, {
         name  = "FOLDER_PATH"
-        value = "./application-code/ecsdemo-frontend/."
-        }, {
-        name  = "BACKEND_SVC_ENDPOINT"
-        value = "http://ecsdemo-backend.default.core-infra.local:3000"
-      },
+        value = "./application-code/nodejs-demoapp/."
+      }
     ]
   }
 

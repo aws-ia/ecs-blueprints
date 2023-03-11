@@ -278,17 +278,8 @@ module "codebuild_ci" {
         name  = "REPO_URL"
         value = module.container_image_ecr.repository_url
         }, {
-        name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
-        }, {
         name  = "CONTAINER_NAME"
         value = local.container_name
-        }, {
-        name  = "SERVICE_PORT"
-        value = local.container_port
-        }, {
-        name  = "ECS_EXEC_ROLE_ARN"
-        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
         }, {
         name  = "BASE_URL"
         value = "http://${module.service_alb.lb_dns_name}"
@@ -445,7 +436,7 @@ data "aws_ecs_cluster" "core_infra" {
 }
 
 data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-execution-*"
+  name_regex = "core-infra-*"
 }
 
 data "aws_service_discovery_dns_namespace" "this" {
