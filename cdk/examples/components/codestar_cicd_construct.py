@@ -58,7 +58,11 @@ class CICDConstructProps(StackProps):
 
 class CodeStarCICDConstruct(Construct):
     def __init__(
-        self, scope: Construct, id: str, cicd_props: CICDConstructProps, **kwargs
+        self,
+        scope: Construct,
+        id: str,
+        cicd_props: CICDConstructProps,
+        **kwargs,
     ) -> None:
         super().__init__(scope, id, **kwargs)
 
