@@ -3,7 +3,6 @@
 This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-* In this folder, copy the `terraform.tfvars.example` file to `terraform.tfvars` and update the variables.
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 

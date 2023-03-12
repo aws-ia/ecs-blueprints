@@ -7,9 +7,9 @@ on:
 
 env:
   TERRAFORM_DOCS_VERSION: v0.16.0
-  TFSEC_VERSION: v1.22.0
+  TFSEC_VERSION: v1.28.1
   TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
-  TFLINT_VERSION: v0.44.1
+  TFLINT_VERSION: v0.45.0
 
 jobs:
   collectInputs:
@@ -50,7 +50,7 @@ jobs:
               - '${{ matrix.directory }}/*.tf'
 
       - name: Config Terraform plugin cache
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         run: mkdir --parents ${{ env.TERRAFORM_DOCS_VERSION }}
 
       - name: Cache Terraform
@@ -63,7 +63,7 @@ jobs:
 
       - name: Terraform min/max versions
         uses: clowdhaus/terraform-min-max@v1.2.5
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         id: minMax
         with:
           directory: ${{ matrix.directory }}
@@ -71,7 +71,7 @@ jobs:
       - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
         uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
         # Run only validate pre-commit check on min version supported
-        if: ${{ matrix.directory !=  '.' && steps.changes.outputs.src== 'true' }}
+        if: ${{ matrix.directory !=  '.' && steps.changes.outputs.src == 'true' }}
         with:
           terraform-version: ${{ steps.minMax.outputs.minVersion }}
           tflint-version: ${{ env.TFLINT_VERSION }}
@@ -80,7 +80,7 @@ jobs:
       - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
         uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
         # Run only validate pre-commit check on min version supported
-        if: ${{ matrix.directory ==  '.' && steps.changes.outputs.src== 'true' }}
+        if: ${{ matrix.directory ==  '.' && steps.changes.outputs.src == 'true' }}
         with:
           terraform-version: ${{ steps.minMax.outputs.minVersion }}
           tflint-version: ${{ env.TFLINT_VERSION }}
@@ -105,29 +105,29 @@ jobs:
               - '**/*.tf'
 
       - name: Config Terraform plugin cache
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         run: mkdir --parents ${{ env.TERRAFORM_DOCS_VERSION }}
 
       - name: Cache Terraform
         uses: actions/cache@v3
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         with:
           path: ${{ env.TF_PLUGIN_CACHE_DIR }}
           key: ${{ runner.os }}-terraform-${{ hashFiles('**/.terraform.lock.hcl') }}
           restore-keys: ${{ runner.os }}-terraform-
 
       - name: Install tfsec
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         run: curl -sSLo ./tfsec https://github.com/aquasecurity/tfsec/releases/download/${{ env.TFSEC_VERSION }}/tfsec-$(uname)-amd64 && chmod +x tfsec && sudo mv tfsec /usr/bin/
 
       - name: Terraform min/max versions
         id: minMax
         uses: clowdhaus/terraform-min-max@v1.2.5
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
 
       - name: Pre-commit Terraform ${{ steps.minMax.outputs.maxVersion }}
         uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
-        if: steps.changes.outputs.src== 'true'
+        if: steps.changes.outputs.src == 'true'
         with:
           terraform-version: ${{ steps.minMax.outputs.maxVersion }}
           terraform-docs-version: ${{ env.TERRAFORM_DOCS_VERSION }}

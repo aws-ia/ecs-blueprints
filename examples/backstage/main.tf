@@ -54,34 +54,33 @@ module "aurora_postgresdb" {
 # ECS Blueprint
 ################################################################################
 
-module "service_alb_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-alb-sg"
-  description = "Security group for backstage frontend"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_rules       = ["http-80-tcp"]
-  ingress_cidr_blocks = ["0.0.0.0/0"]
-
-  egress_rules       = ["all-all"]
-  egress_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
-
-  tags = local.tags
-}
-
 module "service_alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "~> 7.0"
+  version = "~> 8.3"
 
   name = "${local.name}-alb"
 
   load_balancer_type = "application"
 
-  vpc_id          = data.aws_vpc.vpc.id
-  subnets         = data.aws_subnets.public.ids
-  security_groups = [module.service_alb_security_group.security_group_id]
+  vpc_id  = data.aws_vpc.vpc.id
+  subnets = data.aws_subnets.public.ids
+  security_group_rules = {
+    ingress_all_http = {
+      type        = "ingress"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      description = "HTTP web traffic"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+    }
+  }
 
   http_tcp_listeners = [
     {
@@ -122,29 +121,7 @@ module "container_image_ecr" {
   tags = local.tags
 }
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
-
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  ingress_with_source_security_group_id = [
-    {
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      source_security_group_id = module.service_alb_security_group.security_group_id
-    },
-  ]
-
-  egress_rules = ["all-all"]
-
-  tags = local.tags
-}
-
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
@@ -164,36 +141,55 @@ resource "aws_service_discovery_service" "sd_service" {
 }
 
 module "ecs_service_definition" {
-  source = "../../modules/ecs-service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  name           = local.name
-  desired_count  = 3
-  ecs_cluster_id = data.aws_ecs_cluster.core_infra.cluster_name
+  name          = local.name
+  desired_count = 3
+  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
 
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_alb_service = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  load_balancers = [{
+  load_balancer = [{
+    container_name   = local.container_name
+    container_port   = local.container_port
     target_group_arn = element(module.service_alb.target_group_arns, 0)
   }]
 
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
-
-  deployment_controller = "ECS"
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
 
   # Task Definition
-  attach_task_role_policy = false
-  lb_container_port       = local.container_port
-  lb_container_name       = local.container_name
-  execution_role_arn      = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command  = true
+  enable_execute_command = true
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  task_exec_secret_arns  = [data.aws_secretsmanager_secret.github_token.arn, data.aws_secretsmanager_secret.postgresdb_master_password.arn]
+  task_exec_ssm_param_arns = [aws_ssm_parameter.base_url.arn, aws_ssm_parameter.postgres_host.arn,
+  aws_ssm_parameter.postgres_port.arn, aws_ssm_parameter.postgres_user.arn]
+
 
   container_definitions = {
     main_container = {
-      name  = local.container_name
-      image = module.container_image_ecr.repository_url
+      name                     = local.container_name
+      image                    = module.container_image_ecr.repository_url
+      readonly_root_filesystem = false
       secrets = [
         { name = "GITHUB_TOKEN", valueFrom = data.aws_secretsmanager_secret.github_token.arn },
         { name = "BASE_URL", valueFrom = aws_ssm_parameter.base_url.name },
@@ -202,7 +198,7 @@ module "ecs_service_definition" {
         { name = "POSTGRES_USER", valueFrom = aws_ssm_parameter.postgres_user.name },
         { name = "POSTGRES_PASSWORD", valueFrom = data.aws_secretsmanager_secret.postgresdb_master_password.arn }
       ]
-      readonly_root_filesystem = false
+
       port_mappings = [{
         protocol : "tcp",
         containerPort : local.container_port
@@ -210,6 +206,8 @@ module "ecs_service_definition" {
       }]
     }
   }
+
+  ignore_task_definition_changes = true
 
   tags = local.tags
 }
@@ -284,17 +282,8 @@ module "codebuild_ci" {
         name  = "REPO_URL"
         value = module.container_image_ecr.repository_url
         }, {
-        name  = "TASK_DEFINITION_FAMILY"
-        value = module.ecs_service_definition.task_definition_family
-        }, {
         name  = "CONTAINER_NAME"
         value = local.container_name
-        }, {
-        name  = "SERVICE_PORT"
-        value = local.container_port
-        }, {
-        name  = "ECS_EXEC_ROLE_ARN"
-        value = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
         }, {
         name  = "BASE_URL"
         value = "http://${module.service_alb.lb_dns_name}"
@@ -451,7 +440,7 @@ data "aws_ecs_cluster" "core_infra" {
 }
 
 data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-execution-*"
+  name_regex = "core-infra-*"
 }
 
 data "aws_service_discovery_dns_namespace" "this" {

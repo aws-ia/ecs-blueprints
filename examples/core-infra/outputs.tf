@@ -30,12 +30,12 @@ output "ecs_cluster_id" {
 
 output "ecs_task_execution_role_name" {
   description = "The ARN of the task execution role"
-  value       = aws_iam_role.execution.name
+  value       = module.ecs.task_exec_iam_role_name
 }
 
 output "ecs_task_execution_role_arn" {
   description = "The ARN of the task execution role"
-  value       = aws_iam_role.execution.arn
+  value       = module.ecs.task_exec_iam_role_arn
 }
 
 output "service_discovery_namespaces" {
