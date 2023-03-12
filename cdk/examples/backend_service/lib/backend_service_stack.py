@@ -98,7 +98,7 @@ class BackendServiceStack(Stack):
         )
 
         cicd_props = CICDConstructProps(
-            backend_svc_endpoint="",
+            backend_svc_endpoint=None,
             buildspec_path=self.stack_props.buildspec_path,
             container_name=self.stack_props.container_name,
             container_port=self.stack_props.container_port,

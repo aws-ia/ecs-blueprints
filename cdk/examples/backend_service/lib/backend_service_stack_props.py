@@ -12,7 +12,6 @@ class BackendServiceStackProps(StackProps):
         buildspec_path=None,
         container_name=None,
         container_port="3000",
-        core_stack_name=None,
         desired_count="2",
         deploy_core_stack=True,
         ecr_repository_name=None,
@@ -21,7 +20,7 @@ class BackendServiceStackProps(StackProps):
         enable_nat_gw=None,
         folder_path=None,
         github_token_secret_name=None,
-        namespaces="a,b",
+        namespaces="a",
         namespace_name=None,
         namespace_arn=None,
         namespace_id=None,
@@ -39,7 +38,6 @@ class BackendServiceStackProps(StackProps):
         self.buildspec_path = buildspec_path
         self.container_name = container_name
         self.container_port = int(container_port)
-        self.core_stack_name = core_stack_name
         self.desired_count = int(desired_count)
         self.ecr_repository_name = ecr_repository_name
         self.ecs_cluster_name = ecs_cluster_name

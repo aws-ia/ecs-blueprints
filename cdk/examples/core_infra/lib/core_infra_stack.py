@@ -16,6 +16,7 @@ class CoreInfraStack(Stack):
     ):
         super().__init__(scope, id, **kwargs)
 
+        self.stack_props = core_infra_props
         self._core_construct = CoreInfrastructureConstruct(
             self, "CoreInfrastructureConstruct", core_infra_props=core_infra_props
         )

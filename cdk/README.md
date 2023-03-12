@@ -60,7 +60,7 @@ git clone https://github.com/<your-repo>/ecs-blueprints.git
 - Start with `core_infra` to create cluster, VPC, and require IAM
 
 ```bash
-cd ecs-blueprints/cdk/examples/core_infra/
+cd examples/core_infra/
 ```
 
 - Next you can try other example blueprints.
@@ -82,11 +82,12 @@ For architectural details, step-by-step instructions, and customization options,
 
 ## Cleanup
 
-Prior to deleting the a stack with provisioned ECR repository, run the following command to delete existing images
+In case of cleaning up `backend_service` and `lb_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing `cdk destroy` command, executing `aws ecr delete-repository` is needed.
+
 
 ```bash
-aws ecr batch-delete-image \
-    --repository-name ecsdemo-frontend \
-    --image-ids "$(aws ecr list-images --repository-name ecsdemo-frontend --query 'imageIds[*]' --output json
-)" || true
+# backend_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-backend --force
+# lb_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-frontend --force
 ```

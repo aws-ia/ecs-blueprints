@@ -17,16 +17,16 @@ from constructs import Construct
 class CoreInfrastructureProps(StackProps):
     def __init__(
         self,
-        core_stack_name="a_core_stack",
+        ecs_cluster_name="a_core_stack",
         aws_region="us-east-1",
         account_number=None,
-        namespaces="ns1,ns2",
+        namespaces="ns1",
         vpc_cidr="10.0.0.0/16",
-        enable_nat_gw="False",
+        enable_nat_gw="True",
         az_count="3",
     ) -> None:
         self.account_number = account_number
-        self.core_stack_name = core_stack_name
+        self.ecs_cluster_name = ecs_cluster_name
         self.aws_region = aws_region
         self.vpc_cidr = vpc_cidr
         self.namespaces = namespaces.split(",")
@@ -67,7 +67,7 @@ class CoreInfrastructureConstruct(Construct):
         log_group = LogGroup(
             self,
             "CloudWatchLogGroup",
-            log_group_name=f"/aws/ecs/{core_infra_props.core_stack_name}",
+            log_group_name=f"/aws/ecs/{core_infra_props.ecs_cluster_name}",
             retention=RetentionDays.ONE_WEEK,
             removal_policy=RemovalPolicy.DESTROY,
         )
@@ -82,7 +82,7 @@ class CoreInfrastructureConstruct(Construct):
         self.ecs_cluster = Cluster(
             self,
             "EcsCluster",
-            cluster_name=core_infra_props.core_stack_name,
+            cluster_name=core_infra_props.ecs_cluster_name,
             vpc=self.vpc,
             container_insights=True,
             execute_command_configuration=execute_command_configuration,
@@ -93,7 +93,7 @@ class CoreInfrastructureConstruct(Construct):
                 self,
                 f"{namespace}-namespace",
                 vpc=self.vpc,
-                name=f"{namespace}.{core_infra_props.core_stack_name}.local",
+                name=f"{namespace}.{core_infra_props.ecs_cluster_name}.local",
             )
             for namespace in core_infra_props.namespaces
         ]
