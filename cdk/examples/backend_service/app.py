@@ -15,12 +15,14 @@ deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 
 backend_stack_props = BackendServiceStackProps(**env_config)
 
+
 if deploy_core:
     core_config = {
         i
         for i in list(env_config.items())
         if i[0] in CoreInfrastructureProps().__dict__.keys()
     }
+
     core_props = CoreInfrastructureProps(**dict(core_config))
     core_stack = CoreInfraStack(
         app,
@@ -38,7 +40,7 @@ if deploy_core:
         for ns in core_stack.private_dns_namespaces
         if ns.namespace_name == backend_stack_props.namespace_name
     ][0]
-    backend_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
+    backend_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn    
 
 backend_service_stack = BackendServiceStack(
     app,
