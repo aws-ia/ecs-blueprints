@@ -113,7 +113,7 @@ class BackendServiceStack(Stack):
         )
 
         CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
-        
+
     @property
     def vpc(self):
         if not self._vpc:

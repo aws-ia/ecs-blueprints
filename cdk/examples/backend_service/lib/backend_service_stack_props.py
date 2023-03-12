@@ -58,7 +58,7 @@ class BackendServiceStackProps(StackProps):
 
         self._vpc = None
         self._sd_namespace = None
-                                   
+
     @property
     def vpc(self):
         return self._vpc
