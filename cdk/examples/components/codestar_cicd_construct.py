@@ -113,7 +113,7 @@ class CodeStarCICDConstruct(Construct):
         self.ecr_repository.grant_pull_push(self.codebuild_role)
 
     def _create_codebuild_project(self):
-        
+
         build_environment_variables = {
             "REPO_URL": BuildEnvironmentVariable(
                 value=self.ecr_repository.repository_uri
@@ -131,7 +131,7 @@ class CodeStarCICDConstruct(Construct):
                 value=self.codebuild_role.role_arn
             ),
         }
-        
+
         if self.cicd_props.backend_svc_endpoint:
             build_environment_variables["BACKEND_SVC_ENDPOINT"] =  BuildEnvironmentVariable(
                 value=self.cicd_props.backend_svc_endpoint

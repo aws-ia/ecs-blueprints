@@ -1,14 +1,38 @@
 # ECS frontend service with Application Load Balancer(ALB)
 
-This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
+This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this servic
 
-* Deploy the [core_infra](../core_infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-* Modify the variables inside `cdk.json` so that CDK can import your VPC, ECS Cluster, your task execution role and other variables like backend service. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use example `application-code`, then fork [this repository](https://github.com/aws-ia/ecs-blueprints).
+* Copy `sample.env` to `.env` and change the `account_number`, `aws_region`, `repository_owner` values in the Essential Props of the `.env` file:
+```bash
+# Essential Props
+repository_owner="<REPO_OWNER>"
+account_number="<ACCOUNT_NUMBER>"
+aws_region="<REGION>"
+```
+
+* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only frontend service, but also core infra. In this case, you can set the values of **core stack props**.
+```bash
+deploy_core_stack="True"
+
+# Core Stack Props
+vpc_cidr="10.0.0.0/16"
+ecs_cluster_name="ecs-blueprint-infra"
+namespaces="default"
+enable_nat_gw="True"
+az_count="3"
+```
+
+* But if you have already deployed the [core_infra](../core_infra/README.md) or have your own core infra, then you can reuse it as well. Set `deploy_core_stack` value to `False`. And modify the variables inside `.env` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use `application-code`'s example.
+
+* Run CDK ls command to figure out lists of the stacks in the app. The list of CDK stack may differ depending on the `deploy_core_stack` value.
+```bash
+cdk ls
+```
+
 * Deploy the CDK templates in this repository using `cdk deploy`.
 
 ```bash
-# frontend-service is CDK stack name
-cdk deploy frontend-service
+cdk deploy --all --require-approval never --outputs-file output.json
 ```
 
 <p align="center">
@@ -31,7 +55,7 @@ The solution has following key components:
   * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
   * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
-The second half of `app.py` focuses on creating CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
+The second half of this example focuses on creating CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
 
 * **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret (not as key-value pair secret). This token is used to access the *application-code* repository and build images.**
 
@@ -54,12 +78,10 @@ The second half of `app.py` focuses on creating CI/CD pipeline using AWS CodePip
 Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.
 
 ## Cleanup
-
-Prior to deleting the a stack with provisioned ECR repository, run the following command to delete existing images
-
+When you clean up `frontend_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing cdk destroy command, executing aws ecr delete-repository is needed.
 ```bash
-aws ecr batch-delete-image \
-    --repository-name ecsdemo-frontend \
-    --image-ids "$(aws ecr list-images --repository-name ecsdemo-frontend --query 'imageIds[*]' --output json
-)" || true
+# frontend_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-frontend --force
+
+cdk destroy
 ```

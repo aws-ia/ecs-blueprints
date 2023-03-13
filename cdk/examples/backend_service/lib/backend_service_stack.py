@@ -4,8 +4,9 @@ from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver,
 from aws_cdk.aws_iam import Role, PolicyStatement
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
-from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
-from lib.backend_service_stack_props import BackendServiceStackProps
+# from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
+from backend_service.lib.backend_service_stack_props import BackendServiceStackProps
+
 
 class BackendServiceStack(Stack):
     def __init__(
@@ -97,22 +98,22 @@ class BackendServiceStack(Stack):
             "CpuScaling", target_utilization_percent=50
         )
 
-        cicd_props = CICDConstructProps(
-            backend_svc_endpoint=None,
-            buildspec_path=self.stack_props.buildspec_path,
-            container_name=self.stack_props.container_name,
-            container_port=self.stack_props.container_port,
-            ecr_repository_name=self.stack_props.ecr_repository_name,
-            ecs_task_execution_role=self.ecs_task_execution_role,
-            fargate_service=self.fargate_service,
-            folder_path=self.stack_props.folder_path,
-            github_token_secret_name=self.stack_props.github_token_secret_name,
-            repository_owner=self.stack_props.repository_owner,
-            repository_name=self.stack_props.repository_name,
-            repository_branch=self.stack_props.repository_branch,
-        )
+        # cicd_props = CICDConstructProps(
+        #     backend_svc_endpoint=None,
+        #     buildspec_path=self.stack_props.buildspec_path,
+        #     container_name=self.stack_props.container_name,
+        #     container_port=self.stack_props.container_port,
+        #     ecr_repository_name=self.stack_props.ecr_repository_name,
+        #     ecs_task_execution_role=self.ecs_task_execution_role,
+        #     fargate_service=self.fargate_service,
+        #     folder_path=self.stack_props.folder_path,
+        #     github_token_secret_name=self.stack_props.github_token_secret_name,
+        #     repository_owner=self.stack_props.repository_owner,
+        #     repository_name=self.stack_props.repository_name,
+        #     repository_branch=self.stack_props.repository_branch,
+        # )
 
-        CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
+        # CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
 
     @property
     def vpc(self):
