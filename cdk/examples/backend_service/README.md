@@ -9,13 +9,22 @@ repository_owner="<REPO_OWNER>"
 account_number="<ACCOUNT_NUMBER>"
 aws_region="<REGION>"
 ```
-* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *backend service*, but also *core infra*. In this case, 
+
+* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *backend service*, but also *core infra*. In this case, you can set the values of **core stack props**.
 ```bash
 deploy_core_stack="True"
-```
-* But if you have already deployed the [core_infra](../core_infra/README.md) or have your own core infra, then you can reuse it as well. Set `deploy_core_stack` value to `False`. And modify the variables inside `.env` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use example `application-code`, then fork [this repository](https://github.com/aws-ia/ecs-blueprints).
 
-* Run CDK ls command to figure out lists of the stacks in the app
+# Core Stack Props
+vpc_cidr="10.0.0.0/16"
+ecs_cluster_name="ecs-blueprint-infra"
+namespaces="default"
+enable_nat_gw="True"
+az_count="3"
+```
+
+* But if you have already deployed the [core_infra](../core_infra/README.md) or have your own core infra, then you can reuse it as well. Set `deploy_core_stack` value to `False`. And modify the variables inside `.env` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use `application-code`'s example.
+
+* Run CDK ls command to figure out lists of the stacks in the app. The list of CDK stack may differ depending on the `deploy_core_stack` value.
 ```bash
 cdk ls
 ```

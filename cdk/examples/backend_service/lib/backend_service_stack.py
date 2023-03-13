@@ -5,7 +5,8 @@ from aws_cdk.aws_iam import Role, PolicyStatement
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
-from lib.backend_service_stack_props import BackendServiceStackProps
+from backend_service.lib.backend_service_stack_props import BackendServiceStackProps
+
 
 class BackendServiceStack(Stack):
     def __init__(

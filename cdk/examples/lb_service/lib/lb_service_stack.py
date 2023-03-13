@@ -9,7 +9,7 @@ from aws_cdk.aws_iam import Role
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
-from lib.lb_service_stack_props import LoadBalancedServiceStackProps
+from lb_service.lib.lb_service_stack_props import LoadBalancedServiceStackProps
 
 
 class LoadBalancedServiceStack(Stack):
