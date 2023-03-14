@@ -4,7 +4,6 @@ from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver,
 from aws_cdk.aws_iam import Role, PolicyStatement
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
-# from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
 from backend_service.lib.backend_service_stack_props import BackendServiceStackProps
 
 
@@ -51,7 +50,7 @@ class BackendServiceStack(Stack):
         container = fargate_task_def.add_container(
             "task-container",
             image=ContainerImage.from_registry(
-                "public.ecr.aws/aws-containers/ecsdemo-nodejs"
+                self.stack_props.container_image
             ),
             container_name=self.stack_props.container_name,
             cpu=int(self.stack_props.task_cpu),
@@ -77,7 +76,7 @@ class BackendServiceStack(Stack):
             desired_count=self.stack_props.desired_count,
             cloud_map_options=CloudMapOptions(
                 cloud_map_namespace=self.sd_namespace,
-                name="ecsdemo-backend",
+                name=self.stack_props.service_name,
             ),
         )
 
@@ -86,9 +85,7 @@ class BackendServiceStack(Stack):
             Port.all_tcp(),
         )
 
-        self.fargate_service.connections.allow_from_any_ipv4(Port.tcp(3000))
-
-        self.fargate_service.connections.allow_to_any_ipv4(Port.all_tcp())
+        self.fargate_service.connections.allow_from_any_ipv4(Port.tcp(self.stack_props.container_port))
 
         autoscale = self.fargate_service.auto_scale_task_count(
             min_capacity=3, max_capacity=10
@@ -98,28 +95,11 @@ class BackendServiceStack(Stack):
             "CpuScaling", target_utilization_percent=50
         )
 
-        # cicd_props = CICDConstructProps(
-        #     backend_svc_endpoint=None,
-        #     buildspec_path=self.stack_props.buildspec_path,
-        #     container_name=self.stack_props.container_name,
-        #     container_port=self.stack_props.container_port,
-        #     ecr_repository_name=self.stack_props.ecr_repository_name,
-        #     ecs_task_execution_role=self.ecs_task_execution_role,
-        #     fargate_service=self.fargate_service,
-        #     folder_path=self.stack_props.folder_path,
-        #     github_token_secret_name=self.stack_props.github_token_secret_name,
-        #     repository_owner=self.stack_props.repository_owner,
-        #     repository_name=self.stack_props.repository_name,
-        #     repository_branch=self.stack_props.repository_branch,
-        # )
-
-        # CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
-
     @property
     def vpc(self):
         if not self._vpc:
             self._vpc = Vpc.from_lookup(
-                self, "VpcLookup", vpc_id=self.stack_props.vpc_id
+                self, "VpcLookup", vpc_name=self.stack_props.vpc_name
             )
 
         return self._vpc
@@ -166,10 +146,9 @@ class BackendServiceStack(Stack):
 
     def validate_stack_props(self):
         if (
-            self.stack_props.repository_owner == "<REPO_OWNER>"
-            or self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            self.stack_props.account_number == "<ACCOUNT_NUMBER>"
             or self.stack_props.aws_region == "<REGION>"
         ):
             raise ValueError(
-                "Environment values needs to be set for repository_owner, account_number, aws_region"
+                "Environment values needs to be set for account_number, aws_region"
             )

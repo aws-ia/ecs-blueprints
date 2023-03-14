@@ -81,13 +81,7 @@ To post feedback, submit feature ideas, or report bugs, please use the [Issues](
 For architectural details, step-by-step instructions, and customization options, see our documentation under each folder.
 
 ## Cleanup
-
-In case of cleaning up `backend_service` and `lb_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing `cdk destroy` command, executing `aws ecr delete-repository` is needed.
-
-
+To proceed with deleting the stack, use `cdk destroy` at each stack's folder.
 ```bash
-# backend_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-backend --force
-# lb_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-frontend --force
+cdk destroy
 ```

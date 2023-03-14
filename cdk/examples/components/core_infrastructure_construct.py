@@ -62,6 +62,7 @@ class CoreInfrastructureConstruct(Construct):
             nat_gateways=core_infra_props.az_count
             if core_infra_props.enable_nat_gw
             else 0,
+            vpc_name=f"{core_infra_props.ecs_cluster_name}-vpc"
         )
 
         log_group = LogGroup(
