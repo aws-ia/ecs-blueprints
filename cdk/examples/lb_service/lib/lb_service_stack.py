@@ -8,7 +8,6 @@ from aws_cdk.aws_ecs_patterns import (
 from aws_cdk.aws_iam import Role
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
-# from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
 from lb_service.lib.lb_service_stack_props import LoadBalancedServiceStackProps
 
 
@@ -40,7 +39,7 @@ class LoadBalancedServiceStack(Stack):
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
             image=ContainerImage.from_registry(
-                "public.ecr.aws/aws-containers/ecsdemo-frontend"
+                self.stack_props.container_image
             ),
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
@@ -65,7 +64,7 @@ class LoadBalancedServiceStack(Stack):
             public_load_balancer=True,
             cloud_map_options=CloudMapOptions(
                 cloud_map_namespace=self.sd_namespace,
-                name="ecsdemo-frontend",
+                name=self.stack_props.service_name,
             ),
             task_image_options=fargate_task_image,
         ).service
@@ -78,28 +77,11 @@ class LoadBalancedServiceStack(Stack):
             "CpuScaling", target_utilization_percent=50
         )
 
-        # cicd_props = CICDConstructProps(
-        #     backend_svc_endpoint=self.stack_props.backend_svc_endpoint,
-        #     buildspec_path=self.stack_props.buildspec_path,
-        #     container_name=self.stack_props.container_name,
-        #     container_port=self.stack_props.container_port,
-        #     ecr_repository_name=self.stack_props.ecr_repository_name,
-        #     ecs_task_execution_role=self.ecs_task_execution_role,
-        #     fargate_service=self.fargate_service,
-        #     folder_path=self.stack_props.folder_path,
-        #     github_token_secret_name=self.stack_props.github_token_secret_name,
-        #     repository_owner=self.stack_props.repository_owner,
-        #     repository_name=self.stack_props.repository_name,
-        #     repository_branch=self.stack_props.repository_branch,
-        # )
-
-        # CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
-
     @property
     def vpc(self):
         if not self._vpc:
             self._vpc = Vpc.from_lookup(
-                self, "VpcLookup", vpc_id=self.stack_props.vpc_id
+                self, "VpcLookup", vpc_name=self.stack_props.vpc_name
             )
 
         return self._vpc
@@ -146,10 +128,9 @@ class LoadBalancedServiceStack(Stack):
 
     def validate_stack_props(self):
         if (
-            self.stack_props.repository_owner == "<REPO_OWNER>"
-            or self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            self.stack_props.account_number == "<ACCOUNT_NUMBER>"
             or self.stack_props.aws_region == "<REGION>"
         ):
             raise ValueError(
-                "Environment values needs to be set for repository_owner, account_number, aws_region"
+                "Environment values needs to be set for account_number, aws_region"
             )

@@ -5,7 +5,6 @@ This solution blueprint creates a web-facing load balanced ECS service. There ar
 * Copy `sample.env` to `.env` and change the `account_number`, `aws_region`, `repository_owner` values in the Essential Props of the `.env` file:
 ```bash
 # Essential Props
-repository_owner="<REPO_OWNER>"
 account_number="<ACCOUNT_NUMBER>"
 aws_region="<REGION>"
 ```
@@ -78,10 +77,7 @@ The second half of this example focuses on creating CI/CD pipeline using AWS Cod
 Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the *application-code/ecsdemo-frontend* repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.
 
 ## Cleanup
-When you clean up `frontend_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing cdk destroy command, executing aws ecr delete-repository is needed.
+To proceed with deleting the stack, use `cdk destroy`
 ```bash
-# frontend_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-frontend --force
-
 cdk destroy
 ```
