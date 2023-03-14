@@ -77,6 +77,7 @@ class LoadBalancedServiceStack(Stack):
             "CpuScaling", target_utilization_percent=50
         )
 
+
     @property
     def vpc(self):
         if not self._vpc:
