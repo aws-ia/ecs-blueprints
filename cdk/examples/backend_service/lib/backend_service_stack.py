@@ -78,6 +78,7 @@ class BackendServiceStack(Stack):
                 cloud_map_namespace=self.sd_namespace,
                 name=self.stack_props.service_name,
             ),
+            enable_ecs_managed_tags=True
         )
 
         self.fargate_service.connections.allow_from(

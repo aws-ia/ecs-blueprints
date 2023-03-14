@@ -67,6 +67,7 @@ class LoadBalancedServiceStack(Stack):
                 name=self.stack_props.service_name,
             ),
             task_image_options=fargate_task_image,
+            enable_ecs_managed_tags=True,
         ).service
 
         scalable_target = self.fargate_service.auto_scale_task_count(
