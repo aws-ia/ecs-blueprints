@@ -55,28 +55,6 @@ This solution has following key components:
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
     * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to Amazon CloudWatch on behalf of the task.
 
-The second half of this example focuses on creating CI/CD pipeline using AWS CodePipeline and CodeBuild. This has following main components:
-
-* **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret (not as key-value pair secret). This token is used to access the *application-code* repository and build images.**
-
-* S3 bucket to store CodePipeline assets. The bucket is encrypted with AWS managed key.
-* CodeBuild for building container images
-    * Needs the S3 bucket created above
-    * IAM role for the build service
-    * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](https://github.com/aws-ia/ecs-blueprints/blob/main/application-code/ecsdemo-nodejs/templates/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
-    * A set of environment variables including repository URL and folder path.
-* CodePipeline to listen for changes to the repository and trigger build and deployment.
-    * Needs the S3 bucket created above
-    * Github token from AWS Secrets Manager to access the repository with *application-code* folder
-    * Repository owner
-    * Repository name
-    * Repository branch
-    * The cluster and service names for deploying the tasks with new container images
-    * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
-    * IAM role
-
-Note that the CodeBuild and CodePipeline services are provisioned and configured here. However, they primarily interact with the `application-code/ecsdemo-backend` repository. CodePipeline is listening for changes and checkins to that repository. And CodeBuild is using the *Dockerfile* and *templates/* files from that application folder.
-
 # Cleanup
 To proceed with deleting the stack, use `cdk destroy`
 ```bash
