@@ -40,7 +40,7 @@ python -m pip install -r ../../requirements.txt
 
 * Clone the forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 ```bash
-cd examples/core_infra/
+cd ecs-blueprints/cdk/examples/core_infra/
 ```
 * Copy `sample.env` to `.env` and change the `account_number` and `aws_region` values in the `.env` file:
 ```bash
@@ -55,7 +55,7 @@ aws_region="<REGION>"
 ```bash
 cdk synth
 ```
-* Run CDK ls command to figure out lists of the stacks in the app
+* Run CDK ls command to figure out the list of the stacks in the app
 ```bash
 cdk ls
 ```
