@@ -3,13 +3,12 @@ from aws_cdk.aws_ec2 import Vpc
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 
 
-class LoadBalancedServiceStackProps(StackProps):
+class BackendServiceStackProps(StackProps):
     def __init__(
         self,
         account_number=None,
         aws_region=None,
         az_count=None,
-        backend_svc_endpoint=None,
         container_image=None,
         container_name=None,
         container_port="3000",
@@ -30,7 +29,6 @@ class LoadBalancedServiceStackProps(StackProps):
     ):
         self.account_number = account_number
         self.aws_region = aws_region
-        self.backend_svc_endpoint = backend_svc_endpoint
         self.container_image = container_image
         self.container_name = container_name
         self.container_port = int(container_port)
@@ -42,8 +40,8 @@ class LoadBalancedServiceStackProps(StackProps):
         self.namespace_arn = namespace_arn
         self.namespace_id = namespace_id
         self.service_name = service_name
-        self.task_cpu = int(task_cpu)
-        self.task_memory = int(task_memory)
+        self.task_cpu = task_cpu
+        self.task_memory = task_memory
         self.vpc_name = vpc_name
 
         self._vpc = None

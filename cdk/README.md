@@ -81,12 +81,7 @@ To post feedback, submit feature ideas, or report bugs, please use the [Issues](
 For architectural details, step-by-step instructions, and customization options, see our documentation under each folder.
 
 ## Cleanup
-
-Prior to deleting the a stack with provisioned ECR repository, run the following command to delete existing images
-
+To proceed with deleting the stack, use `cdk destroy` at each stack's folder.
 ```bash
-aws ecr batch-delete-image \
-    --repository-name ecsdemo-frontend \
-    --image-ids "$(aws ecr list-images --repository-name ecsdemo-frontend --query 'imageIds[*]' --output json
-)" || true
+cdk destroy
 ```

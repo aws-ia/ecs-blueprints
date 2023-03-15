@@ -40,20 +40,28 @@ python -m pip install -r ../../requirements.txt
 
 * Clone the forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 ```bash
-cd examples/core_infra/
+cd ecs-blueprints/cdk/examples/core_infra/
 ```
+* Copy `sample.env` to `.env` and change the `account_number` and `aws_region` values in the `.env` file:
+```bash
+cp sample.env .env
+
+# change the vales basd on your aws account
+account_number="<ACCOUNT_NUMBER>"
+aws_region="<REGION>"
+```
+
 * Run CDK synth command to synthesize and do a dry run
 ```bash
 cdk synth
 ```
-* Run CDK ls command to figure out lists the stacks in the app
+* Run CDK ls command to figure out the list of the stacks in the app
 ```bash
 cdk ls
 ```
 * Review the CDK synth output, take a look at the changes that CDK will execute, and then apply them:
 ```bash
-# ecs-blueprint-infra is CDK stack name
-cdk deploy ecs-blueprint-infra --outputs-file output.json
+cdk deploy CoreInfraStack --outputs-file output.json
 ```
 
 ## Outputs
@@ -68,7 +76,7 @@ In case of cleaning up `backend_service` and `lb_service` blueprints, AWS CloudF
 
 ```bash
 # backend_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-nodejs --force
+aws ecr delete-repository --repository-name ecsdemo-backend --force
 # lb_service repository deletion
 aws ecr delete-repository --repository-name ecsdemo-frontend --force
 ```

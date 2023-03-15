@@ -3,9 +3,12 @@ from components.core_infrastructure_construct import CoreInfrastructureProps
 from dotenv import dotenv_values
 from lib.core_infra_stack import CoreInfraStack
 
-config = dotenv_values(".env")
-core_props = CoreInfrastructureProps(**config)
 app = App()
+
+config = dotenv_values(".env")
+
+core_props = CoreInfrastructureProps(**config)
+
 core_stack = CoreInfraStack(
     app,
     "CoreInfraStack",
