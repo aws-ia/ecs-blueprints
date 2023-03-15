@@ -60,7 +60,7 @@ git clone https://github.com/<your-repo>/ecs-blueprints.git
 - Start with `core_infra` to create cluster, VPC, and require IAM
 
 ```bash
-cd examples/core_infra/
+cd ecs-blueprints/cdk/examples/core_infra/
 ```
 
 - Next you can try other example blueprints.
