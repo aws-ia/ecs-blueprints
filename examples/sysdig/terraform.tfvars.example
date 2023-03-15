@@ -13,7 +13,6 @@ cpu             =   256
 memory          =   512
 container_name  =   "ecs-infected-backend-demo"   # Sample container name
 container_image =   "sysdiglabs/writer-to-bin"    # Sample "backend" workload that we want to secure
-container_command = ["/usr/bin/demo-writer-c", "/usr/bin/oh-no-i-wrote-in-bin"] # Sample container command (this one is aimed to trigger suspicious events)
 container_port =    3000                          # Container port example
 
 #Sysdig Access Token

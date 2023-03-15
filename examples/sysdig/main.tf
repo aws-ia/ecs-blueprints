@@ -1,5 +1,5 @@
 provider "aws" {
-  region = var.aws_region
+  region = local.region
 }
 
 provider "sysdig" {
@@ -7,84 +7,43 @@ provider "sysdig" {
 }
 
 locals {
+  name = "sysdig-infected-backend-demo"
+  region = "us-west-2"
 
-  # this will get the name of the local directory
-  # name   = basename(path.cwd)
-  name = var.service_name
+  container_image = "sysdiglabs/writer-to-bin"
+  container_port  = 3000 # Container port is specific to this app example
+  container_name  = "sysdig-backend-demo"
 
   tags = {
     Blueprint  = local.name
     GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
-
-  tag_val_vpc            = var.vpc_tag_value == "" ? var.core_stack_name : var.vpc_tag_value
-  tag_val_private_subnet = var.private_subnets_tag_value == "" ? "${var.core_stack_name}-private-" : var.private_subnets_tag_value
-
-}
-
-################################################################################
-# Data Sources from ecs-blueprint-infra
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = [local.tag_val_vpc]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:${var.vpc_tag_key}"
-    values = ["${local.tag_val_private_subnet}*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = var.ecs_cluster_name == "" ? var.core_stack_name : var.ecs_cluster_name
-}
-
-data "aws_iam_role" "ecs_core_infra_exec_role" {
-  name = var.ecs_task_execution_role_name == "" ? "${var.core_stack_name}-execution" : var.ecs_task_execution_role_name
-}
-
-data "aws_service_discovery_dns_namespace" "sd_namespace" {
-  name = "${var.namespace}.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
 }
 
 ################################################################################
 # ECS Blueprint
 ################################################################################
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+# Sysdig Orchestrator Agent ECS Service Definition
+module "sysdig_orchestrator_agent" {
 
-  name        = "${local.name}-task-sg"
-  description = "Security group for service task"
-  vpc_id      = data.aws_vpc.vpc.id
+  source = "sysdiglabs/fargate-orchestrator-agent/aws"
 
-  ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
-  egress_rules        = ["all-all"]
-  ingress_with_cidr_blocks = [
-    {
-      from_port   = var.container_port
-      to_port     = var.container_port
-      protocol    = "tcp"
-      description = "User-service ports"
-      cidr_blocks = "0.0.0.0/0"
-    }
-  ]
+  name = "${local.name}-sysdig-orchestrator-agent"
 
-  tags = local.tags
+  vpc_id           = data.aws_vpc.vpc.id
+  subnets          = data.aws_subnets.private.ids
+  collector_host   = var.sysdig_collector_url
+  collector_port   = 6443
+  access_key       = var.sysdig_access_key
+  assign_public_ip = true # If using Internet Gateway
 }
 
-resource "aws_service_discovery_service" "sd_service" {
+resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.sd_namespace.id
+    namespace_id = data.aws_service_discovery_dns_namespace.this.id
 
     dns_records {
       ttl  = 10
@@ -99,99 +58,89 @@ resource "aws_service_discovery_service" "sd_service" {
   }
 }
 
-# Sysdig Orchestrator Agent ECS Service Definition
-module "sysdig_orchestrator_agent" {
-
-  source = "sysdiglabs/fargate-orchestrator-agent/aws"
-
-  name = "${local.name}-sysdig-orchestrator-agent"
-
-  vpc_id           = data.aws_vpc.vpc.id
-  subnets          = data.aws_subnets.private.ids
-  collector_host   = var.sysdig_collector_url
-  collector_port   = var.sysdig_collector_port
-  access_key       = var.sysdig_access_key
-  assign_public_ip = true # If using Internet Gateway
-}
-
-# ECS Service Definition for the instrumented
 module "ecs_service_definition" {
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
 
-  source = "../../modules/ecs-service"
-
-  name                       = var.service_name
-  desired_count              = var.desired_count
-  ecs_cluster_id             = data.aws_ecs_cluster.core_infra.cluster_name
-  cp_strategy_base           = var.cp_strategy_base
-  cp_strategy_fg_weight      = var.cp_strategy_fg_weight
-  cp_strategy_fg_spot_weight = var.cp_strategy_fg_spot_weight
-
-  security_groups = [module.service_task_security_group.security_group_id]
-  subnets         = data.aws_subnets.private.ids
-
-  service_registry_list = [{
-    registry_arn = aws_service_discovery_service.sd_service.arn
-  }]
   deployment_controller = "ECS"
 
-  # Task Definition
-  attach_task_role_policy = true
-  lb_container_port       = var.container_port
-  lb_container_name       = var.container_name
-  cpu                     = var.cpu
-  memory                  = var.memory
-  task_role_policy        = data.aws_iam_policy_document.task_role.json
-  execution_role_arn      = data.aws_iam_role.ecs_core_infra_exec_role.arn
-  enable_execute_command  = true
+  name               = local.name
+  desired_count      = 3
+  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
+  enable_autoscaling = false
 
-  container_definition_defaults = var.container_definition_defaults
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    ingress_all_service = {
+      type        = "ingress"
+      from_port   = local.container_port
+      to_port     = local.container_port
+      protocol    = "tcp"
+      description = "Service port"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
+
+  # Task Definition
+  create_iam_role        = false
+  iam_role_statements    = data.aws_iam_policy_document.task_role
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
+
+  cpu    = 512
 
   container_definitions = {
     main_container = {
-      image                    = var.container_image
-      name                     = var.container_name
+      name                     = local.container_name
+      image                    = local.container_image
+      cpu                      = 256
       readonly_root_filesystem = false
       entrypoint               = ["/opt/draios/bin/instrument"]
-      command                  = var.container_command
+      command                  = ["/usr/bin/demo-writer-c", "/usr/bin/oh-no-i-wrote-in-bin"]
       linux_parameters = {
         capabilities = {
           add = ["SYS_PTRACE"]
         }
       }
-      environment = [
-        {
+      environment = [{
           name  = "SYSDIG_ORCHESTRATOR"
           value = module.sysdig_orchestrator_agent.orchestrator_host
-        },
-        {
+        }, {
           name  = "SYSDIG_ORCHESTRATOR_PORT"
           value = module.sysdig_orchestrator_agent.orchestrator_port
-        },
-        {
+        }, {
           name  = "SYSDIG_ACCESS_KEY"
           value = var.sysdig_access_key
-        },
-        {
+        }, {
           name  = "SYSDIG_COLLECTOR"
           value = var.sysdig_collector_url
-        },
-        {
+        }, {
           name  = "SYSDIG_COLLECTOR_PORT"
-          value = var.sysdig_collector_port
-        },
-        {
+          value = 6443
+        }, {
           name  = "SYSDIG_LOGGING"
           value = "debug"
-        }
-      ],
-      volumes_from = [
-        {
+        }],
+      volumes_from = [{
           sourceContainer = "SysdigInstrumentation"
           readOnly        = true
-        }
-      ]
+        }]
     },
-    sidecar_container = var.sidecar_container_definition
+    sidecar_container = {
+      name        = "SysdigInstrumentation"
+      image       = "quay.io/sysdig/workload-agent:latest"
+      cpu         = 256
+      entrypoint = ["/opt/draios/bin/logwriter"]
+    }
   }
 
   tags = local.tags
@@ -210,4 +159,35 @@ data "aws_iam_policy_document" "task_role" {
     ]
     resources = ["*"]
   }
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-*"]
+  }
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = "core-infra"
+}
+
+data "aws_iam_roles" "ecs_core_infra_exec_role" {
+  name_regex = "core-infra-*"
+}
+
+data "aws_service_discovery_dns_namespace" "this" {
+  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  type = "DNS_PRIVATE"
 }
