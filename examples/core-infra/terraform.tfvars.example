@@ -1,0 +1,4 @@
+# You should update the below variables
+
+# The AWS Region containing the resources and also the SecretsManager secret
+# region="us-west-2"
