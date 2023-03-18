@@ -41,12 +41,6 @@ region = us-west-2
 ## Quick Start
 
 * Fork this repository.
-* Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
-* Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
-
-```shell
-aws secretsmanager create-secret --name ecs-github-token --secret-string <your-github-access-token>
-```
 
 * Clone your forked repository to your laptop/Cloud9 VM.
 
@@ -60,57 +54,33 @@ git clone https://github.com/<your-repo>/ecs-blueprints.git
 cd ecs-blueprints/examples/core-infra/
 
 terraform init
-
-cp terraform.tfvars.example terraform.tfvars
-
-vim terraform.tfvars
-# edit the region name in the terraform.tfvars to your region where you created the secret
-```
-
-* Run terraform commands to deploy infrastructure
-
-```shell
 terraform plan
 terraform apply --auto-approve
 ```
-
 * Now we can deploy a load balanced service along with CI/CD pipeline to the above cluster
 
 ```shell
 cd ../lb-service
-cp terraform.tfvars.example terraform.tfvars
-vim terraform.tfvars
-# uncomment and change the repository owner to your repo owner name, and set aws region to ECS cluster region
-```
-
-* Deploy the load balanced service and CI/CD pipeline
-
-```shell
 terraform init
 terraform plan
 terraform apply --auto-approve
 ```
 
-**NOTE:** lb-service module requires a Codestar notification rule, which itself requires a **one-time** creation of a service-linked role. You may run into terraform errors if one is not created.  
+You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, and ECS service. You can use these as building blocks to create and deploy many ECS services. Next you can try other example blueprints.
 
-* If you receive the error, please create the service-linked role with the `awscli` below.
-* `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
-* Again, once this is created, you will not have to complete these steps for the other examples.
-
-You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, ECS service, and CI/CD pipelines using AWS CodeBuild and AWS CodePipeline services. You can use these as building blocks to create and deploy many ECS services where each service has its independent infra-as-code repository, separate CI/CD pipeline, and gets deployed in an ECS cluster such as dev, staging, or production. Next you can try other example blueprints.
-
-* [VPC Endpoints](./examples/vpc-endpoints/README.md)
 * [Backend Service](./examples/backend-service/README.md)
+* [Graviton](./examples/graviton/README.md)
 * [Amazon Managed Prometheus and Grafana](./examples/prometheus/README.md)
 * [VPC Endpoints for cost-saving](./examples/vpc-endpoints/README.md)
-* [Graviton](./examples/graviton/README.md)
+* [VPC Endpoints](./examples/vpc-endpoints/README.md)
+
 
 ## Repository overview
 
 This repository has 3 main folders
 
 * [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
-* [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. The [lb-service](./examples/lb-service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
+* [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. If you are looking to contribute new blueprints, put them in the *examples* folder.
 * [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
 ## Support & Feedback
