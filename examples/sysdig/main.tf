@@ -64,7 +64,7 @@ module "ecs_service_definition" {
   deployment_controller = "ECS"
 
   name               = local.name
-  desired_count      = 3
+  desired_count      = 1
   cluster            = data.aws_ecs_cluster.core_infra.cluster_name
   enable_autoscaling = false
 
@@ -91,10 +91,10 @@ module "ecs_service_definition" {
   }
 
   # Task Definition
-  create_iam_role        = false
-  iam_role_statements    = data.aws_iam_policy_document.task_role
-  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command = true
+  create_tasks_iam_role     = true
+  tasks_iam_role_statements = data.aws_iam_policy_document.task_role
+  task_exec_iam_role_arn    = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command    = true
 
   cpu    = 512
 
@@ -139,7 +139,7 @@ module "ecs_service_definition" {
       name        = "SysdigInstrumentation"
       image       = "quay.io/sysdig/workload-agent:latest"
       cpu         = 256
-      entrypoint = ["/opt/draios/bin/logwriter"]
+      entrypoint  = ["/opt/draios/bin/logwriter"]
     }
   }
 
@@ -156,6 +156,16 @@ data "aws_iam_policy_document" "task_role" {
     actions = [
       "ecs:DescribeVolumes",
       "ecs:DescribeTags"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    sid = "ECSExec"
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
     ]
     resources = ["*"]
   }
