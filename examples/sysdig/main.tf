@@ -92,7 +92,26 @@ module "ecs_service_definition" {
 
   # Task Definition
   create_tasks_iam_role     = true
-  tasks_iam_role_statements = data.aws_iam_policy_document.task_role
+  tasks_iam_role_statements = [
+    {
+      sid = "SysdigPolicy"
+      actions = [
+        "ecs:DescribeVolumes",
+        "ecs:DescribeTags"
+      ]
+      resources = ["*"]
+    },
+    {
+      sid = "ECSExec"
+      actions = [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+      ]
+      resources = ["*"]
+    }
+  ]
   task_exec_iam_role_arn    = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command    = true
 
@@ -144,31 +163,6 @@ module "ecs_service_definition" {
   }
 
   tags = local.tags
-}
-
-################################################################################
-# Task IAM Role Policy
-################################################################################
-
-data "aws_iam_policy_document" "task_role" {
-  statement {
-    sid = "SysdigPolicy"
-    actions = [
-      "ecs:DescribeVolumes",
-      "ecs:DescribeTags"
-    ]
-    resources = ["*"]
-  }
-  statement {
-    sid = "ECSExec"
-    actions = [
-      "ssmmessages:CreateControlChannel",
-      "ssmmessages:CreateDataChannel",
-      "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"
-    ]
-    resources = ["*"]
-  }
 }
 
 ################################################################################
