@@ -5,7 +5,13 @@ AWS Graviton processors are custom built by Amazon Web Services using 64-bit Arm
 This solution blueprint focuses on how to build multi-architecture images, store them in ECR, and most importantly launch tasks on both Fargate x86 and ARM without juggling architecture specific container images.
 
 * Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-* Set the input variables in terraform.tfvars
+* Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository.
+* Store the secret in AWS Secrets Manager in the region where you want to deploy the blueprints.
+
+```shell
+aws secretsmanager create-secret --name ecs-github-token --secret-string <your-github-access-token>
+```
+
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
 
