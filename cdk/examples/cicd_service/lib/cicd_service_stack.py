@@ -75,7 +75,7 @@ class CICDServiceStack(Stack):
         scalable_target.scale_on_cpu_utilization(
             "CpuScaling", target_utilization_percent=50
         )
-        
+
         cicd_props = CICDConstructProps(
             backend_svc_endpoint=None,
             buildspec_path=self.stack_props.buildspec_path,
