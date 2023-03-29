@@ -54,16 +54,16 @@ class CoreInfraStack(Stack):
                 }
             ),
         )
-        CfnOutput(
-            self,
-            "ecs_cluster_security_groups",
-            value=str(
-                [
-                    sg.security_group_id
-                    for sg in self._core_construct.ecs_cluster_security_groups
-                ]
-            ),
-        )
+        # CfnOutput(
+        #     self,
+        #     "ecs_cluster_security_groups",
+        #     value=str(
+        #         [
+        #             sg.security_group_id
+        #             for sg in self._core_construct.ecs_cluster_security_groups
+        #         ]
+        #     ),
+        # )
 
     @property
     def vpc(self):

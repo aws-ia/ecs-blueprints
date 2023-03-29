@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Amazon ECS Simple App</title>
+    <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+    <header class="bg-primary text-white text-center py-5">
+        <p style="text-align:center;">
+            <img src="{{ url_for('static', filename='amazon-ecs.png') }}" alt="Amazon ECS Logo" width="100">
+        </p>
+        <h1>{{ name }}</h1>
+    </header>
+    <main class="container">
+        <h2>Congratulations!</h2>
+        <p>Your Flask application is now running on a container in <b>{{ platform }}-version {{infra_version}}</b></p>
+        <p>This container is running Flask-version {{ flask_version }} and Python-version {{ python_version }}</p>
+        <p> {{ time }} </p>
+    </main>
+</body>
+</html>

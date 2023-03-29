@@ -1,6 +1,6 @@
 # ECS frontend service with Application Load Balancer(ALB)
 
-This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this servic
+This blueprint creates a web-facing load balanced ECS service. Below are the steps for deploying this service.
 
 * Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the Essential Props of the `.env` file:
 ```bash
@@ -9,7 +9,7 @@ account_number="<ACCOUNT_NUMBER>"
 aws_region="<REGION>"
 ```
 
-* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only frontend service, but also core infra. In this case, you can set the values of **core stack props**.
+* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *frontend service*, but also *core infra*. In this case, you can set the values of **core stack props**.
 ```bash
 deploy_core_stack="True"
 
@@ -29,9 +29,8 @@ cdk ls
 ```
 
 * Deploy the CDK templates in this repository using `cdk deploy`.
-
 ```bash
-cdk deploy --all --require-approval never --outputs-file output.json
+cdk deploy --all --require-approval never
 ```
 
 <p align="center">
