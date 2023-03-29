@@ -1,12 +1,12 @@
-# Amazon ECS Solution Blueprints for CDK
+# Amazon ECS Blueprints for CDK
 
-Welcome to Amazon ECS Solution Blueprints for CDK Python!
+Welcome to Amazon ECS Blueprints for CDK Python!
 
-When new users want to adopt containers to build, deploy, and run their applications, it often takes them several months to learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or and host OS. With ECS Solution Blueprints, we want new users to achieve benefits of container-based modernization in hours rather than months!
+When new users want to adopt containers to build, deploy, and run their applications, it often takes them several months to learn, setup, and realize container benefits. With [Amazon Elastic Container Service (ECS)](https://aws.amazon.com/ecs/) and [AWS Fargate](https://aws.amazon.com/fargate/) users don't need to manage any middleware, any EC2, or host OS. With ECS Blueprints, we want new users to achieve benefits of container-based modernization in hours rather than months!
 
-The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. With blueprints we aspire to codify best practices, well-designed architecture patterns, and provide end-to-end solutions addressing CI/CD, observability, security, and cost efficiency.
+The blueprints are meant to give new users a jumpstart, and enable them to learn-by-doing. With blueprints, we aspire to codify best practices, well-designed architecture patterns, and provide end-to-end solutions addressing CI/CD, observability, security, and cost efficiency.
 
-We fully expect you to get started by copying the modules and examples but we do not expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the modules and examples code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Solution Blueprints.
+We fully expect you to get started by copying the modules and examples but we do not expect you to maintain any conformity to this repository. In others, we expect that you will adapt and extend the modules and examples code to suit your needs. If you feel your use cases and solutions will help other users, we encourage you to contribute your solutions to ECS Blueprints.
 
 ## Prerequisites
 
@@ -45,7 +45,7 @@ region = us-west-2
 ---
 
 - Fork this repository
-- Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository
+- Create a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository. This is only needed when you're going through [cicd_service](./examples/cicd_service).
 
 ```bash
 aws secretsmanager create-secret --name ecs-github-token --secret-string <your-github-access-token>

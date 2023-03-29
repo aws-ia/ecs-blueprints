@@ -1,6 +1,6 @@
 # ECS backend service with service discovery
 
-This solution blueprint creates a backend service that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. Below are the steps for deploying this service:
+This blueprint creates a backend service that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. Below are the steps for deploying this service:
 
 * Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the **Essential Props** of the `.env` file:
 ```bash
