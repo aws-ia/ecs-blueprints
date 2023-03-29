@@ -264,7 +264,7 @@ class CodeStarCICDConstruct(Construct):
                             action_name="Deploy",
                             service=self.cicd_props.fargate_service,
                             image_file=self.build_artifact.at_path(
-                                "imagedefinition.json"
+                                "imagedefinitions.json"
                             ),
                         )
                     ],
