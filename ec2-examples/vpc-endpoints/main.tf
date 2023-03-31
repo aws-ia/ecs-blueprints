@@ -90,7 +90,7 @@ module "vpc_endpoints" {
 ################################################################################
 
 resource "aws_security_group" "vpc_endpoints" {
-  name_prefix = "${local.name}-vpc_endpints"
+  name_prefix = "${local.name}-vpc_endpoints"
   description = "Allow HTTPS inbound traffic"
   vpc_id      = data.aws_vpc.vpc.id
 
