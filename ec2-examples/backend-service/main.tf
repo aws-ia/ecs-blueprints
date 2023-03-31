@@ -92,8 +92,8 @@ module "ecs_service_definition" {
   task_exec_iam_role_arn   = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command   = true
 
+  #https://docs.aws.amazon.com/AmazonECS/latest/developerguide/example_task_definitions.html
   container_definitions = {
-
     fluent-bit = {
       cpu       = 512
       memory    = 1024
