@@ -180,7 +180,7 @@ resource "aws_service_discovery_service" "arm64" {
 }
 
 module "ecs_service_definition_amd64" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service?ref=73acc1d"
 
   name          = local.name
   desired_count = 3
@@ -238,7 +238,7 @@ module "ecs_service_definition_amd64" {
 }
 
 module "ecs_service_definition_arm64" {
-  source        = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source        = "github.com/clowdhaus/terraform-aws-ecs//modules/service?ref=73acc1d"
   name          = "${local.name}-arm64"
   desired_count = 3
   cluster       = data.aws_ecs_cluster.core_infra.cluster_name
