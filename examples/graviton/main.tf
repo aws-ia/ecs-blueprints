@@ -184,7 +184,7 @@ module "ecs_service_definition_amd64" {
 
   name          = local.name
   desired_count = 3
-  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  cluster_arn   = data.aws_ecs_cluster.core_infra.cluster_name
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
@@ -241,7 +241,7 @@ module "ecs_service_definition_arm64" {
   source        = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
   name          = "${local.name}-arm64"
   desired_count = 3
-  cluster       = data.aws_ecs_cluster.core_infra.cluster_name
+  cluster_arn   = data.aws_ecs_cluster.core_infra.cluster_name
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
