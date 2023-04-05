@@ -145,7 +145,7 @@ module "ecs_service_definition" {
 
   name          = local.name
   desired_count = 3
-  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
+  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {

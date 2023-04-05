@@ -24,7 +24,7 @@ locals {
     cat <<'EOF' >> /etc/ecs/ecs.config
     ECS_CLUSTER=${local.name}
     ECS_LOGLEVEL=debug
-    EOF    
+    EOF
   EOT
 
   tags = {
@@ -165,7 +165,7 @@ resource "aws_iam_policy_attachment" "execution" {
 
 
 ################################################################################
-# Auto Scaling Group 
+# Auto Scaling Group
 ################################################################################
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
 data "aws_ssm_parameter" "ecs_optimized_ami" {
