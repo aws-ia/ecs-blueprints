@@ -1,6 +1,6 @@
 # ECS frontend service with Application Load Balancer(ALB)
 
-This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this servic
+This blueprint creates a web-facing load balanced ECS service. Below are the steps for deploying this service.
 
 * Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the Essential Props of the `.env` file:
 ```bash
@@ -9,7 +9,7 @@ account_number="<ACCOUNT_NUMBER>"
 aws_region="<REGION>"
 ```
 
-* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only frontend service, but also core infra. In this case, you can set the values of **core stack props**.
+* If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *frontend service*, but also *core infra*. In this case, you can set the values of **core stack props**.
 ```bash
 deploy_core_stack="True"
 
@@ -21,7 +21,7 @@ enable_nat_gw="True"
 az_count="3"
 ```
 
-* But if you have already deployed the [core_infra](../core_infra/README.md) or have your own core infra, then you can reuse it as well. Set `deploy_core_stack` value to `False`. And modify the variables inside `.env` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation. Also, if you want to use `application-code`'s example.
+* But if you have already deployed the [core_infra](../core_infra/README.md) or have your own core infra, then you can reuse it as well. In this case, set `deploy_core_stack` value to `False`. And modify the variables inside `.env` so that CDK can import your VPC, ECS Cluster and your task execution role. You can find those variables by looking at the core infrastructure modules outputs in AWS CloudFormation.
 
 * Run CDK ls command to figure out lists of the stacks in the app. The list of CDK stack may differ depending on the `deploy_core_stack` value.
 ```bash
@@ -29,9 +29,8 @@ cdk ls
 ```
 
 * Deploy the CDK templates in this repository using `cdk deploy`.
-
 ```bash
-cdk deploy --all --require-approval never --outputs-file output.json
+cdk deploy --all --require-approval never
 ```
 
 <p align="center">
@@ -44,14 +43,13 @@ The solution has following key components:
   * ALB security group - allows ingress from any IP address to port 80 and allows all egress
   * ALB subnet - ALB is created in a public subnet
   * Listener - listens on port 80 for protocol HTTP
-  * Target group - Since we are using Fargate launch type, the targe type is IP since each task in Fargate gets its own ENI and IP address. The target group has container port (3000) and protocol (HTTP) where the application container will serve requests. The ALB runs health check against all registered targets. In this example, ALB send HTTP GET request to path "/" to container port 3000. We are using target group default health check settings. You can tune these settings to adjust the time interval and frequency of health checks. It impacts how fast tasks become available to serve traffic. (See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more.)
-* **Amazon ECR repository** for the container image. We are using only one container image for the task in this example.
+  * Target group: Since we are using Fargate launch type, the targe type is IP because each task in Fargate gets its own ENI and IP address. The target group has container port(3000) and protocol(HTTP) where the application container will serve requests. The ALB runs health check against all registered targets(See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more).
 * **Amazon ECS** service definition:
   * Task security group: allows ingress for TCP from the ALB security group to the container service port (3000 for this example). And allows all egress.
   * Service discovery: You can register the service to AWS Cloud Map registry. You just need to provide the `namespace` but make sure the namespace is created in the `core_infra` step.
   * Tasks for this service will be deployed in private subnet
   * Service definition takes the load balancer target group created above as input.
-  * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
+  * Task definition consisting of task vCPU size, task memory, and container information
   * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
 ## Cleanup

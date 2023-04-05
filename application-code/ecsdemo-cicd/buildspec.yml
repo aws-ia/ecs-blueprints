@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo $REPO_URL
+      - REPOSITORY=${REPO_URL%/*}
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPO_URL $FOLDER_PATH
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG
+      - echo Preparing spec files in new folder
+      - mkdir artifacts
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPO_URL:$IMAGE_TAG" > artifacts/imagedefinitions.json
+      - cat artifacts/imagedefinitions.json
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'artifacts'
+  discard-paths: yes
