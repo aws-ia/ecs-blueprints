@@ -97,7 +97,7 @@ module "ecs_service_definition" {
 
   name               = local.name
   desired_count      = 3
-  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
+  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
