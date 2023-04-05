@@ -23,7 +23,7 @@ locals {
 ################################################################################
 
 module "ecs" {
-  source = "github.com/clowdhaus/terraform-aws-ecs"
+  source = "github.com/clowdhaus/terraform-aws-ecs?ref=73acc1d"
   # version = "~> 4.0"
 
   cluster_name = local.name
