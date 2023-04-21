@@ -93,11 +93,12 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service?ref=73acc1d"
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "~> 5.0"
 
   name               = local.name
   desired_count      = 3
-  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
+  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
