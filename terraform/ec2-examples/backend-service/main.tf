@@ -48,8 +48,8 @@ module "ecs_service_definition" {
   desired_count      = 3
   cluster_arn        = data.aws_ecs_cluster.core_infra.arn
   enable_autoscaling = false
-  cpu                = 1024
-  memory             = 4096
+  # cpu                = 1024
+  # memory             = 4096
 
   subnet_ids = data.aws_subnets.private.ids
   security_group_rules = {
@@ -95,10 +95,10 @@ module "ecs_service_definition" {
   #https://docs.aws.amazon.com/AmazonECS/latest/developerguide/example_task_definitions.html
   container_definitions = {
     fluent-bit = {
-      cpu       = 512
-      memory    = 1024
+      # cpu       = 512
+      # memory    = 1024
       essential = true
-      image     = data.aws_ssm_parameter.fluentbit.value
+      image     = nonsensitive(data.aws_ssm_parameter.fluentbit.value)
       firelens_configuration = {
         type = "fluentbit"
       }
@@ -109,8 +109,8 @@ module "ecs_service_definition" {
       name      = local.container_name
       image     = local.container_image
       essential = true
-      cpu       = 512
-      memory    = 1024
+      # cpu       = 512
+      # memory    = 1024
       port_mappings = [{
         name : "${local.container_name}-${local.container_port}"
         protocol : "tcp",
@@ -170,3 +170,4 @@ data "aws_service_discovery_dns_namespace" "this" {
 data "aws_ssm_parameter" "fluentbit" {
   name = "/aws/service/aws-for-fluent-bit/stable"
 }
+

@@ -180,7 +180,7 @@ module "autoscaling" {
 
   for_each = {
     one = {
-      instance_type = "t3.small"
+      instance_type = "c6a.xlarge"
     }
     two = {
       instance_type = "c6a.2xlarge"
@@ -237,4 +237,12 @@ module "autoscaling_sg" {
   egress_rules = ["all-all"]
 
   tags = local.tags
+}
+
+################################################################################
+# Optional - Enable VPC Trunking
+################################################################################
+resource "aws_ecs_account_setting_default" "aws_vpc_trunking" {
+  name  = "awsvpcTrunking"
+  value = "enabled"
 }
