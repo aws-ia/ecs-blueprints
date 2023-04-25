@@ -40,7 +40,8 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "~> 5.0"
 
   deployment_controller = "ECS"
 

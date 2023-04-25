@@ -22,7 +22,8 @@ locals {
 ################################################################################
 
 module "aurora_postgresdb" {
-  source = "terraform-aws-modules/rds-aurora/aws"
+  source  = "terraform-aws-modules/rds-aurora/aws"
+  version = "~> 8.0"
 
   name        = "backstage-db"
   engine      = "aurora-postgresql"
@@ -30,8 +31,12 @@ module "aurora_postgresdb" {
 
   vpc_id  = data.aws_vpc.vpc.id
   subnets = data.aws_subnets.private.ids
-
-  allowed_cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+  security_group_rules = {
+    private_subnets_ingress = {
+      description = "Allow ingress from VPC private subnets"
+      cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+    }
+  }
 
   storage_encrypted   = true
   apply_immediately   = true
@@ -42,10 +47,9 @@ module "aurora_postgresdb" {
     max_capacity = 2
   }
 
-  create_random_password = false
-  master_username        = "postgres"
-  master_password        = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
-  port                   = 5432
+  master_username = "postgres"
+  master_password = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
+  port            = 5432
 
   tags = local.tags
 }
@@ -141,7 +145,8 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "~> 5.0"
 
   name          = local.name
   desired_count = 3
@@ -180,10 +185,16 @@ module "ecs_service_definition" {
   enable_execute_command = true
   create_iam_role        = false
   task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  task_exec_secret_arns  = [data.aws_secretsmanager_secret.github_token.arn, data.aws_secretsmanager_secret.postgresdb_master_password.arn]
-  task_exec_ssm_param_arns = [aws_ssm_parameter.base_url.arn, aws_ssm_parameter.postgres_host.arn,
-  aws_ssm_parameter.postgres_port.arn, aws_ssm_parameter.postgres_user.arn]
-
+  task_exec_secret_arns = [
+    data.aws_secretsmanager_secret.github_token.arn,
+    data.aws_secretsmanager_secret.postgresdb_master_password.arn,
+  ]
+  task_exec_ssm_param_arns = [
+    aws_ssm_parameter.base_url.arn,
+    aws_ssm_parameter.postgres_host.arn,
+    aws_ssm_parameter.postgres_port.arn,
+    aws_ssm_parameter.postgres_user.arn,
+  ]
 
   container_definitions = {
     main_container = {

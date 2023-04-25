@@ -51,7 +51,7 @@ class CoreInfrastructureConstruct(Construct):
         self.ecs_cluster_id = None
         self.ecs_task_execution_role_name = None
         self.ecs_task_execution_role_arn = None
-        self.ecs_cluster_security_groups = None
+        # self.ecs_cluster_security_groups = None
         self.private_dns_namespaces = []
 
         self.vpc = Vpc(
@@ -119,6 +119,3 @@ class CoreInfrastructureConstruct(Construct):
         self.ecs_cluster_id = self.ecs_cluster.cluster_arn
         self.ecs_task_execution_role_arn = self.ecs_task_execution_role.role_arn
         self.ecs_task_execution_role_name = self.ecs_task_execution_role.role_name
-        self.ecs_cluster_security_groups = [
-            sg for sg in self.ecs_cluster.connections.security_groups
-        ]

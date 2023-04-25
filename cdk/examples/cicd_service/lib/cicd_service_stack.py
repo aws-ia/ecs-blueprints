@@ -1,23 +1,28 @@
 from aws_cdk import PhysicalName, Stack
-from aws_cdk.aws_ec2 import Vpc, Peer, Port
-from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver, TaskDefinition, Compatibility, FargateService, PortMapping
-from aws_cdk.aws_iam import Role, PolicyStatement
+from aws_cdk.aws_ec2 import Vpc
+from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver
+from aws_cdk.aws_ecs_patterns import (
+    ApplicationLoadBalancedFargateService,
+    ApplicationLoadBalancedTaskImageOptions,
+)
+from aws_cdk.aws_iam import Role
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
-from backend_service.lib.backend_service_stack_props import BackendServiceStackProps
+from components.codestar_cicd_construct import CICDConstructProps, CodeStarCICDConstruct
+from cicd_service.lib.cicd_service_stack_props import CICDServiceStackProps
 
 
-class BackendServiceStack(Stack):
+class CICDServiceStack(Stack):
     def __init__(
         self,
         scope: Stack,
         id: str,
-        backend_service_stack_prop: BackendServiceStackProps,
+        lb_service_stack_prop: CICDServiceStackProps,
         **kwargs
     ):
         super().__init__(scope, id, **kwargs)
 
-        self.stack_props = backend_service_stack_prop
+        self.stack_props = lb_service_stack_prop
         self._ecs_cluster = None
         self._ecs_task_execution_role = None
         self._vpc = self.stack_props.vpc if self.stack_props.vpc else None
@@ -27,74 +32,67 @@ class BackendServiceStack(Stack):
 
         log_group = LogGroup(
             self,
-            "BackendServiceLogGroup",
+            "CICDServiceLogGroup",
             retention=RetentionDays.ONE_WEEK,
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
 
-        fargate_task_def = TaskDefinition(
-            self,
-            self.stack_props.container_name,
-            compatibility=Compatibility.FARGATE,
-            cpu=self.stack_props.task_cpu,
-            memory_mib=self.stack_props.task_memory,
-            execution_role=self.ecs_task_execution_role,
-        )
-
-        fargate_task_def.add_to_task_role_policy(
-            PolicyStatement(
-                actions=["ec2:DescribeSubnets"], resources=["*"]
-            )
-        )
-
-        container = fargate_task_def.add_container(
-            "task-container",
+        fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
+            container_name=self.stack_props.container_name,
             image=ContainerImage.from_registry(
                 self.stack_props.container_image
             ),
-            container_name=self.stack_props.container_name,
-            cpu=int(self.stack_props.task_cpu),
-            memory_reservation_mib=int(self.stack_props.task_memory),
-            logging=LogDriver.aws_logs(
+            container_port=self.stack_props.container_port,
+            execution_role=self.ecs_task_execution_role,
+            log_driver=LogDriver.aws_logs(
                 stream_prefix="ecs",
                 log_group=log_group,
-            ),
-        )
-
-        container.add_port_mappings(
-            PortMapping(
-                container_port=self.stack_props.container_port
             )
         )
-        self.fargate_service = FargateService(
+
+        self.fargate_service = ApplicationLoadBalancedFargateService(
             self,
-            "BackendFargateService",
+            "CICDFargateLBService",
             service_name=self.stack_props.service_name,
-            task_definition=fargate_task_def,
-            enable_execute_command=True,
             cluster=self.ecs_cluster,
+            cpu=int(self.stack_props.task_cpu),
+            memory_limit_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
+            enable_execute_command=True,
+            public_load_balancer=True,
             cloud_map_options=CloudMapOptions(
                 cloud_map_namespace=self.sd_namespace,
                 name=self.stack_props.service_name,
             ),
-            enable_ecs_managed_tags=True
-        )
+            task_image_options=fargate_task_image,
+            enable_ecs_managed_tags=True,
+        ).service
 
-        self.fargate_service.connections.allow_from(
-            Peer.ipv4(self.vpc.vpc_cidr_block),
-            Port.all_tcp(),
-        )
-
-        self.fargate_service.connections.allow_from_any_ipv4(Port.tcp(self.stack_props.container_port))
-
-        autoscale = self.fargate_service.auto_scale_task_count(
+        scalable_target = self.fargate_service.auto_scale_task_count(
             min_capacity=3, max_capacity=10
         )
 
-        autoscale.scale_on_cpu_utilization(
+        scalable_target.scale_on_cpu_utilization(
             "CpuScaling", target_utilization_percent=50
         )
+
+        cicd_props = CICDConstructProps(
+            backend_svc_endpoint=None,
+            buildspec_path=self.stack_props.buildspec_path,
+            container_name=self.stack_props.container_name,
+            container_port=self.stack_props.container_port,
+            ecr_repository_name=self.stack_props.ecr_repository_name,
+            ecs_task_execution_role=self.ecs_task_execution_role,
+            fargate_service=self.fargate_service,
+            folder_path=self.stack_props.folder_path,
+            github_token_secret_name=self.stack_props.github_token_secret_name,
+            repository_owner=self.stack_props.repository_owner,
+            repository_name=self.stack_props.repository_name,
+            repository_branch=self.stack_props.repository_branch,
+        )
+
+        CodeStarCICDConstruct(self, "CodeStarCICDConstruct", cicd_props)
+
 
     @property
     def vpc(self):
@@ -149,7 +147,8 @@ class BackendServiceStack(Stack):
         if (
             self.stack_props.account_number == "<ACCOUNT_NUMBER>"
             or self.stack_props.aws_region == "<REGION>"
+            or self.stack_props.repository_owner == "<REPO_OWNER>"
         ):
             raise ValueError(
-                "Environment values needs to be set for account_number, aws_region"
+                "Environment values needs to be set for repository_owner, account_number, aws_region"
             )

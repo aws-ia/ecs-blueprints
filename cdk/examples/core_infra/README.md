@@ -4,10 +4,10 @@ This folder contains the CDK code to deploy the core infratructure for an ECS Fa
   * VPC
     * 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
     * 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of private subnets as AZs.
-    * 1 NAT Gateway
+    * NAT Gateway per subnet
+    * Associated Route Tables
     * 1 Internet Gateway
-    * 1 Associated Route Tables
-* 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
+* 1 ECS Cluster with AWS CloudWatch Container Insights enabled
 * Task execution IAM role
 * CloudWatch log groups
 * CloudMap service discovery namespace `default`
