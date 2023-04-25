@@ -81,30 +81,12 @@ terraform destroy
 | [aws_iam_role.execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_service_discovery_private_dns_namespace.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/service_discovery_private_dns_namespace) | resource |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
-| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.execution](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
-| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 | [aws_ssm_parameter.ecs_optimized_ami](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ssm_parameter) | data source |
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_asg_name"></a> [asg\_name](#input\_asg\_name) | Name of the AutoScaling Group | `string` | `"ecs_blueprint_asg"` | no |
-| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS region | `string` | `"us-west-2"` | no |
-| <a name="input_capcitiy-provider_name"></a> [capcitiy-provider\_name](#input\_capcitiy-provider\_name) | Name of capacity provider | `string` | `"capacity-provide-blue-print"` | no |
-| <a name="input_core_stack_name"></a> [core\_stack\_name](#input\_core\_stack\_name) | The name of Core Infrastructure stack, feel free to rename it. Used for cluster and VPC names. | `string` | `"ecs-blueprint-infra"` | no |
-| <a name="input_desired_capacity"></a> [desired\_capacity](#input\_desired\_capacity) | Desire Capacity Of AutoScalingGroup | `number` | `1` | no |
-| <a name="input_enable_nat_gw"></a> [enable\_nat\_gw](#input\_enable\_nat\_gw) | Provision a NAT Gateway in the VPC | `bool` | `true` | no |
-| <a name="input_instance_initiated_shutdown_behavior"></a> [instance\_initiated\_shutdown\_behavior](#input\_instance\_initiated\_shutdown\_behavior) | Shutdown behavioure on instance | `string` | `"terminate"` | no |
-| <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | ECS Container Instance Instance Type | `string` | `"c6a.2xlarge"` | no |
-| <a name="input_launch_name"></a> [launch\_name](#input\_launch\_name) | Name of the Launch Template | `string` | `"ecs-blueprint-launch_template"` | no |
-| <a name="input_max_size"></a> [max\_size](#input\_max\_size) | Maximum Size Of AutoScalingGroup | `number` | `4` | no |
-| <a name="input_min_size"></a> [min\_size](#input\_min\_size) | Minimum Size Of AutoScalingGroup | `number` | `1` | no |
-| <a name="input_namespaces"></a> [namespaces](#input\_namespaces) | List of service discovery namespaces for ECS services. Creates a default namespace | `list(string)` | <pre>[<br>  "default",<br>  "myapp"<br>]</pre> | no |
-| <a name="input_volume_size"></a> [volume\_size](#input\_volume\_size) | n/a | `string` | `30` | no |
-| <a name="input_volume_type"></a> [volume\_type](#input\_volume\_type) | Volume type to be used | `string` | `"gp2"` | no |
-| <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for VPC | `string` | `"10.0.0.0/16"` | no |
+No inputs.
 
 ## Outputs
 
