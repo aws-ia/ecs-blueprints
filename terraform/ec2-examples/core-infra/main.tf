@@ -240,7 +240,7 @@ module "autoscaling_sg" {
 }
 
 ################################################################################
-# Optional - Enable VPC Trunking
+# Optional - Enable VPC Trunking. Ref : https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html
 ################################################################################
 resource "aws_ecs_account_setting_default" "aws_vpc_trunking" {
   name  = "awsvpcTrunking"

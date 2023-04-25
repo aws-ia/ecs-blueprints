@@ -170,4 +170,3 @@ data "aws_service_discovery_dns_namespace" "this" {
 data "aws_ssm_parameter" "fluentbit" {
   name = "/aws/service/aws-for-fluent-bit/stable"
 }
-
