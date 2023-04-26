@@ -3,6 +3,7 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
@@ -11,17 +12,12 @@ locals {
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
-
-  #TODO - Cleanup and add fine grained SSM and Secrets Manager access for the example.
-  task_execution_role_managed_policy_arn = ["arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess",
-  "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
-
-
   user_data = <<-EOT
     #!/bin/bash
     cat <<'EOF' >> /etc/ecs/ecs.config
     ECS_CLUSTER=${local.name}
     ECS_LOGLEVEL=debug
+    ECS_ENABLE_TASK_IAM_ROLE=true
     EOF
   EOT
 
@@ -35,8 +31,9 @@ locals {
 # ECS Blueprint
 ################################################################################
 
-module "ecs" {
-  source = "github.com/clowdhaus/terraform-aws-ecs"
+module "ecs_cluster" {
+  source  = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version = "~> 5.0"
 
   cluster_name = local.name
 
@@ -47,8 +44,8 @@ module "ecs" {
   # Capacity provider - autoscaling groups
   default_capacity_provider_use_fargate = false
   autoscaling_capacity_providers = {
-    one = {
-      auto_scaling_group_arn         = module.autoscaling["one"].autoscaling_group_arn
+    (local.name) = {
+      auto_scaling_group_arn         = module.autoscaling.autoscaling_group_arn
       managed_termination_protection = "ENABLED"
 
       managed_scaling = {
@@ -59,39 +56,32 @@ module "ecs" {
       }
 
       default_capacity_provider_strategy = {
-        weight = 60
-        base   = 20
-      }
-    }
-    two = {
-      auto_scaling_group_arn         = module.autoscaling["two"].autoscaling_group_arn
-      managed_termination_protection = "ENABLED"
-
-      managed_scaling = {
-        maximum_scaling_step_size = 15
-        minimum_scaling_step_size = 5
-        status                    = "ENABLED"
-        target_capacity           = 90
-      }
-
-      default_capacity_provider_strategy = {
-        weight = 40
+        weight = 1
+        base   = 1
       }
     }
   }
 
-  # # Shared task execution role
-  # create_task_exec_iam_role = false
-  # # Allow read access to all SSM params in current account for demo
-  # task_exec_ssm_param_arns = ["arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*"]
-  # # Allow read access to all secrets in current account for demo
-  # task_exec_secret_arns = ["arn:aws:secretsmanager:${local.region}:${data.aws_caller_identity.current.account_id}:secret:*"]
+  # Shared task execution role
+  create_task_exec_iam_role = false
+  # Allow read access to all SSM params in current account for demo
+  task_exec_ssm_param_arns = ["arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*"]
+  # Allow read access to all secrets in current account for demo
+  task_exec_secret_arns = ["arn:aws:secretsmanager:${local.region}:${data.aws_caller_identity.current.account_id}:secret:*"]
+
+  tags = local.tags
+}
+
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  name        = "default.${local.name}.local"
+  description = "Service discovery namespace.clustername.local"
+  vpc         = module.vpc.vpc_id
 
   tags = local.tags
 }
 
 ################################################################################
-# Supporting Resources - VPC
+# Supporting Resources
 ################################################################################
 
 module "vpc" {
@@ -121,50 +111,6 @@ module "vpc" {
   tags = local.tags
 }
 
-################################################################################
-# Service discovery namespaces
-################################################################################
-
-resource "aws_service_discovery_private_dns_namespace" "this" {
-  name        = "default.${local.name}.local"
-  description = "Service discovery namespace.clustername.local"
-  vpc         = module.vpc.vpc_id
-
-  tags = local.tags
-}
-
-################################################################################
-# Task Execution Role
-################################################################################
-
-resource "aws_iam_role" "execution" {
-  name               = "${local.name}-execution"
-  assume_role_policy = data.aws_iam_policy_document.execution.json
-  tags               = local.tags
-}
-
-data "aws_iam_policy_document" "execution" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_policy_attachment" "execution" {
-  count      = length(local.task_execution_role_managed_policy_arn)
-  name       = "${local.name}-execution-policy"
-  roles      = [aws_iam_role.execution.name]
-  policy_arn = local.task_execution_role_managed_policy_arn[count.index]
-}
-
-
-
-################################################################################
-# Auto Scaling Group
-################################################################################
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
 data "aws_ssm_parameter" "ecs_optimized_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
@@ -173,17 +119,8 @@ data "aws_ssm_parameter" "ecs_optimized_ami" {
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "~> 6.5"
-  # Autoscaling group
-  name = "${local.name}-${each.key}"
 
-  for_each = {
-    one = {
-      instance_type = "c6a.xlarge"
-    }
-    two = {
-      instance_type = "c6a.2xlarge"
-    }
-  }
+  name = local.name
 
   image_id      = jsondecode(data.aws_ssm_parameter.ecs_optimized_ami.value)["image_id"]
   instance_type = each.value.instance_type
@@ -197,7 +134,6 @@ module "autoscaling" {
   iam_role_description        = "ECS role for ${local.name}"
   iam_role_policies = {
     AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-    AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   }
 
   vpc_zone_identifier = module.vpc.private_subnets
@@ -217,10 +153,6 @@ module "autoscaling" {
   tags = local.tags
 }
 
-################################################################################
-# Auto Scaling Group - Security Group
-################################################################################
-
 module "autoscaling_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
@@ -235,12 +167,4 @@ module "autoscaling_sg" {
   egress_rules = ["all-all"]
 
   tags = local.tags
-}
-
-################################################################################
-# Optional - Enable VPC Trunking. Ref : https://docs.aws.amazon.com/AmazonECS/latest/developerguide/container-instance-eni.html
-################################################################################
-resource "aws_ecs_account_setting_default" "aws_vpc_trunking" {
-  name  = "awsvpcTrunking"
-  value = "enabled"
 }

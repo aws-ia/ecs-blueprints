@@ -20,12 +20,107 @@ locals {
 # ECS Blueprint
 ################################################################################
 
+module "ecs_service" {
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "~> 5.0"
+
+  name               = local.name
+  desired_count      = 3
+  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
+  enable_autoscaling = false
+
+  # Task Definition
+  requires_compatibilities = ["EC2"]
+  capacity_provider_strategy = {
+    default = {
+      capacity_provider = "core-infra" # needs to match name of capacity provider
+      weight            = 1
+      base              = 1
+    }
+  }
+  create_iam_role        = false
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
+
+  container_definitions = {
+    (local.container_name) = {
+      image = local.container_image
+      port_mappings = [
+        {
+          name          = "${local.container_name}-${local.container_port}"
+          protocol      = "tcp",
+          containerPort = local.container_port
+          hostPort      = local.container_port
+        }
+      ]
+
+      environment = [
+        {
+          name  = "NODEJS_URL",
+          value = "http://ecsdemo-backend.${data.aws_service_discovery_dns_namespace.this.name}:3000"
+        }
+      ]
+    }
+  }
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.this.arn
+  }
+
+  load_balancer = [
+    {
+      container_name   = local.container_name
+      container_port   = local.container_port
+      target_group_arn = element(module.service_alb.target_group_arns, 0)
+    }
+  ]
+
+  subnet_ids = data.aws_subnets.private.ids
+  security_group_rules = {
+    alb_ingress = {
+      type                     = "ingress"
+      from_port                = local.container_port
+      to_port                  = local.container_port
+      protocol                 = "tcp"
+      description              = "Service port"
+      source_security_group_id = module.service_alb.security_group_id
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = data.aws_subnet.private_cidr[*].cidr_block
+    }
+  }
+
+  tags = local.tags
+}
+
+resource "aws_service_discovery_service" "this" {
+  name = local.name
+
+  dns_config {
+    namespace_id = data.aws_service_discovery_dns_namespace.this.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
+
 module "service_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 8.3"
 
-  name = "${local.name}-alb"
-
+  name               = "${local.name}-alb"
   load_balancer_type = "application"
 
   vpc_id  = data.aws_vpc.vpc.id
@@ -44,7 +139,7 @@ module "service_alb" {
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
-      cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+      cidr_blocks = data.aws_subnet.private_cidr[*].cidr_block
     }
   }
 
@@ -69,97 +164,6 @@ module "service_alb" {
       }
     },
   ]
-
-  tags = local.tags
-}
-
-resource "aws_service_discovery_service" "this" {
-  name = local.name
-
-  dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.this.id
-
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
-
-    routing_policy = "MULTIVALUE"
-  }
-
-  health_check_custom_config {
-    failure_threshold = 1
-  }
-}
-
-module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
-
-  name               = local.name
-  desired_count      = 3
-  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
-  enable_autoscaling = false
-
-  subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
-    ingress_alb_service = {
-      type                     = "ingress"
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      description              = "Service port"
-      source_security_group_id = module.service_alb.security_group_id
-    }
-    egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-
-  load_balancer = [{
-    container_name   = local.container_name
-    container_port   = local.container_port
-    target_group_arn = element(module.service_alb.target_group_arns, 0)
-  }]
-
-  service_registries = {
-    registry_arn = aws_service_discovery_service.this.arn
-  }
-
-  # service_connect_configuration = {
-  #   enabled = false
-  # }
-
-  # Task Definition
-  requires_compatibilities = ["EC2", "FARGATE"]
-  launch_type              = "EC2"
-  create_iam_role          = false
-
-  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command = true
-
-  container_definitions = {
-    main_container = {
-      name                     = local.container_name
-      image                    = local.container_image
-      readonly_root_filesystem = false
-
-      port_mappings = [{
-        protocol : "tcp",
-        containerPort : local.container_port
-        hostPort : local.container_port
-      }],
-      "environment" = [{
-        "name"  = "NODEJS_URL",
-        "value" = "http://ecsdemo-backend.default.core-infra.local:3000"
-      }]
-    }
-  }
-
-  ignore_task_definition_changes = false
 
   tags = local.tags
 }
