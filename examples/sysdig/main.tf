@@ -7,7 +7,7 @@ provider "sysdig" {
 }
 
 locals {
-  name = "sysdig-infected-backend-demo"
+  name   = "sysdig-infected-backend-demo"
   region = "us-west-2"
 
   container_image = "sysdiglabs/writer-to-bin"
@@ -59,13 +59,13 @@ resource "aws_service_discovery_service" "this" {
 }
 
 module "ecs_service_definition" {
-  source = "github.com/clowdhaus/terraform-aws-ecs//modules/service"
+  source = "terraform-aws-modules/ecs/aws//modules/service"
 
   deployment_controller = "ECS"
 
   name               = local.name
   desired_count      = 1
-  cluster            = data.aws_ecs_cluster.core_infra.cluster_name
+  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
@@ -91,7 +91,7 @@ module "ecs_service_definition" {
   }
 
   # Task Definition
-  create_tasks_iam_role     = true
+  create_tasks_iam_role = true
   tasks_iam_role_statements = [
     {
       sid = "SysdigPolicy"
@@ -112,10 +112,10 @@ module "ecs_service_definition" {
       resources = ["*"]
     }
   ]
-  task_exec_iam_role_arn    = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command    = true
+  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
+  enable_execute_command = true
 
-  cpu    = 512
+  cpu = 512
 
   container_definitions = {
     main_container = {
@@ -131,34 +131,34 @@ module "ecs_service_definition" {
         }
       }
       environment = [{
-          name  = "SYSDIG_ORCHESTRATOR"
-          value = module.sysdig_orchestrator_agent.orchestrator_host
+        name  = "SYSDIG_ORCHESTRATOR"
+        value = module.sysdig_orchestrator_agent.orchestrator_host
         }, {
-          name  = "SYSDIG_ORCHESTRATOR_PORT"
-          value = module.sysdig_orchestrator_agent.orchestrator_port
+        name  = "SYSDIG_ORCHESTRATOR_PORT"
+        value = module.sysdig_orchestrator_agent.orchestrator_port
         }, {
-          name  = "SYSDIG_ACCESS_KEY"
-          value = var.sysdig_access_key
+        name  = "SYSDIG_ACCESS_KEY"
+        value = var.sysdig_access_key
         }, {
-          name  = "SYSDIG_COLLECTOR"
-          value = var.sysdig_collector_url
+        name  = "SYSDIG_COLLECTOR"
+        value = var.sysdig_collector_url
         }, {
-          name  = "SYSDIG_COLLECTOR_PORT"
-          value = 6443
+        name  = "SYSDIG_COLLECTOR_PORT"
+        value = 6443
         }, {
-          name  = "SYSDIG_LOGGING"
-          value = "debug"
-        }],
+        name  = "SYSDIG_LOGGING"
+        value = "debug"
+      }],
       volumes_from = [{
-          sourceContainer = "SysdigInstrumentation"
-          readOnly        = true
-        }]
+        sourceContainer = "SysdigInstrumentation"
+        readOnly        = true
+      }]
     },
     sidecar_container = {
-      name        = "SysdigInstrumentation"
-      image       = "quay.io/sysdig/workload-agent:latest"
-      cpu         = 256
-      entrypoint  = ["/opt/draios/bin/logwriter"]
+      name       = "SysdigInstrumentation"
+      image      = "quay.io/sysdig/workload-agent:latest"
+      cpu        = 256
+      entrypoint = ["/opt/draios/bin/logwriter"]
     }
   }
 
