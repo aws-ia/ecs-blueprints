@@ -1,15 +1,9 @@
-
-output "service_discovery_arn" {
-  value       = aws_service_discovery_service.this.arn
-  description = "Service discovery arn"
+output "task_definition_family" {
+  description = "The ECS Task Definition family"
+  value       = module.ecs_service.task_definition_family
 }
 
-output "service_discovery_name" {
-  value       = aws_service_discovery_service.this.name
-  description = "Service name"
-}
-
-output "service_discovery_namespace" {
-  value       = aws_service_discovery_service.this.namespace_id
-  description = "Service discovery namespace"
+output "ecs_service_name" {
+  description = "The name of the ECS Service"
+  value       = module.ecs_service.name
 }
