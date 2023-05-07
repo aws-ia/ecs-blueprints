@@ -51,7 +51,7 @@ git clone https://github.com/<your-repo>/ecs-blueprints.git
 * Start with `core-infra` to create cluster, VPC, and require IAM
 
 ```shell
-cd ecs-blueprints/examples/core-infra/
+cd ecs-blueprints/terraform/fargate-examples/core-infra/
 
 terraform init
 terraform plan
