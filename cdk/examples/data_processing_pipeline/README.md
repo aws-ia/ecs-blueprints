@@ -1,4 +1,4 @@
-# ECS Fargate Autoscaling Queue Processing
+# ECS Fargate parallel data processing using StepFunctions
 
 One of the most commonly used patterns for Step Functions is the invocation of Lambda functions to perform tasks. While this works well for use cases with short lived tasks, the short time constraints of lambda do not work well with use cases that require longer running tasks.  For example, consider the use case of regulators that process data submitted by hundreds of thousands of clients. This data is usually processed in batches and in some cases, on an ad-hoc basis.  Data processing tasks, whether it is preparing data or transforming large data sets, are time consuming. Lambda functions can run for up to 15 minutes, at which point they will timeout, regardless of the state they are in, meaning that loss of data or worse things may happen (data corruption for example). In addition to the potential failure because of the timeout, we have to also consider the costs. Lambda functions are billed by 1ms segments, and while they are cheap, the longer they run, the more expensive they become. Additionally, functions that do compute heavy work may require more memory allocated to them, and adding memory to a Lambda increases the runtime cost. 
 
@@ -12,11 +12,10 @@ The above solution can be used not only for batch processing, but is flexible en
 
 This blueprint expects csv data files uploaded to an S3 source bucket, in a "__prefix__/incoming/" folder. At a given schedule configured in EventBridge, the workflow is triggered to process the uploaded files.
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * **NOTE:** The blueprint deployment requires the ecs container to exist in your repository. Use the below steps to build and deploy the container image. Please ensure Docker daemon is running prior to building the image and aws cli is configured for an account and region and your role has permissions to deploy to ECR.
   * `cd ecr`
   * `./build.sh -i process-data`
-  * Again, once this is created, you will only run the above steps if there are changes to the task.
+* Once this is created, you will only run the above steps if there are changes to the task.
 * Now you can deploy this blueprint
 ```shell
 cdk bootstrap
