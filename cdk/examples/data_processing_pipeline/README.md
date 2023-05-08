@@ -28,7 +28,7 @@ cdk deploy
 ## Blueprint Architecture
 
 <p align="center">
-  <img src="sfn-ecs-s3.png"/>
+  <img src="StepFunctions_ECS_S3_Blueprint.png"/>
 </p>
 
 The solution has following key components:
