@@ -5,7 +5,12 @@ from aws_cdk.aws_ecs_patterns import (
     ApplicationLoadBalancedFargateService,
     ApplicationLoadBalancedTaskImageOptions,
 )
-from aws_cdk.aws_iam import Role
+from aws_cdk.aws_iam import (
+    Effect,
+    PolicyStatement,
+    Role,
+    ServicePrincipal
+)
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from fis_service.lib.fis_service_stack_props import FISServiceStackProps
@@ -19,6 +24,7 @@ class FISServiceStack(Stack):
         **kwargs
     ):
         super().__init__(scope, id, **kwargs)
+        
         self.stack_props = fis_service_stack_prop
         self._ecs_cluster = None
         self._ecs_task_execution_role = None
@@ -26,6 +32,8 @@ class FISServiceStack(Stack):
         self._sd_namespace = (
             self.stack_props.sd_namespace if self.stack_props.sd_namespace else None
         )
+        
+        self._create_ecs_task_role()
         
         log_group = LogGroup(
             self,
@@ -45,7 +53,7 @@ class FISServiceStack(Stack):
                 stream_prefix="ecs",
                 log_group=log_group,
             ),
-            task_role=[]
+            task_role=self.ecs_task_role
         )
         
         self.fargate_service = ApplicationLoadBalancedFargateService(
@@ -123,8 +131,23 @@ class FISServiceStack(Stack):
             )
         return self._ecs_task_execution_role
     
-    # def ecs_task_role(self):
-    #     return self.ecs_task_role
+    def _create_ecs_task_role(self):
+        self.ecs_task_role = Role(
+            self,
+            "codeBuildServiceRole",
+            assumed_by=ServicePrincipal("ecs-tasks"),
+        )
+        
+        inline_policy = PolicyStatement(
+            effect=Effect.ALLOW,
+            actions=[
+                "ssm:CreateActivation",
+                "ssm:AddTagsToResource",
+            ],
+            resources=["*"],
+        )
+        
+        self.ecs_task_role.add_to_policy(inline_policy)
     
     def validate_stack_props(self):
         if (
