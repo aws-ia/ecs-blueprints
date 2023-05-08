@@ -1,4 +1,7 @@
 # ECS Fargate parallel data processing using StepFunctions
+<p align="center">
+  <img src="sfn-ecs-s3.png"/>
+</p>
 
 One of the most commonly used patterns for Step Functions is the invocation of Lambda functions to perform tasks. While this works well for use cases with short lived tasks, the short time constraints of lambda do not work well with use cases that require longer running tasks.  For example, consider the use case of regulators that process data submitted by hundreds of thousands of clients. This data is usually processed in batches and in some cases, on an ad-hoc basis.  Data processing tasks, whether it is preparing data or transforming large data sets, are time consuming. Lambda functions can run for up to 15 minutes, at which point they will timeout, regardless of the state they are in, meaning that loss of data or worse things may happen (data corruption for example). In addition to the potential failure because of the timeout, we have to also consider the costs. Lambda functions are billed by 1ms segments, and while they are cheap, the longer they run, the more expensive they become. Additionally, functions that do compute heavy work may require more memory allocated to them, and adding memory to a Lambda increases the runtime cost. 
 
