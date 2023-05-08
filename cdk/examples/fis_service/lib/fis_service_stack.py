@@ -6,6 +6,7 @@ from aws_cdk.aws_ecs_patterns import (
     ApplicationLoadBalancedTaskImageOptions,
 )
 from aws_cdk.aws_iam import (
+    ManagedPolicy,
     Effect,
     PolicyStatement,
     Role,
@@ -34,6 +35,7 @@ class FISServiceStack(Stack):
         )
         
         self._create_ecs_task_role()
+        self._create_ssm_managed_instance_role()
         
         log_group = LogGroup(
             self,
@@ -77,7 +79,7 @@ class FISServiceStack(Stack):
             "amazon-ssm-agent",
             image=ContainerImage.from_registry("public.ecr.aws/amazon-ssm-agent/amazon-ssm-agent:latest"),
             environment={
-                "MANAGED_INSTANCE_ROLE_NAME": "SSMManagedInstanceRole"
+                "MANAGED_INSTANCE_ROLE_NAME": self.ssm_managed_instance_role.role_name
             },
             command=[
                 "/bin/bash",
@@ -134,13 +136,14 @@ class FISServiceStack(Stack):
     def _create_ecs_task_role(self):
         self.ecs_task_role = Role(
             self,
-            "codeBuildServiceRole",
+            "ECSTaskRole",
             assumed_by=ServicePrincipal("ecs-tasks"),
         )
         
         inline_policy = PolicyStatement(
             effect=Effect.ALLOW,
             actions=[
+                "iam:PassRole",
                 "ssm:CreateActivation",
                 "ssm:AddTagsToResource",
             ],
@@ -148,6 +151,24 @@ class FISServiceStack(Stack):
         )
         
         self.ecs_task_role.add_to_policy(inline_policy)
+        
+    def _create_ssm_managed_instance_role(self):
+        self.ssm_managed_instance_role = Role(
+            self,
+            "SSMManagedInstanceRole",
+            assumed_by=ServicePrincipal("ssm"),
+        )
+        
+        inline_policy = PolicyStatement(
+            effect=Effect.ALLOW,
+            actions=[
+                "ssm:DeleteActivation",
+                "ssm:DeregisterManagedInstance",
+            ],
+            resources=["*"],
+        )
+        self.ssm_managed_instance_role.add_managed_policy(ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore"))
+        self.ssm_managed_instance_role.add_to_policy(inline_policy)
     
     def validate_stack_props(self):
         if (
