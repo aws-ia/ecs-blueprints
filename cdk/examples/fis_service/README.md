@@ -50,7 +50,7 @@ The solution has following key components:
   * Tasks for this service will be deployed in private subnet
   * Service definition takes the load balancer target group created above as input
   * Task definition consisting of task vCPU size, task memory, and container information
-  * Two containers are defined in the task definition. One is for the simple nginx and the other is amazon-ssm-agent container for registering ECS Task as a SSM Managed Instance. 
+  * Two containers are defined in the task definition. One is for the simple nginx and the other is amazon-ssm-agent container for registering ECS Task as a SSM Managed Instance.
   * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
 
 ## Cleanup
