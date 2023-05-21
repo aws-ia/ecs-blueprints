@@ -15,9 +15,9 @@ The above solution can be used not only for batch processing, but is flexible en
 
 This blueprint expects csv data files uploaded to an S3 source bucket, in a "__prefix__/incoming/" folder. At a given schedule configured in EventBridge, the workflow is triggered to process the uploaded files.
 
-* **NOTE:** The blueprint deployment requires the ecs container to exist in your repository. Use the below steps to build and deploy the container image. Please ensure Docker daemon is running prior to building the image and aws cli is configured for an account and region and your role has permissions to deploy to ECR.
-  * `cd ecr`
+* **NOTE:** The blueprint deployment requires the ecs container to exist in your repository. An example task is provided under application-code/data-pipeline-task in the root of the blueprint repository. Use the below command to build and deploy the container image. Please ensure Docker daemon is running prior to building the image and aws cli is configured for an account and region and your role has permissions to deploy to ECR.
   * `./build.sh -i process-data`
+
 * Once this is created, you will only run the above steps if there are changes to the task.
 * Now you can deploy this blueprint
 ```shell
