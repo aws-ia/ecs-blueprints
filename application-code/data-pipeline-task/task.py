@@ -73,7 +73,22 @@ try:
         taskToken=task_token,
         output=json.dumps(result, default=convert_to_json_string)
     )
-
+# Catch any boto3 client exception
+except ClientError as e:
+    result = {
+        'error': e.__dict__,
+        "id": foldername,
+        "files": file_list,
+        "processing_date": processing_date
+    }
+    print("Sending failure output to Step Functions with task token " + task_token)
+    print(result)
+    workflowClient.send_task_failure(
+        taskToken=task_token,
+        error="DataProcessingException",
+        cause=json.dumps(result, default=convert_to_json_string)
+    )
+# Catch any generic python exception
 except Exception as e:
     result = {
         "id": foldername,
@@ -81,8 +96,7 @@ except Exception as e:
         "result": "fail",
         "error": e,
         "cause": "processing error",
-        "processing_date": processing_date,
-        "code": "O"
+        "processing_date": processing_date
     }
     print("Sending failure output to Step Functions with task token " + task_token)
     print(result)
