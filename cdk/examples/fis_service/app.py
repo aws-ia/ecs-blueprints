@@ -34,12 +34,12 @@ if deploy_core:
     )
     fis_stack_props.vpc = core_stack.vpc
     fis_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
+
     fis_stack_props.sd_namespace = [
         ns
         for ns in core_stack.private_dns_namespaces
         if ns.namespace_name == fis_stack_props.namespace_name
     ][0]
-
     fis_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
 
 fis_service_stack = FISServiceStack(
