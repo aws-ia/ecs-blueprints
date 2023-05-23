@@ -92,6 +92,7 @@ class FISServiceStack(Stack):
         )
 
         self.ec2_service.task_definition.add_container(
+
             "amazon-ssm-agent",
             image=ContainerImage.from_registry("public.ecr.aws/amazon-ssm-agent/amazon-ssm-agent:latest"),
             environment={

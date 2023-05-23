@@ -2,7 +2,8 @@
 
 This blueprint creates a web-facing load balanced ECS service for AWS FIS. Below are the steps for deploying this service.
 
-* Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the Essential Props of the `.env` file:
+
+* Copy `sample.env` to `.env` and change the `account_number` and `aws_region` values in the Essential Props of the `.env` file:
 ```bash
 # Essential Props
 account_number="<ACCOUNT_NUMBER>"
