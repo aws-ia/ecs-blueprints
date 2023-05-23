@@ -7,7 +7,7 @@ def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role):
     stepfunctionExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ['ecs:RunTask'],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ecs:'+region+':'+account+':task-definition/*']
+        resources= ['arn:aws:ecs:'+region+':'+str(account)+':task-definition/*']
     ))
     stepfunctionExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["logs:CreateLogDelivery",
@@ -41,7 +41,7 @@ def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
         "ecr:GetDownloadUrlForLayer",
         "ecr:BatchGetImage"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ecr:'+region+':'+account+':*']
+        resources= ['arn:aws:ecr:'+region+':'+str(account)+':*']
     ))
     ecsTaskExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["logs:CreateLogStream",
@@ -53,7 +53,7 @@ def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
         actions= ["ec2:AuthorizeSecurityGroupIngress",
         "ec2:Describe*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ec2:'+region+':'+account+':*']
+        resources= ['arn:aws:ec2:'+region+':'+str(account)+':*']
     ))
     ecsTaskExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
@@ -62,7 +62,7 @@ def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
         "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
         "elasticloadbalancing:RegisterTargets"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:elasticloadbalancing:'+region+':'+account+':*']
+        resources= ['arn:aws:elasticloadbalancing:'+region+':'+str(account)+':*']
     ))
 
     return ecsTaskExecutionRole
@@ -73,23 +73,23 @@ def add_ecs_task_role_policies(ecsTaskRole: iam.Role):
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["states:*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:states:'+region+':'+account+':*']
+        resources= ['arn:aws:states:'+region+':'+str(account)+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["ssm:DescribeParameters",
         "ssm:GetParameters"],
         effect= iam.Effect.ALLOW,
-        resources=['arn:aws:ssm:'+region+':'+account+':*']
+        resources=['arn:aws:ssm:'+region+':'+str(account)+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["kms:Decrypt"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:kms:'+region+':'+account+':*']
+        resources= ['arn:aws:kms:'+region+':'+str(account)+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["elasticfilesystem:*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:elasticfilesystem:'+region+':'+account+':*']
+        resources= ['arn:aws:elasticfilesystem:'+region+':'+str(account)+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["s3:*",

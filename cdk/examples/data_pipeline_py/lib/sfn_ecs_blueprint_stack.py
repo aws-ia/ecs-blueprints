@@ -94,7 +94,7 @@ class SfnEcsBlueprintStack(cdk.Stack):
           self, 
           'ecrRepository', 
           repository_name= 'process-data',
-          repository_arn= 'arn:aws:ecr:'+env.region+':'+env.account+':repository/process-data'
+          repository_arn= 'arn:aws:ecr:'+env.region+':'+str(env.account)+':repository/process-data'
         )
 
         # Create the fargate task definition
@@ -142,7 +142,7 @@ class SfnEcsBlueprintStack(cdk.Stack):
         eventbridge_execution_role = iam.Role(
            self, 
            'DataPipelineEventBridgeSchedulerExecutionRole',
-           assumed_by= iam.ServicePrincipal('scheduler.amazonaws.com'),
+           assumed_by= iam.ServicePrincipal('events.amazonaws.com'),
            description= 'Role assumed by EventBridge scheduler to invoke workflow'
         )
         eventbridge_execution_role.add_to_principal_policy(

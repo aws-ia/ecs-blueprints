@@ -15,7 +15,7 @@ import {
   addLambdaExecutionRolePolicies
 } from './sfn-ecs-blueprint-roles';
 import { 
-  createDataProcessorStateMachine 
+  createDataPipelineStateMachine 
 } from './sfn-ecs-blueprint-workflow';
 import { TargetTrackingScalingPolicy } from 'aws-cdk-lib/aws-applicationautoscaling';
 
@@ -39,15 +39,15 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     // * Ecs Task Execution Role - Role assumed by ECS to execute tasks
     // * Ecs Task Role - Role assumed by task to perform its job
     // * Lambda execution role - Role to be assumed by Lambda to parse S3  
-    const ecsTaskExecutionRole = new iam.Role (this, 'DataProcessorEcsTaskExecutionRole', {
+    const ecsTaskExecutionRole = new iam.Role (this, 'DataPipelineEcsTaskExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Role to run an ECS task'
     });
-    const ecsTaskRole = new iam.Role (this, 'DataProcessorEcsTaskRole', {
+    const ecsTaskRole = new iam.Role (this, 'DataPipelineEcsTaskRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Role assumed by task to perform its function'
     });
-    const stepFunctionExecutionRole = new iam.Role(this, 'DataProcessorStepFunctionExecutionRole', {
+    const stepFunctionExecutionRole = new iam.Role(this, 'DataPipelineStepFunctionExecutionRole', {
       assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
       description: 'Stepfunction execution role'
     });
@@ -59,7 +59,7 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
         "iam:PassedToService": "ecs-tasks.amazonaws.com"
       }}
     }))
-    const lambdaExecutionRole = new iam.Role(this, "DataProcessorLambdaExecutionRole", {
+    const lambdaExecutionRole = new iam.Role(this, "DataPipelineLambdaExecutionRole", {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: 'Lambda execution role',
       managedPolicies: [
@@ -73,9 +73,12 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     addLambdaExecutionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, lambdaExecutionRole);
 
     // Create the ECS Cluster
-    const vpc = new ec2.Vpc(this, 'DataProcessorVpc', { maxAzs: 2 });
-    const ecsCluster = new ecs.Cluster(this, "DataProcessorCluster", {
-      clusterName: "DataProcessorCluster",
+    const vpc = new ec2.Vpc(this, 'DataPipelineVpc', { 
+      maxAzs: 2,
+      natGateways: 2 
+    });
+    const ecsCluster = new ecs.Cluster(this, "DataPipelineCluster", {
+      clusterName: "DataPipelineCluster",
       enableFargateCapacityProviders: true,
       vpc
     });
@@ -115,7 +118,7 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     })
 
     // Create the state machine
-    const dataProcessorWorkflow = createDataProcessorStateMachine(this, 
+    const dataPipelineWorkflow = createDataPipelineStateMachine(this, 
       ecsCluster, 
       fargateTaskDefinition, 
       container, 
@@ -124,14 +127,14 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     )
     
     // Create the EventBridge Scheduler to invoke the workflow at a given cron schedule
-    const eventbridgeExecutionRole = new iam.Role(this, "DataProcessorEventBridgeSchedulerExecutionRole", {
-      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
+    const eventbridgeExecutionRole = new iam.Role(this, "DataPipelineEventBridgeSchedulerExecutionRole", {
+      assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
       description: 'Role assumed by EventBridge scheduler to invoke workflow'
     })
     eventbridgeExecutionRole.addToPrincipalPolicy(new iam.PolicyStatement({
       actions:['states:StartExecution'],
       effect: iam.Effect.ALLOW,
-      resources:[dataProcessorWorkflow.stateMachineArn]
+      resources:[dataPipelineWorkflow.stateMachineArn]
     }))
 
     const rule = new events.Rule(this, 'Rule', {
@@ -140,7 +143,7 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
         hour: '22' // 10 PM everyday
       })
     });
-    rule.addTarget(new targets.SfnStateMachine(dataProcessorWorkflow, {
+    rule.addTarget(new targets.SfnStateMachine(dataPipelineWorkflow, {
       role: eventbridgeExecutionRole
     })); 
 
