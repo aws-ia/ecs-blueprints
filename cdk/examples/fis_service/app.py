@@ -34,6 +34,7 @@ if deploy_core:
     )
     fis_stack_props.vpc = core_stack.vpc
     fis_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
+
     fis_stack_props.sd_namespace = [
         ns
         for ns in core_stack.private_dns_namespaces

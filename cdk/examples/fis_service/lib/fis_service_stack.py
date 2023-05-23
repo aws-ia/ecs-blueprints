@@ -1,9 +1,16 @@
 from aws_cdk import PhysicalName, Stack
 from aws_cdk.aws_ec2 import Vpc
-from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver, TaskDefinition, Compatibility, FargateService, PortMapping
+from aws_cdk.aws_ecs import (
+    CloudMapOptions,
+    Cluster,
+    ContainerImage,
+    AwsLogDriver,
+    Ec2TaskDefinition,
+    NetworkMode,
+    PortMapping
+)
 from aws_cdk.aws_ecs_patterns import (
-    ApplicationLoadBalancedFargateService,
-    ApplicationLoadBalancedTaskImageOptions,
+    ApplicationLoadBalancedEc2Service,
 )
 from aws_cdk.aws_iam import (
     ManagedPolicy,
@@ -44,43 +51,54 @@ class FISServiceStack(Stack):
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
 
-        fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
+        ec2_task_image = Ec2TaskDefinition(
+            self,
+            "ECSEC2Task",
+            execution_role=self.ecs_task_execution_role,
+            task_role=self.ecs_task_role,
+            network_mode=NetworkMode.AWS_VPC
+        )
+
+        ec2_task_image.add_container(
+            "nginx-container",
             container_name=self.stack_props.container_name,
             image=ContainerImage.from_registry(
                 self.stack_props.container_image
             ),
-            container_port=self.stack_props.container_port,
-            execution_role=self.ecs_task_execution_role,
-            log_driver=LogDriver.aws_logs(
+            memory_reservation_mib=512,
+            port_mappings=[PortMapping(container_port=self.stack_props.container_port)],
+            logging=AwsLogDriver(
                 stream_prefix="ecs",
                 log_group=log_group,
             ),
-            task_role=self.ecs_task_role
         )
 
-        self.fargate_service = ApplicationLoadBalancedFargateService(
+        self.ec2_service = ApplicationLoadBalancedEc2Service(
             self,
-            "FISFargateLBService",
+            "FISEC2LBService",
             service_name=self.stack_props.service_name,
             cluster=self.ecs_cluster,
             cpu=int(self.stack_props.task_cpu),
-            memory_limit_mib=int(self.stack_props.task_memory),
+            memory_reservation_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
             public_load_balancer=True,
             cloud_map_options=CloudMapOptions(
                 cloud_map_namespace=self.sd_namespace,
                 name=self.stack_props.service_name,
             ),
-            task_image_options=fargate_task_image,
+            task_definition=ec2_task_image,
             enable_ecs_managed_tags=True,
+
         )
 
-        self.fargate_service.task_definition.add_container(
+        self.ec2_service.task_definition.add_container(
+
             "amazon-ssm-agent",
             image=ContainerImage.from_registry("public.ecr.aws/amazon-ssm-agent/amazon-ssm-agent:latest"),
             environment={
                 "MANAGED_INSTANCE_ROLE_NAME": self.ssm_managed_instance_role.role_name
             },
+            memory_reservation_mib=128,
             command=[
                 "/bin/bash",
                 "-c",
@@ -121,6 +139,7 @@ class FISServiceStack(Stack):
                 vpc=self.vpc,
                 default_cloud_map_namespace=self.sd_namespace,
             )
+
         return self._ecs_cluster
 
     @property
@@ -157,8 +176,12 @@ class FISServiceStack(Stack):
             self,
             "SSMManagedInstanceRole",
             assumed_by=ServicePrincipal("ssm"),
+            managed_policies=[
+                ManagedPolicy.from_aws_managed_policy_name(
+                    "AmazonSSMManagedInstanceCore"
+                )
+            ]
         )
-
         inline_policy = PolicyStatement(
             effect=Effect.ALLOW,
             actions=[
@@ -167,7 +190,6 @@ class FISServiceStack(Stack):
             ],
             resources=["*"],
         )
-        self.ssm_managed_instance_role.add_managed_policy(ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore"))
         self.ssm_managed_instance_role.add_to_policy(inline_policy)
 
     def validate_stack_props(self):
