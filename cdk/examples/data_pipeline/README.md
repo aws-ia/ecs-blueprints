@@ -15,20 +15,68 @@ The above solution can be used not only for batch processing, but is flexible en
 
 This blueprint expects csv data files uploaded to an S3 source bucket, in a "__prefix__/incoming/" folder. At a given schedule configured in EventBridge, the workflow is triggered to process the uploaded files.
 
-* **NOTE:** The blueprint deployment requires the ecs container to exist in your repository. An example task is provided under application-code/data-pipeline-task in the root of the blueprint repository. Use the below command to build and deploy the container image. Please ensure Docker daemon is running prior to building the image and aws cli is configured for an account and region and your role has permissions to deploy to ECR.
-  * `./build.sh -i process-data`
+## **Deployment**
+### Prerequisites
 
-* Once this is created, you will only run the above steps if there are changes to the task.
-* Now you can deploy this blueprint
+---
+
+- [AWS CDK](https://aws.amazon.com/getting-started/guides/setup-cdk/module-two/)
+- [AWS CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [Configure the AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) on your machine 
+- [Git](https://github.com/git-guides/install-git) if you prefer to clone the source from github. If not, you may download the code from github as a zip file and unzip on your local device. 
+- AWS account with administrator role access
+- [Docker](https://docs.docker.com/engine/install/) to build the task container
+- [Python](https://www.python.org/downloads/) 3.10+ if you use python for CDK deployments
+
+----
+
+### **Build the container**
+The blueprint requires the ecs container (process-data) to exist in your ECR repository. 
+An example task is provided under `application-code/data-pipeline-task` in the root of the `ecs-blueprints` source. Use the below command to build and deploy the container image.
+
+**Note** Please ensure Docker daemon is running prior to building the image and [AWS CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) is configured for an account and region and your role has permissions to deploy to ECR.
+```
+cd  ecs-blueprints/application-code/data-pipeline-task
+./build.sh -i process-data
+```
+Once created and pushed to the ECR repository, you will only run the above steps if there are changes to the task.
+
+### **Deploy the blueprint**
+---
+### Typescript cdk deployment
+
+Navigate to the `typescript` folder and run the below commands to deploy the blueprint. 
+
+**Note** This creates an ECS cluster and vpc to run the tasks. Does not create other resources required to run long running services.
+
 ```shell
 cdk bootstrap
 cdk deploy
 ```
-* To test, upload a lot of `.csv` files to the S3 source bucket (data-processing-incoming-bucket) under different __prefix__/incoming/ folders.
+---
+### Python cdk deployment
+Navigate to the `python` folder. Copy the provided `sample.env` file to `.env` and populate the `.env` file with the account and region for the deployment
 
-* Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger.
+Deploy the core infra stack. 
 
-## Blueprint Architecture
+**Note** This creates resources required to run tasks and services in an ECS cluster
+```shell
+cdk bootstrap
+cdk deploy CoreInfraStack
+```
+
+Deploy the blueprint
+```shell
+cdk deploy DataPipelineBlueprintStack
+```
+---
+
+### **Test the blueprint**
+To test, upload a multiple `.csv` files to the S3 source bucket (data-processing-incoming-bucket) under different __prefix__/incoming/ folders. You can create multiple __prefix__ folders to process multiple files in parallel. (example: __prefix1__/incoming/, __prefix2__/incoming, __prefix3__/incoming/, and so on)
+
+Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger (configured for 10 PM daily via a cron rule).
+
+## **Blueprint Architecture**
 
 <p align="center">
   <img src="StepFunctions_ECS_S3_Blueprint.png"/>

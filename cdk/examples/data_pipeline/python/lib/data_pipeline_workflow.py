@@ -25,10 +25,12 @@ def create_data_pipeline_statemachine(
         result_path= '$.results'
       ).iterator(broadcast_task)
 
-      broadcast_error_status = tasks.EventBridgePutEvents(stack, 'Broadcast error status', 
-        entries= [
-              tasks.EventBridgePutEventsEntry(detail= sfn.TaskInput.from_json_path_at('$'), detail_type= 'Data Processing Error', source= 'data.pipeline.workflow')]
-      )
+      # broadcast_error_status = tasks.EventBridgePutEvents(stack, 'Broadcast error status', 
+      #   entries= [
+      #         tasks.EventBridgePutEventsEntry(detail= sfn.TaskInput.from_json_path_at('$'), detail_type= 'Data Processing Error', source= 'data.pipeline.workflow')]
+      # )
+
+      # broadcast_error_status.next(broadcast_status)
 
       ######### Configurations for the ECS Task to be run ##########
       container_override = tasks.ContainerOverride(
@@ -58,23 +60,23 @@ def create_data_pipeline_statemachine(
         result_path= "$.results"
       )
       # Send a custom exception from task and catch it here to perform retries or notify end customers of data errors
-      process_data_in_parallel.add_catch(broadcast_error_status, 
+      process_data_in_parallel.add_catch(broadcast_status, 
         errors= ["DataProcessingException","CustomException"],
         result_path= "$"
       )
       # Send a language exception from task and catch it here to notify developers if required.
-      process_data_in_parallel.add_catch(broadcast_error_status,
+      process_data_in_parallel.add_catch(broadcast_status,
         errors= ["LanguageException"],
         result_path= "$"
       )
       # Sometimes tasks can take longer than expected (they timeout!) and need to be investigated to determine success or failure. 
       # Send notifications to developers to investigate result and retry separately if required.
-      process_data_in_parallel.add_catch(broadcast_error_status,
+      process_data_in_parallel.add_catch(broadcast_status,
         errors= ["States.Timeout"],
         result_path= "$"
       )
       # Fallback exception for any stepfunction error code. 
-      process_data_in_parallel.add_catch(broadcast_error_status,
+      process_data_in_parallel.add_catch(broadcast_status,
         errors= ["States.ALL"],
         result_path= "$"
       )

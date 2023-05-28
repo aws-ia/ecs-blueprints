@@ -8,21 +8,24 @@ import aws_cdk.aws_ecr as ecr
 import aws_cdk.aws_events as events
 import aws_cdk.aws_events_targets as targets
 import aws_cdk.aws_lambda as functions
-from lib.sfn_ecs_blueprint_roles import add_step_function_role_policies, add_ecs_task_execution_role_policies, add_ecs_task_role_policies, add_lambda_execution_role_policies
-from lib.sfn_ecs_blueprint_workflow import create_data_pipeline_statemachine
+from lib.data_pipeline_roles import add_step_function_role_policies, add_ecs_task_execution_role_policies, add_ecs_task_role_policies, add_lambda_execution_role_policies
+from lib.data_pipeline_workflow import create_data_pipeline_statemachine
+from lib.data_pipeline_stack_props import DataPipelineStackProps
 
-class SfnEcsBlueprintStack(cdk.Stack):
+class DataPipelineStack(cdk.Stack):
 
     def __init__(
-            self, 
-            scope: cdk.Stack, 
-            construct_id: str,
-            env: cdk.Environment, 
-            **kwargs
-        ):
-        super().__init__(scope, construct_id, **kwargs)
+        self,
+        scope: cdk.Stack,
+        id: str,
+        data_pipeline_stack_props: DataPipelineStackProps,
+        **kwargs
+    ):
+        super().__init__(scope, id, **kwargs)
 
-        self.env = env
+        self.stack_props = data_pipeline_stack_props
+        self._ecs_cluster = None
+        self._vpc = None
 
         log_group = logs.LogGroup(
             self,
@@ -76,39 +79,27 @@ class SfnEcsBlueprintStack(cdk.Stack):
         ecs_task_execution_role = add_ecs_task_execution_role_policies(ecs_task_execution_role)
         ecs_task_role = add_ecs_task_role_policies(ecs_task_role)
         lambda_execution_role = add_lambda_execution_role_policies(lambda_execution_role)
-
-        # Create the ECS cluster
-        vpc = ec2.Vpc(self, 'DataPipelineVpc', 
-                      max_azs=2,
-                      nat_gateways=2)
-        ecs_cluster = ecs.Cluster(
-          self,
-          'DataPipelineCluster',
-          cluster_name= 'DataPipelineCluster',
-          enable_fargate_capacity_providers=True,
-          vpc=vpc,
-          container_insights=True)
         
         # Specify the container to use
         ecr_repository = ecr.Repository.from_repository_attributes(
           self, 
-          'ecrRepository', 
+          'DataPipelineEcrRepository', 
           repository_name= 'process-data',
-          repository_arn= 'arn:aws:ecr:'+env.region+':'+str(env.account)+':repository/process-data'
+          repository_arn= 'arn:aws:ecr:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':repository/process-data'
         )
 
         # Create the fargate task definition
         fargate_task_definition = ecs.FargateTaskDefinition(
           self, 
           'DataPipelineTaskDefinition',
-          memory_limit_mib= 512,
-          cpu= 256,
+          memory_limit_mib= data_pipeline_stack_props.task_memory if data_pipeline_stack_props.task_memory else 512,
+          cpu= data_pipeline_stack_props.task_cpu if data_pipeline_stack_props.task_cpu else 256,
           execution_role= ecs_task_execution_role,
           task_role= ecs_task_role
         )
         # Specify container to use
         container = fargate_task_definition.add_container(
-          'data-processor',
+          'DataPipelineDataProcessor',
           image= ecs.ContainerImage.from_ecr_repository(ecr_repository, 'latest'),
           essential= True,
           logging= ecs.AwsLogDriver(
@@ -120,7 +111,7 @@ class SfnEcsBlueprintStack(cdk.Stack):
         # Create the data preparation lambda function
         data_preparation_function = functions.Function(
           self, 
-          'PrepareData',
+          'DataPipelinePrepareData',
           runtime= functions.Runtime.PYTHON_3_10,
           code= functions.Code.from_asset('lambda'),
           handler= 'prepareData.lambda_handler',
@@ -131,7 +122,7 @@ class SfnEcsBlueprintStack(cdk.Stack):
         # Create the state machine
         data_pipeline_workflow = create_data_pipeline_statemachine(
            self,
-           ecs_cluster,
+           self.ecs_cluster,
            fargate_task_definition,
            container,
            data_preparation_function,
@@ -155,7 +146,7 @@ class SfnEcsBlueprintStack(cdk.Stack):
 
         rule = events.Rule(
             self, 
-            'Rule',
+            'DataPipelineRule',
             schedule= events.Schedule.cron(
                 minute= '0',
                 hour= '22' # 10 PM everyday
@@ -167,4 +158,35 @@ class SfnEcsBlueprintStack(cdk.Stack):
                 role= eventbridge_execution_role
             )
         )
+
+    @property
+    def vpc(self):
+        if not self._vpc:
+            self._vpc = ec2.Vpc.from_lookup(
+                self, "VpcLookup", vpc_name=self.stack_props.vpc_name
+            )
+
+        return self._vpc
+
+    @property
+    def ecs_cluster(self):
+        if not self._ecs_cluster:
+            self._ecs_cluster = ecs.Cluster.from_cluster_attributes(
+                self,
+                "EcsClusterLookup",
+                cluster_name=self.stack_props.ecs_cluster_name,
+                security_groups=[],
+                vpc=self.vpc
+            )
+
+        return self._ecs_cluster
+    
+    def validate_stack_props(self):
+        if (
+            self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            or self.stack_props.aws_region == "<REGION>"
+        ):
+            raise ValueError(
+                "Environment values needs to be set for account_number, aws_region"
+            )
         

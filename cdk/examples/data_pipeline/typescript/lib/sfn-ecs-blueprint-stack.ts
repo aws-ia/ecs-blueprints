@@ -17,8 +17,6 @@ import {
 import { 
   createDataPipelineStateMachine 
 } from './sfn-ecs-blueprint-workflow';
-import { TargetTrackingScalingPolicy } from 'aws-cdk-lib/aws-applicationautoscaling';
-
 
 export class SfnEcsBlueprintStack extends cdk.Stack {
   
@@ -84,19 +82,19 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     });
 
     // Specify the container to use
-    const ecrRepository = ecr.Repository.fromRepositoryAttributes(this, 'ecrRepository', {
+    const ecrRepository = ecr.Repository.fromRepositoryAttributes(this, 'DataPipelineEcrRepository', {
       repositoryName: 'process-data',
       repositoryArn: `arn:aws:ecr:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:repository/process-data`
     });
 
     // Create the fargate task definition
-    const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'FargateTaskDefinition', {
+    const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'DataPipelineTaskDefinition', {
       memoryLimitMiB: 512,
       cpu: 256,
       executionRole: ecsTaskExecutionRole,
       taskRole: ecsTaskRole
     });
-    const container = fargateTaskDefinition.addContainer('data-processor', {
+    const container = fargateTaskDefinition.addContainer('DataPipelineDataProcessor', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository, "latest"),
       memoryLimitMiB: 512,
       essential: true,
@@ -107,7 +105,7 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
     });
 
     // Create the data preparation lambda function
-    const dataPreparationFunction = new lambda.Function(this, "PrepareData", {
+    const dataPreparationFunction = new lambda.Function(this, "DataPipelinePrepareData", {
       runtime: lambda.Runtime.PYTHON_3_10,
       code: lambda.Code.fromAsset('lambda'),
       handler: 'prepareData.lambda_handler',
@@ -137,7 +135,7 @@ export class SfnEcsBlueprintStack extends cdk.Stack {
       resources:[dataPipelineWorkflow.stateMachineArn]
     }))
 
-    const rule = new events.Rule(this, 'Rule', {
+    const rule = new events.Rule(this, 'DataPipelineRule', {
       schedule: events.Schedule.cron({
         minute: '0',
         hour: '22' // 10 PM everyday

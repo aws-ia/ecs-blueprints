@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { SfnEcsBlueprintStack } from '../lib/sfn-ecs-blueprint-stack';
+import { SfnEcsBlueprintStack } from 'lib/sfn-ecs-blueprint-stack';
 
 const app = new cdk.App();
 new SfnEcsBlueprintStack(app, 'SfnEcsBlueprintStack', {
