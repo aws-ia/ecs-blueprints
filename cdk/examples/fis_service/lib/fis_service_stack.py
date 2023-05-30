@@ -7,7 +7,8 @@ from aws_cdk.aws_ecs import (
     AwsLogDriver,
     Ec2TaskDefinition,
     NetworkMode,
-    PortMapping
+    PortMapping,
+    PidMode
 )
 from aws_cdk.aws_ecs_patterns import (
     ApplicationLoadBalancedEc2Service,
@@ -56,6 +57,7 @@ class FISServiceStack(Stack):
             "ECSEC2Task",
             execution_role=self.ecs_task_execution_role,
             task_role=self.ecs_task_role,
+            pid_mode=PidMode.TASK,
             network_mode=NetworkMode.AWS_VPC
         )
 
@@ -92,7 +94,6 @@ class FISServiceStack(Stack):
         )
 
         self.ec2_service.task_definition.add_container(
-
             "amazon-ssm-agent",
             image=ContainerImage.from_registry("public.ecr.aws/amazon-ssm-agent/amazon-ssm-agent:latest"),
             environment={
