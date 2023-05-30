@@ -68,11 +68,11 @@ terraform apply --auto-approve
 
 You can use the ALB URL from terraform output to access the load balanced service. The above will give you a good understanding about the basics of ECS Fargate, and ECS service. You can use these as building blocks to create and deploy many ECS services. Next you can try other example blueprints.
 
-* [Backend Service](./examples/backend-service/README.md)
-* [Graviton](./examples/graviton/README.md)
-* [Amazon Managed Prometheus and Grafana](./examples/prometheus/README.md)
-* [VPC Endpoints for cost-saving](./examples/vpc-endpoints/README.md)
-* [VPC Endpoints](./examples/vpc-endpoints/README.md)
+* [Backend Service](./terraform/fargate-examples/backend-service/README.md)
+* [Graviton](./terraform/fargate-examples/graviton/README.md)
+* [Amazon Managed Prometheus and Grafana](./terraform/fargate-examples/prometheus/README.md)
+* [VPC Endpoints](./terraform/fargate-examples/vpc-endpoints/README.md)
+* [Queue Processing](./terraform/fargate-examples/queue-processing/README.md)
 
 
 ## Repository overview
