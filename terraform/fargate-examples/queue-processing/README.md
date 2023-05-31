@@ -27,7 +27,7 @@ aws s3 cp . s3://ecsdemo-queue-proc-source-xx-xxx-xxx-xx/ecsproc --recursive
 ## Blueprint Architecture
 
 <p align="center">
-  <img src="../../docs/ecs-fargate-queue-processing.png"/>
+  <img src="../../../docs/ecs-fargate-queue-processing.png"/>
 </p>
 
 The solutions has following key components:

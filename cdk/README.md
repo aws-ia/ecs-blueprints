@@ -14,7 +14,7 @@ We fully expect you to get started by copying the modules and examples but we do
 
 - You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to Getting Started
 - Mac and AWS Cloud9 Linux machines. We have not tested with Windows machines
-- [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)(tested with version 2.50.+)
+- [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)(tested with version 2.70.+)
 - [Git](https://github.com/git-guides/install-git)(tested version 2.37.0)
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
 - AWS test account with administrator role access
