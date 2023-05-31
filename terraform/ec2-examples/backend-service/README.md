@@ -12,7 +12,7 @@ terraform apply -auto-approve
 * To test the backend service access using service discovery, deploy the [lb-service](../lb-service/README.md) along with providing the name of this backend service.
 
 <p align="center">
-  <img src="../../docs/backend-service.png"/>
+  <img src="../../../docs/backend-service.png"/>
 </p>
 
 The solution has following key components:

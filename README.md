@@ -12,7 +12,9 @@ We fully expect you to get started by copying the modules and examples but we **
 
 * You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to [Quick Start](#quick-start)
 * Mac (tested with OS version 12.+) and AWS Cloud9 Linux machines. We have **not tested** with Windows machines
-* [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.2.5 on darwin_amd64)
+* IaC Tool
+  * [Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) (tested version v1.3.7 on darwin_amd64)
+  * [AWS CDK](https://aws.amazon.com/cdk/) (tested vision 2.70.+)
 * [Git](https://github.com/git-guides/install-git) (tested version 2.27.0)
 * [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
 * AWS test account with administrator role access
@@ -38,7 +40,9 @@ output = json
 region = us-west-2
 ```
 
-## Quick Start
+## Quick Start for ECS Blueprints for Terraform
+
+Please refer [ECS Blueprints Workshop](https://catalog.workshops.aws/ecs-solution-blueprints/en-US) in detail.
 
 * Fork this repository.
 
@@ -79,8 +83,8 @@ You can use the ALB URL from terraform output to access the load balanced servic
 
 This repository has 3 main folders
 
-* [modules](./modules): Each module is a collection one or more resources that are used together to address specific needs. For example, [ecs-service](./modules/ecs-service) has resources for ECS service definition, task definition, task related IAM roles, and autoscaling. These resources are often used together in defining an ECS service. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
-* [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. If you are looking to contribute new blueprints, put them in the *examples* folder.
+* [modules](./terraform/modules/): Each module is a collection one or more resources that are used together to address specific needs. If you are going to contribue new modules, that is, commonly used group of resources, then put them in the *modules* folder.
+* [examples](./terraform/fargate-examples/) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. If you are looking to contribute new blueprints, put them in the *examples* folder.
 * [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
 ## Support & Feedback
