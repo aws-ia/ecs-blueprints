@@ -4,7 +4,7 @@ provider "aws" {
 
 locals {
   name   = "ecsdemo-backend"
-  region = "us-west-2"
+  region = "us-east-2"
 
   container_image = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
   container_port  = 3000 # Container port is specific to this app example
@@ -45,6 +45,7 @@ module "ecs_service" {
   container_definitions = {
     (local.container_name) = {
       image = local.container_image
+      readonly_root_filesystem = false
       port_mappings = [
         {
           name          = "${local.container_name}-${local.container_port}"

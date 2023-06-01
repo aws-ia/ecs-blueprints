@@ -7,10 +7,11 @@ data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
-  region = "us-west-2"
+  region = "us-east-2"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  instance_type = "m5.xlarge"
 
   user_data = <<-EOT
     #!/bin/bash
@@ -123,7 +124,7 @@ module "autoscaling" {
   name = local.name
 
   image_id      = jsondecode(data.aws_ssm_parameter.ecs_optimized_ami.value)["image_id"]
-  instance_type = each.value.instance_type
+  instance_type = local.instance_type
 
   security_groups                 = [module.autoscaling_sg.security_group_id]
   user_data                       = base64encode(local.user_data)
@@ -138,9 +139,9 @@ module "autoscaling" {
 
   vpc_zone_identifier = module.vpc.private_subnets
   health_check_type   = "EC2"
-  min_size            = 1
-  max_size            = 3
-  desired_capacity    = 1
+  min_size            = 3
+  max_size            = 5
+  desired_capacity    = 3
 
   # https://github.com/hashicorp/terraform-provider-aws/issues/12582
   autoscaling_group_tags = {
