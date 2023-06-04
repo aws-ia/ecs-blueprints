@@ -63,7 +63,7 @@ class CoreInfrastructureConstruct(Construct):
             "EcsVpc",
             ip_addresses=IpAddresses.cidr(core_infra_props.vpc_cidr),
             max_azs=core_infra_props.az_count,
-            nat_gateways=core_infra_props.az_count
+            nat_gateways=1
             if core_infra_props.enable_nat_gw
             else 0,
             vpc_name=f"{core_infra_props.ecs_cluster_name}-vpc"
