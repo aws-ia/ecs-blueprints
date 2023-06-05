@@ -13,12 +13,12 @@ import {
   addEcsTaskExecutionRolePolicies, 
   addEcsTaskRolePolicies,
   addLambdaExecutionRolePolicies
-} from './sfn-ecs-blueprint-roles';
+} from './data-pipeline-roles';
 import { 
   createDataPipelineStateMachine 
-} from './sfn-ecs-blueprint-workflow';
+} from './data-pipeline-workflow';
 
-export class SfnEcsBlueprintStack extends cdk.Stack {
+export class DataPipelineBlueprintStack extends cdk.Stack {
   
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);

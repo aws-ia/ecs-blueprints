@@ -1,8 +1,8 @@
 {
-  "name": "sfn-ecs-blueprint",
+  "name": "data-pipeline-blueprint",
   "version": "0.1.0",
   "bin": {
-    "sfn-ecs-blueprint": "bin/sfn-ecs-blueprint.js"
+    "data-pipeline-blueprint": "data-pipeline-blueprint.js"
   },
   "scripts": {
     "build": "tsc",
