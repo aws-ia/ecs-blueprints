@@ -132,7 +132,7 @@ export function createDataPipelineStateMachine(
       const definition = prepareData
       .next(processReadinessCheck)
     
-      return new sfn.StateMachine(stack, "ECSMapIntegrationStateMachine", {
+      return new sfn.StateMachine(stack, "DataPipelineStateMachine", {
         definition,
         timeout: cdk.Duration.minutes(30)
       });
