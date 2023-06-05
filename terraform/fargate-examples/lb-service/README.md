@@ -11,7 +11,7 @@ terraform apply -auto-approve
 ```
 
 <p align="center">
-  <img src="../../docs/lb-service.png"/>
+  <img src="../../../docs/lb-service.png"/>
 </p>
 
 The solution has following key components:

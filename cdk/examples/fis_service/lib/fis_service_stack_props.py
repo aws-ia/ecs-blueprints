@@ -3,7 +3,7 @@ from aws_cdk.aws_ec2 import Vpc
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 
 
-class BackendServiceStackProps(StackProps):
+class FISServiceStackProps(StackProps):
     def __init__(
         self,
         account_number=None,

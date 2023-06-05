@@ -19,6 +19,7 @@ class CICDServiceStackProps(StackProps):
         ecs_cluster_name=None,
         ecs_task_execution_role_arn=None,
         enable_nat_gw=None,
+        create_ec2_instance=False,
         folder_path=None,
         github_token_secret_name=None,
         namespaces="a",

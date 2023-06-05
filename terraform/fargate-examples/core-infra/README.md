@@ -13,18 +13,12 @@ This folder contains the Terraform code to deploy the core infratructure for an 
 * CloudMap service discovery namespace `default`
 
 ## Getting Started
-Make sure you have all the [prerequisites](../../README.md) for your laptop.
-
-Fork this repository and [create the GitHub token granting access](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) to this new repository in your account. Store this secret in AWS secrets manager using the aws cli.
-```shell
-aws secretsmanager create-secret --name ecs-github-token --secret-string "<github-token-created-above>"
-```
-Note you should create the secret in an AWS region where you plan to deploy the various examples. You can set the default region by exporting the environment variable `export AWS_DEFAULT_REGION=<default-region>` or in `~/.aws/config`.
+Make sure you have all the [prerequisites](../../../README.md) for your laptop.
 
 ## Usage
 * Clone the forked repository from your account (not the one from the aws-ia organization) and change the directory to the appropriate one as shown below:
 ```bash
-cd examples/core-infra/
+cd ecs-blueprints/terraform/fargate-examples/core-infra/
 ```
 * Run Terraform init to download the providers and install the modules
 ```shell
@@ -51,13 +45,13 @@ terraform destroy
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.1 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.43 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 4.43 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.43 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 4.43 |
 
 ## Modules
 

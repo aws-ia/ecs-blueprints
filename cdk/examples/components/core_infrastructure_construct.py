@@ -1,12 +1,15 @@
 from distutils import util
 
-from aws_cdk import PhysicalName, RemovalPolicy, StackProps
-from aws_cdk.aws_ec2 import IpAddresses, Vpc
+from aws_cdk import PhysicalName, StackProps, RemovalPolicy
+from aws_cdk.aws_ec2 import IpAddresses, Vpc, InstanceType
+from aws_cdk.aws_autoscaling import AutoScalingGroup
 from aws_cdk.aws_ecs import (
     Cluster,
     ExecuteCommandConfiguration,
     ExecuteCommandLogConfiguration,
     ExecuteCommandLogging,
+    EcsOptimizedImage,
+    AsgCapacityProvider
 )
 from aws_cdk.aws_iam import ManagedPolicy, Role, ServicePrincipal
 from aws_cdk.aws_logs import LogGroup, RetentionDays
@@ -24,6 +27,7 @@ class CoreInfrastructureProps(StackProps):
         vpc_cidr="10.0.0.0/16",
         enable_nat_gw="True",
         az_count="3",
+        create_ec2_instance="False",
     ) -> None:
         self.account_number = account_number
         self.ecs_cluster_name = ecs_cluster_name
@@ -32,7 +36,7 @@ class CoreInfrastructureProps(StackProps):
         self.namespaces = namespaces.split(",")
         self.enable_nat_gw = bool(util.strtobool(enable_nat_gw))
         self.az_count = int(az_count)
-
+        self.create_ec2_instance = bool(util.strtobool(create_ec2_instance))
 
 class CoreInfrastructureConstruct(Construct):
     def __init__(
@@ -51,7 +55,7 @@ class CoreInfrastructureConstruct(Construct):
         self.ecs_cluster_id = None
         self.ecs_task_execution_role_name = None
         self.ecs_task_execution_role_arn = None
-        # self.ecs_cluster_security_groups = None
+        self.ecs_cluster_security_groups = None
         self.private_dns_namespaces = []
 
         self.vpc = Vpc(
@@ -59,7 +63,7 @@ class CoreInfrastructureConstruct(Construct):
             "EcsVpc",
             ip_addresses=IpAddresses.cidr(core_infra_props.vpc_cidr),
             max_azs=core_infra_props.az_count,
-            nat_gateways=core_infra_props.az_count
+            nat_gateways=1
             if core_infra_props.enable_nat_gw
             else 0,
             vpc_name=f"{core_infra_props.ecs_cluster_name}-vpc"
@@ -89,6 +93,25 @@ class CoreInfrastructureConstruct(Construct):
             execute_command_configuration=execute_command_configuration,
         )
 
+        if core_infra_props.create_ec2_instance:
+            auto_scaling = AutoScalingGroup(
+                self,
+                "DefaultAutoScalingGroup",
+                instance_type=InstanceType("t3.medium"),
+                machine_image=EcsOptimizedImage.amazon_linux2(),
+                desired_capacity=2,
+                vpc=self.vpc,
+            )
+            capacity_provider = AsgCapacityProvider(
+                self,
+                "AsgCapacityProvider",
+                auto_scaling_group=auto_scaling,
+                enable_managed_termination_protection=False
+            )
+
+            self.ecs_cluster.add_asg_capacity_provider(capacity_provider)
+
+
         self.private_dns_namespaces = [
             PrivateDnsNamespace(
                 self,
@@ -101,7 +124,7 @@ class CoreInfrastructureConstruct(Construct):
 
         self.ecs_task_execution_role = Role(
             self,
-            "FargateContainerRole",
+            "ECSTaskExecutionRole",
             role_name=PhysicalName.GENERATE_IF_NEEDED,
             assumed_by=ServicePrincipal("ecs-tasks.amazonaws.com"),
             managed_policies=[

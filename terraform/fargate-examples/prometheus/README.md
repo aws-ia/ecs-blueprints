@@ -22,7 +22,7 @@ Access your AMG workspace that was setup in the prerequisites. In the left panel
 
 In the left panel, find the `+` icon and create a `Dashboard`. In the create dashboard, select `Add a new panel`. From metrics browser select `ecs_task_cpu_utilized`, you should see the metrics from the task created above.
 <p align="center">
-  <img src="../../docs/amg-amp-metrics.png"/>
+  <img src="../../../docs/amg-amp-metrics.png"/>
 </p>
 
 ### Solution Details
