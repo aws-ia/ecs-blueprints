@@ -1,8 +1,4 @@
 # ECS Fargate parallel data processing using StepFunctions
-<p align="center">
-  <img src="sfn-ecs-s3.png"/>
-</p>
-
 One of the most commonly used patterns for Step Functions is the invocation of Lambda functions to perform tasks. While this works well for use cases with short lived tasks, the short time constraints of lambda do not work well with use cases that require longer running tasks.  For example, consider the use case of regulators that process data submitted by hundreds of thousands of clients. This data is usually processed in batches and in some cases, on an ad-hoc basis.  Data processing tasks, whether it is preparing data or transforming large data sets, are time consuming. Lambda functions can run for up to 15 minutes, at which point they will timeout, regardless of the state they are in, meaning that loss of data or worse things may happen (data corruption for example). In addition to the potential failure because of the timeout, we have to also consider the costs. Lambda functions are billed by 1ms segments, and while they are cheap, the longer they run, the more expensive they become. Additionally, functions that do compute heavy work may require more memory allocated to them, and adding memory to a Lambda increases the runtime cost. 
 
 This is where ECS (Elastic Container Service) shines. ECS allows you to run containers quickly and easily on AWS servers, so all you need is a working container image with your app/task code bundled in and you can quickly deploy full applications/tasks without a lot of the deployment overhead.  In the data processing use case above, ECS allows you to run longer running tasks that prepare and process large data sets as tasks. Additionally, you can configure memory and CPU requirements for the different types of tasks you have in your workflow. This results in lower costs as well as a more efficient workflow.  Different integrations with various AWS services provide the flexibility to adapt to any kind of workload that you may have. 
@@ -37,7 +33,7 @@ An example task is provided under `application-code/data-pipeline-task` in the r
 **Note** Please ensure Docker daemon is running prior to building the image and [AWS CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) is configured for an account and region and your role has permissions to deploy to ECR.
 ```
 cd  ecs-blueprints/application-code/data-pipeline-task
-./build.sh -i process-data
+./build.sh -i process-data -r <region>
 ```
 Once created and pushed to the ECR repository, you will only run the above steps if there are changes to the task.
 
@@ -72,14 +68,18 @@ cdk deploy DataPipelineBlueprintStack
 ---
 
 ### **Test the blueprint**
-To test, upload a multiple `.csv` files to the S3 source bucket (data-processing-incoming-bucket) under different __prefix__/incoming/ folders. You can create multiple __prefix__ folders to process multiple files in parallel. (example: __prefix1__/incoming/, __prefix2__/incoming, __prefix3__/incoming/, and so on)
+To test, upload multiple `.csv` files to the S3 source bucket (cdk output - `DataPipelineBlueprintStack.DataPipelineBucketName`) under different __prefix__/incoming/ folders. You can create multiple __prefix__ folders to process multiple files in parallel. (example: __prefix1__/incoming/, __prefix2__/incoming, __prefix3__/incoming/, and so on). The `test` folder has a sample structure and files that you can use to test the blueprint. Use the below commands in the test folder to upload the files to the bucket
+```shell
+cd test
+aws s3 sync --region <bucket region> . s3://<DataPipelineBlueprintStack.DataPipelineBucketName>
+```
 
-Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger (configured for 10 PM daily via a cron rule).
+Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger (configured for 10 PM UTC daily via a cron rule).
 
 ## **Blueprint Architecture**
 
 <p align="center">
-  <img src="StepFunctions_ECS_S3_Blueprint.png"/>
+  <img src="../../docs/StepFunctions_ECS_S3_Blueprint.png"/>
 </p>
 
 The solution has following key components:

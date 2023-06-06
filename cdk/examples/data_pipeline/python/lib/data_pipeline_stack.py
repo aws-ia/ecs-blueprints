@@ -40,7 +40,9 @@ class DataPipelineStack(cdk.Stack):
                         enforce_ssl=True,
                         versioned=True,
                         removal_policy=cdk.RemovalPolicy.RETAIN)
-        
+        cdk.CfnOutput(self, "DataPipelineBucketName",
+                      value=bucket.bucket_name
+        )
         ecs_task_execution_role = iam.Role(
             self,
             'DataPipelineEcsTaskExecutionRole',
@@ -75,9 +77,9 @@ class DataPipelineStack(cdk.Stack):
                                        managed_policies=[
                                            iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaVPCAccessExecutionRole'),
                                            iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')])
-        sfn_execution_role = add_step_function_role_policies(sfn_execution_role)
-        ecs_task_execution_role = add_ecs_task_execution_role_policies(ecs_task_execution_role)
-        ecs_task_role = add_ecs_task_role_policies(ecs_task_role)
+        sfn_execution_role = add_step_function_role_policies(sfn_execution_role, data_pipeline_stack_props)
+        ecs_task_execution_role = add_ecs_task_execution_role_policies(ecs_task_execution_role, data_pipeline_stack_props)
+        ecs_task_role = add_ecs_task_role_policies(ecs_task_role, data_pipeline_stack_props)
         lambda_execution_role = add_lambda_execution_role_policies(lambda_execution_role)
         
         # Specify the container to use

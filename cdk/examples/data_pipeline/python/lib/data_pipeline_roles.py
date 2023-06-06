@@ -1,13 +1,12 @@
 import os
 import aws_cdk.aws_iam as iam
+from lib.data_pipeline_stack_props import DataPipelineStackProps
 
-def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role):
-    region = os.getenv('CDK_DEFAULT_REGION')
-    account = os.getenv('CDK_DEFAULT_ACCOUNT')
+def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role, data_pipeline_stack_props: DataPipelineStackProps):
     stepfunctionExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ['ecs:RunTask'],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ecs:'+region+':'+str(account)+':task-definition/*']
+        resources= ['arn:aws:ecs:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':task-definition/*']
     ))
     stepfunctionExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["logs:CreateLogDelivery",
@@ -32,16 +31,14 @@ def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role):
     
     return stepfunctionExecutionRole
 
-def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
-    region = os.getenv('CDK_DEFAULT_REGION')
-    account = os.getenv('CDK_DEFAULT_ACCOUNT')
+def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role, data_pipeline_stack_props: DataPipelineStackProps):
     ecsTaskExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["ecr:GetAuthorizationToken",
         "ecr:BatchCheckLayerAvailability",
         "ecr:GetDownloadUrlForLayer",
         "ecr:BatchGetImage"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ecr:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:ecr:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["logs:CreateLogStream",
@@ -53,7 +50,7 @@ def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
         actions= ["ec2:AuthorizeSecurityGroupIngress",
         "ec2:Describe*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:ec2:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:ec2:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskExecutionRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
@@ -62,34 +59,32 @@ def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role):
         "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
         "elasticloadbalancing:RegisterTargets"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:elasticloadbalancing:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:elasticloadbalancing:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
 
     return ecsTaskExecutionRole
 
-def add_ecs_task_role_policies(ecsTaskRole: iam.Role):
-    region = os.getenv('CDK_DEFAULT_REGION')
-    account = os.getenv('CDK_DEFAULT_ACCOUNT')
+def add_ecs_task_role_policies(ecsTaskRole: iam.Role, data_pipeline_stack_props: DataPipelineStackProps):
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["states:*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:states:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:states:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["ssm:DescribeParameters",
         "ssm:GetParameters"],
         effect= iam.Effect.ALLOW,
-        resources=['arn:aws:ssm:'+region+':'+str(account)+':*']
+        resources=['arn:aws:ssm:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["kms:Decrypt"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:kms:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:kms:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["elasticfilesystem:*"],
         effect= iam.Effect.ALLOW,
-        resources= ['arn:aws:elasticfilesystem:'+region+':'+str(account)+':*']
+        resources= ['arn:aws:elasticfilesystem:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':*']
     ))
     ecsTaskRole.add_to_principal_policy(iam.PolicyStatement(
         actions= ["s3:*",

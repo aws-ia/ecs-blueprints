@@ -32,6 +32,9 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    new cdk.CfnOutput(this, "DataPipelineBucketName", {
+      value: bucket.bucketName
+    })
     // Build the roles
     // * StepFunction execution role - Role assumed by Step Function
     // * Ecs Task Execution Role - Role assumed by ECS to execute tasks

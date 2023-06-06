@@ -1,19 +1,21 @@
 #!/bin/bash
 
 function usage {
-    echo "usage: build.sh [-i image_name]"
+    echo "usage: build.sh [-i image_name] [-r region]"
     echo "Required:"
-    echo "  -i        Used to specify the build container image."
+    echo "  -i        Used to specify the build container image"
+    echo "Optional:"
+    echo "  -r        Region to deploy the container in. Default will use aws cli configured region"
     exit 1
 }
 
 image_flag=false
 accountid=`aws sts get-caller-identity --query Account --output text`
-regionname=`aws configure get region`
 
-while getopts ":i:" opt; do
+while getopts ":i:r:" opt; do
     case "$opt" in
         i) image_flag=true; imagename=$OPTARG;;
+	r) region_flag=true; regionname=$OPTARG;;
         h) usage; exit;;
         \?) echo "Unknown option: -$OPTARG" >&2; usage;exit 1;;
         :) echo "Missing option argument for -$OPTARG" >&2; usage;exit 1;;
@@ -24,6 +26,11 @@ done
 if  ! $image_flag
 then
     echo "The image name (-i) must be included for a build to run" >&2
+fi
+
+if ! $region_flag
+then
+    regionname=`aws configure get region`
 fi
 
 # Login to ECR
