@@ -66,13 +66,13 @@ try:
         "processing_date": processing_date,
         "code": "O"
     }
-    print("Sending success output to Step Functions with task token " + task_token)
     print(result)
-
-    workflowClient.send_task_success(
-        taskToken=task_token,
-        output=json.dumps(result, default=convert_to_json_string)
-    )
+    if task_token:
+        print("Sending success output to Step Functions with task token " + task_token)
+        workflowClient.send_task_success(
+            taskToken=task_token,
+            output=json.dumps(result, default=convert_to_json_string)
+        )
 # Catch any boto3 client exception
 except ClientError as e:
     result = {
@@ -81,13 +81,14 @@ except ClientError as e:
         "files": file_list,
         "processing_date": processing_date
     }
-    print("Sending failure output to Step Functions with task token " + task_token)
     print(result)
-    workflowClient.send_task_failure(
-        taskToken=task_token,
-        error="DataProcessingException",
-        cause=json.dumps(result, default=convert_to_json_string)
-    )
+    if task_token:
+        print("Sending failure output to Step Functions with task token " + task_token)
+        workflowClient.send_task_failure(
+            taskToken=task_token,
+            error="DataProcessingException",
+            cause=json.dumps(result, default=convert_to_json_string)
+        )
 # Catch any generic python exception
 except Exception as e:
     result = {
@@ -98,10 +99,11 @@ except Exception as e:
         "cause": "processing error",
         "processing_date": processing_date
     }
-    print("Sending failure output to Step Functions with task token " + task_token)
     print(result)
-    workflowClient.send_task_failure(
-        taskToken=task_token,
-        error="DataProcessingException",
-        cause=json.dumps(result, default=convert_to_json_string)
-    )
+    if task_token:
+        print("Sending failure output to Step Functions with task token " + task_token)
+        workflowClient.send_task_failure(
+            taskToken=task_token,
+            error="DataProcessingException",
+            cause=json.dumps(result, default=convert_to_json_string)
+        )

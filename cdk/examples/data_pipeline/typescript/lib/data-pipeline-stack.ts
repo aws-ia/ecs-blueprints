@@ -92,14 +92,13 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
 
     // Create the fargate task definition
     const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'DataPipelineTaskDefinition', {
-      memoryLimitMiB: 512,
-      cpu: 256,
+      memoryLimitMiB: 4096,
+      cpu: 512,
       executionRole: ecsTaskExecutionRole,
       taskRole: ecsTaskRole
     });
     const container = fargateTaskDefinition.addContainer('DataPipelineDataProcessor', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository, "latest"),
-      memoryLimitMiB: 512,
       essential: true,
       logging: new ecs.AwsLogDriver({
         streamPrefix: "ecs",

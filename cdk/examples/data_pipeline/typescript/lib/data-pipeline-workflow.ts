@@ -64,7 +64,9 @@ export function createDataPipelineStateMachine(
         launchTarget: new tasks.EcsFargateLaunchTarget({
           platformVersion: ecs.FargatePlatformVersion.LATEST
         }),
-        integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
+        integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+        // Comment above line and uncomment below line if you would like to send output back to the workflow
+        /*integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,*/
         containerOverrides: [containerOverride],
         assignPublicIp: false,
         taskTimeout: sfn.Timeout.duration(cdk.Duration.minutes(20))
