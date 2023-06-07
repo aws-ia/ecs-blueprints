@@ -77,8 +77,8 @@ Use the below commands to copy a publicly available NOAA dataset into the bucket
  aws s3 sync s3://noaa-ghcn-pds/csv/by_year/ s3://<DataPipelineBlueprintStack.DataPipelineBucketName>/noaa4/incoming/ --exclude "*" --include "18[6-9]*.csv"
 ```
 
-Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger (configured for 10 PM UTC daily via a cron rule). 
-Check the tasks running in the Elastic Container Service cluster. There will be 4 tasks running in parallel, processing files under each __prefix__. 
+Trigger the StepFunction workflow in the AWS Management console or wait for the Eventbridge rule to trigger (configured for 10 PM UTC daily via a cron rule).
+Check the tasks running in the Elastic Container Service cluster. There will be 4 tasks running in parallel, processing files under each __prefix__.
 
 ## **Blueprint Architecture**
 
