@@ -8,18 +8,18 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as events from 'aws-cdk-lib/aws-events'
 import * as targets from 'aws-cdk-lib/aws-events-targets'
 import { Construct } from 'constructs';
-import { 
-  addStepFunctionRolePolicies, 
-  addEcsTaskExecutionRolePolicies, 
+import {
+  addStepFunctionRolePolicies,
+  addEcsTaskExecutionRolePolicies,
   addEcsTaskRolePolicies,
   addLambdaExecutionRolePolicies
 } from './data-pipeline-roles';
-import { 
-  createDataPipelineStateMachine 
+import {
+  createDataPipelineStateMachine
 } from './data-pipeline-workflow';
 
 export class DataPipelineBlueprintStack extends cdk.Stack {
-  
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -39,7 +39,7 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
     // * StepFunction execution role - Role assumed by Step Function
     // * Ecs Task Execution Role - Role assumed by ECS to execute tasks
     // * Ecs Task Role - Role assumed by task to perform its job
-    // * Lambda execution role - Role to be assumed by Lambda to parse S3  
+    // * Lambda execution role - Role to be assumed by Lambda to parse S3
     const ecsTaskExecutionRole = new iam.Role (this, 'DataPipelineEcsTaskExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Role to run an ECS task'
@@ -67,16 +67,16 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
       ]
-    })   
+    })
     addStepFunctionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, stepFunctionExecutionRole);
     addEcsTaskExecutionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, ecsTaskExecutionRole);
     addEcsTaskRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, ecsTaskRole);
     addLambdaExecutionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, lambdaExecutionRole);
 
     // Create the ECS Cluster
-    const vpc = new ec2.Vpc(this, 'DataPipelineVpc', { 
+    const vpc = new ec2.Vpc(this, 'DataPipelineVpc', {
       maxAzs: 2,
-      natGateways: 2 
+      natGateways: 2
     });
     const ecsCluster = new ecs.Cluster(this, "DataPipelineCluster", {
       clusterName: "DataPipelineCluster",
@@ -119,14 +119,14 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
     })
 
     // Create the state machine
-    const dataPipelineWorkflow = createDataPipelineStateMachine(this, 
-      ecsCluster, 
-      fargateTaskDefinition, 
-      container, 
+    const dataPipelineWorkflow = createDataPipelineStateMachine(this,
+      ecsCluster,
+      fargateTaskDefinition,
+      container,
       dataPreparationFunction,
       bucket.bucketName
     )
-    
+
     // Create the EventBridge Scheduler to invoke the workflow at a given cron schedule
     const eventbridgeExecutionRole = new iam.Role(this, "DataPipelineEventBridgeSchedulerExecutionRole", {
       assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
@@ -146,7 +146,7 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
     });
     rule.addTarget(new targets.SfnStateMachine(dataPipelineWorkflow, {
       role: eventbridgeExecutionRole
-    })); 
+    }));
 
   }
 

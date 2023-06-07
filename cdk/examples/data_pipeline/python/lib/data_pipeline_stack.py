@@ -34,7 +34,7 @@ class DataPipelineStack(cdk.Stack):
             log_group_name=cdk.PhysicalName.GENERATE_IF_NEEDED,
         )
 
-        bucket = s3.Bucket(self, 
+        bucket = s3.Bucket(self,
                         'data-pipeline-incoming-bucket',
                         encryption=s3.BucketEncryption.S3_MANAGED,
                         enforce_ssl=True,
@@ -62,10 +62,10 @@ class DataPipelineStack(cdk.Stack):
             description='StepFunction execution role'
         )
         sfn_execution_role.add_to_principal_policy(
-            iam.PolicyStatement(actions=['iam:PassRole'], 
+            iam.PolicyStatement(actions=['iam:PassRole'],
                             effect=iam.Effect.ALLOW,
                             resources=[
-                                ecs_task_execution_role.role_arn, 
+                                ecs_task_execution_role.role_arn,
                                 ecs_task_role.role_arn
                             ],
                             conditions={
@@ -81,18 +81,18 @@ class DataPipelineStack(cdk.Stack):
         ecs_task_execution_role = add_ecs_task_execution_role_policies(ecs_task_execution_role, data_pipeline_stack_props)
         ecs_task_role = add_ecs_task_role_policies(ecs_task_role, data_pipeline_stack_props)
         lambda_execution_role = add_lambda_execution_role_policies(lambda_execution_role)
-        
+
         # Specify the container to use
         ecr_repository = ecr.Repository.from_repository_attributes(
-          self, 
-          'DataPipelineEcrRepository', 
+          self,
+          'DataPipelineEcrRepository',
           repository_name= 'process-data',
           repository_arn= 'arn:aws:ecr:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':repository/process-data'
         )
 
         # Create the fargate task definition
         fargate_task_definition = ecs.FargateTaskDefinition(
-          self, 
+          self,
           'DataPipelineTaskDefinition',
           memory_limit_mib= data_pipeline_stack_props.task_memory if data_pipeline_stack_props.task_memory else 512,
           cpu= data_pipeline_stack_props.task_cpu if data_pipeline_stack_props.task_cpu else 256,
@@ -106,13 +106,13 @@ class DataPipelineStack(cdk.Stack):
           essential= True,
           logging= ecs.AwsLogDriver(
             stream_prefix= 'ecs',
-            mode= ecs.AwsLogDriverMode.NON_BLOCKING, 
+            mode= ecs.AwsLogDriverMode.NON_BLOCKING,
             log_group=log_group)
         )
 
         # Create the data preparation lambda function
         data_preparation_function = functions.Function(
-          self, 
+          self,
           'DataPipelinePrepareData',
           runtime= functions.Runtime.PYTHON_3_10,
           code= functions.Code.from_asset('lambda'),
@@ -133,7 +133,7 @@ class DataPipelineStack(cdk.Stack):
 
         # Create the EventBridge Scheduler to invoke the workflow at a given cron schedule
         eventbridge_execution_role = iam.Role(
-           self, 
+           self,
            'DataPipelineEventBridgeSchedulerExecutionRole',
            assumed_by= iam.ServicePrincipal('events.amazonaws.com'),
            description= 'Role assumed by EventBridge scheduler to invoke workflow'
@@ -147,7 +147,7 @@ class DataPipelineStack(cdk.Stack):
         )
 
         rule = events.Rule(
-            self, 
+            self,
             'DataPipelineRule',
             schedule= events.Schedule.cron(
                 minute= '0',
@@ -156,7 +156,7 @@ class DataPipelineStack(cdk.Stack):
         )
         rule.add_target(
             targets.SfnStateMachine(
-                data_pipeline_workflow, 
+                data_pipeline_workflow,
                 role= eventbridge_execution_role
             )
         )
@@ -182,7 +182,7 @@ class DataPipelineStack(cdk.Stack):
             )
 
         return self._ecs_cluster
-    
+
     def validate_stack_props(self):
         if (
             self.stack_props.account_number == "<ACCOUNT_NUMBER>"
@@ -191,4 +191,3 @@ class DataPipelineStack(cdk.Stack):
             raise ValueError(
                 "Environment values needs to be set for account_number, aws_region"
             )
-        

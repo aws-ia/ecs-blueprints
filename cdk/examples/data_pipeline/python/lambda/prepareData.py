@@ -11,7 +11,7 @@ class account:
         self.files = files
 
 def lambda_handler(event, context):
-    try: 
+    try:
         response = client.list_objects_v2(
             Bucket=bucket
         )
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
         # 'results': []
         #}
         details = {}
-        folders = []        
+        folders = []
         details['dataPreparationResult'] = False if len(folderFiles) == 0 else True
         for folder in folderFiles:
             detail = {}

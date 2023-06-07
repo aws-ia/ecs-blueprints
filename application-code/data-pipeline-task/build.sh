@@ -53,4 +53,3 @@ echo "No existing repo $imagename found. Creating one and pushing image to this 
 aws ecr create-repository --repository-name $imagename --region $regionname
 docker push $accountid.dkr.ecr.$regionname.amazonaws.com/$imagename:latest
 echo build completed on `date`
-

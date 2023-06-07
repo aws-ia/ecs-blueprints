@@ -5,15 +5,15 @@ import * as lambda from 'aws-cdk-lib/aws-lambda'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 
 export function createDataPipelineStateMachine(
-    stack: cdk.Stack, 
-    cluster: ecs.Cluster, 
-    taskDefinition: ecs.FargateTaskDefinition, 
-    containerDefinition: ecs.ContainerDefinition, 
+    stack: cdk.Stack,
+    cluster: ecs.Cluster,
+    taskDefinition: ecs.FargateTaskDefinition,
+    containerDefinition: ecs.ContainerDefinition,
     prepareDataFunction: lambda.IFunction,
-    bucket: string) 
+    bucket: string)
     {
       /*******NOTE: State machine is defined bottoms up! ***********/
-    
+
       /********* Final Broadcast Status task and parallel state definitions **********/
       const broadcastTask = new tasks.EventBridgePutEvents(stack, 'Broadcast processing status', {
         entries: [{
@@ -22,13 +22,13 @@ export function createDataPipelineStateMachine(
           source: "data.processor.workflow"
         }]
       })
-    
+
       const broadcastStatus = new sfn.Map(stack, "Broadcast completion status", {
         itemsPath: "$.results",
         maxConcurrency: 0,
         resultPath: "$.results"
       }).iterator(broadcastTask);
-    
+
       const broadcastErrorStatus = new tasks.EventBridgePutEvents(stack, 'Broadcast error status', {
         entries: [{
           detail: sfn.TaskInput.fromJsonPathAt('$'),
@@ -36,10 +36,10 @@ export function createDataPipelineStateMachine(
           source: "data.processor.workflow"
         }]
       })
-    
+
       /******* Configurations for the ECS Task to be run ************/
       const containerOverride: tasks.ContainerOverride = {
-        containerDefinition,  
+        containerDefinition,
         environment: [{
           name: 'TASK_TOKEN',
           value: sfn.JsonPath.taskToken,
@@ -57,7 +57,7 @@ export function createDataPipelineStateMachine(
           value: bucket
         }]
       };
-    
+
       const processDataTask = new tasks.EcsRunTask(stack, 'Process Data', {
         taskDefinition,
         cluster,
@@ -69,9 +69,9 @@ export function createDataPipelineStateMachine(
         assignPublicIp: false,
         taskTimeout: sfn.Timeout.duration(cdk.Duration.minutes(20))
       });
-    
+
       /******** Start a parallel execution of tasks in ECS. The configuration for the task to be run is above **********/
-      /**** Add catch statements to perform different actions based on exception. Some exceptions are from the state ****/ 
+      /**** Add catch statements to perform different actions based on exception. Some exceptions are from the state ****/
       /**** machine execution and some could be from the task being run. Here we send all errors to EventBridge.     ****/
       const processDataInParallel = new sfn.Map(stack, 'Parallel Execution', {
         itemsPath: '$.folders',
@@ -101,16 +101,16 @@ export function createDataPipelineStateMachine(
       })
       .iterator(processDataTask)
       .next(broadcastStatus);
-    
+
       /******* Fail state when lambda unable to prepare data ******/
       const failState = new sfn.Fail(stack, "No", {
         cause: 'Data preparation failed',
         error: 'Lambda function returned non 200 response'
       })
-      
+
       /******* Pass state when there is no data to process ******/
       const passState = new sfn.Pass(stack, "No Data", {
-        comment: "No data to process"        
+        comment: "No data to process"
       })
 
       /******* Check for readiness to process data *******/
@@ -119,19 +119,19 @@ export function createDataPipelineStateMachine(
       })
       .when(sfn.Condition.numberEquals('$.statusCode', 200), processDataInParallel)
       .when(sfn.Condition.numberEquals('$.statusCode', 404), passState)
-      .when(sfn.Condition.not(sfn.Condition.or(sfn.Condition.numberEquals('$.statusCode',200), sfn.Condition.numberEquals('$.statusCode',404))), failState)      
+      .when(sfn.Condition.not(sfn.Condition.or(sfn.Condition.numberEquals('$.statusCode',200), sfn.Condition.numberEquals('$.statusCode',404))), failState)
       .otherwise(failState);
-    
+
       /********* STATE MACHINE DEFINITION STARTS HERE ***********/
       const prepareData = new tasks.LambdaInvoke(stack, 'Prepare Data', {
         lambdaFunction: prepareDataFunction,
         comment: "Prepare the data for processing",
         payloadResponseOnly: true
       })
-    
+
       const definition = prepareData
       .next(processReadinessCheck)
-    
+
       return new sfn.StateMachine(stack, "DataPipelineStateMachine", {
         definition,
         timeout: cdk.Duration.minutes(30)

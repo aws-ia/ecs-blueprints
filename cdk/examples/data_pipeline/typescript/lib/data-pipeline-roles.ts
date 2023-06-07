@@ -5,7 +5,7 @@ export function addStepFunctionRolePolicies(account: String, region: String, ste
         actions:["ecs:RunTask"],
         effect: Effect.ALLOW,
         resources: [`arn:aws:ecs:${region}:${account}:task-definition/*`]
-    }))    
+    }))
     stepFunctionExecutionRole.addToPrincipalPolicy(new PolicyStatement({
         actions: ["logs:CreateLogDelivery",
         "logs:GetLogDelivery",
@@ -67,7 +67,7 @@ export function addEcsTaskRolePolicies(account: String, region: String, ecsTaskR
         resources: [`arn:aws:states:${region}:${account}:*`]
     }))
     ecsTaskRole.addToPrincipalPolicy(new PolicyStatement({
-        actions: ["ssm:DescribeParameters", 
+        actions: ["ssm:DescribeParameters",
         "ssm:GetParameters"],
         effect: Effect.ALLOW,
         resources:[`arn:aws:ssm:${region}:${account}:*`]
@@ -83,7 +83,7 @@ export function addEcsTaskRolePolicies(account: String, region: String, ecsTaskR
         resources: [`arn:aws:elasticfilesystem:${region}:${account}:*`]
     }))
     ecsTaskRole.addToPrincipalPolicy(new PolicyStatement({
-        actions: ["s3:*", 
+        actions: ["s3:*",
         "s3-object-lambda:*"],
         effect: Effect.ALLOW,
         resources: [`arn:aws:s3:::*`]
@@ -97,7 +97,7 @@ export function addLambdaExecutionRolePolicies(account: String, region: String, 
         resources: ["*"]
     }))
     lambdaExecutionRole.addToPrincipalPolicy(new PolicyStatement({
-        actions: ["s3:*", 
+        actions: ["s3:*",
         "s3-object-lambda:*"],
         effect: Effect.ALLOW,
         resources: [`arn:aws:s3:::*`]

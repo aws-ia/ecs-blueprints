@@ -44,7 +44,7 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image = local.container_image
+      image                    = local.container_image
       readonly_root_filesystem = false
       port_mappings = [
         {

@@ -28,7 +28,7 @@ def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role, data_pip
         effect= iam.Effect.ALLOW,
         resources= ["*"]
     ))
-    
+
     return stepfunctionExecutionRole
 
 def add_ecs_task_execution_role_policies(ecsTaskExecutionRole:iam.Role, data_pipeline_stack_props: DataPipelineStackProps):

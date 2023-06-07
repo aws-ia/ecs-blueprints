@@ -15,13 +15,13 @@ processing_date = now.strftime("%m-%d-%Y")
 
 s3Client = boto3.client('s3')
 workflowClient = boto3.client('stepfunctions')
-try:  
+try:
     s3BucketName = os.environ["S3_BUCKET"]
     foldername = os.environ['FOLDERNAME']
     task_token = os.environ['TASK_TOKEN']
     print (os.environ['FILES'])
-    file_list = json.loads(os.environ['FILES'])  
-    for file in file_list:        
+    file_list = json.loads(os.environ['FILES'])
+    for file in file_list:
         print ("Reading file : " + file)
         fileName = os.path.basename(file)
         clean_data = open(fileName+'_processed.csv', "w")
