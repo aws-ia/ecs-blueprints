@@ -309,7 +309,6 @@ module "codepipeline_s3_bucket" {
   version = "~> 3.0"
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
-  acl    = "private"
 
   # For example only - please re-evaluate for your environment
   force_destroy = true
