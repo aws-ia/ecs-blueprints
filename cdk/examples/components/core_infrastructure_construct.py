@@ -97,7 +97,7 @@ class CoreInfrastructureConstruct(Construct):
             auto_scaling = AutoScalingGroup(
                 self,
                 "DefaultAutoScalingGroup",
-                instance_type=InstanceType("t3.medium"),
+                instance_type=InstanceType("m5.large"),
                 machine_image=EcsOptimizedImage.amazon_linux2(),
                 desired_capacity=2,
                 vpc=self.vpc,

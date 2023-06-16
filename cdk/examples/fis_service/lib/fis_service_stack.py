@@ -67,7 +67,8 @@ class FISServiceStack(Stack):
             image=ContainerImage.from_registry(
                 self.stack_props.container_image
             ),
-            memory_reservation_mib=512,
+            cpu=int(self.stack_props.task_cpu),
+            memory_reservation_mib=int(self.stack_props.task_memory),
             port_mappings=[PortMapping(container_port=self.stack_props.container_port)],
             logging=AwsLogDriver(
                 stream_prefix="ecs",
@@ -80,8 +81,6 @@ class FISServiceStack(Stack):
             "FISEC2LBService",
             service_name=self.stack_props.service_name,
             cluster=self.ecs_cluster,
-            cpu=int(self.stack_props.task_cpu),
-            memory_reservation_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
             public_load_balancer=True,
             cloud_map_options=CloudMapOptions(
@@ -99,7 +98,7 @@ class FISServiceStack(Stack):
             environment={
                 "MANAGED_INSTANCE_ROLE_NAME": self.ssm_managed_instance_role.role_name
             },
-            memory_reservation_mib=128,
+            memory_reservation_mib=64,
             command=[
                 "/bin/bash",
                 "-c",
