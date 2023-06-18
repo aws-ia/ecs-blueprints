@@ -1,2 +1,2 @@
-aws-cdk-lib==2.70.0
+aws-cdk-lib==2.84.0
 python-dotenv==0.21.0

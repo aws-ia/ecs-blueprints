@@ -85,7 +85,7 @@ class CoreInfraStack(Stack):
 
     def validate_stack_props(self):
         if (
-            self.stack_props.account_number == "<ACCOUNT_NUMBER>"
+            self.stack_props.account_number in ["<ACCOUNT_NUMBER>", None]
             or self.stack_props.aws_region == "<REGION>"
         ):
             raise ValueError(

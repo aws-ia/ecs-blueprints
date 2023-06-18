@@ -40,7 +40,7 @@ cdk deploy --all --require-approval never
 
 The solution has following key components:
 
-* **AWS Application Load Balancer**: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
+* **Application Load Balancer**: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
   * ALB security group - allows ingress from any IP address to port 80 and allows all egress
   * ALB subnet - ALB is created in a public subnet
   * Listener - listens on port 80 for protocol HTTP
@@ -62,7 +62,7 @@ The second half of `lib/cicd_service_stack.py` focuses on creating CI/CD pipelin
 * CodeBuild for building container images
   * Needs the S3 bucket created above
   * IAM role for the build service
-  * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](https://github.com/aws-ia/ecs-blueprints/blob/main/application-code/ecsdemo-cicd/templates/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
+  * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](https://github.com/aws-ia/ecs-blueprints/blob/main/application-code/ecsdemo-cicd/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
   * A set of environment variables including repository URL and folder path.
 * CodePipeline to listen for changes to the repository and trigger build and deployment.
   * Needs the S3 bucket created above

@@ -5,8 +5,11 @@ This blueprint creates a backend service that **does not** sit behind a load bal
 * Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the **Essential Props** of the `.env` file:
 ```bash
 # Essential Props
-account_number="<ACCOUNT_NUMBER>"
-aws_region="<REGION>"
+export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
+export AWS_REGION={AWS-Region-for-ECS-resources}
+
+sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
+  -e "s/<REGION>/$AWS_REGION/g" sample.env > .env
 ```
 
 * If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *backend service*, but also *core infra*. In this case, you can set the values of **core stack props**.
@@ -43,7 +46,7 @@ After the execution of the CDK code, the outputs will be in the `output.json` fi
 
 This solution has following key components:
 
-* **AWS Cloud Map** for service discovery: The backend service can be given a service discovery name such as `backend.default.cluster-name.local`. The `backend` is service name, and `default` is the namespace alongwith further qualifier of `cluster-name.local`. Other services can interact with the backend service using the service discovery name. Here are the key aspects to note:
+* **AWS Cloud Map** for service discovery: The backend service can be given a service discovery name such as `backend-name.default.cluster-name.local`. The `backend` is service name, and `default` is the namespace alongwith further qualifier of `cluster-name.local`. Other services can interact with the backend service using the service discovery name. Here are the key aspects to note:
     * The namespace (i.e. `default.cluster-name.local`) is created in the [core_infra](../core_infra/README.md) blueprint. Many services can be registered to a namespace that is why we don't create the namespace in a specific service definition. We created them in the core-infra blueprint and you can easily add more namespaces there
     * We use `aws_service_discovery_dns_namespace` datasource to search and fetch the namespace.
     * The `aws_service_discovery_service` resource is used to register the service to the namespace. You see the record type, TTL, and health check setting in this resource.

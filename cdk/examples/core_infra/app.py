@@ -5,9 +5,9 @@ from lib.core_infra_stack import CoreInfraStack
 
 app = App()
 
-config = dotenv_values(".env")
+env_config = dotenv_values(".env")
 
-core_props = CoreInfrastructureProps(**config)
+core_props = CoreInfrastructureProps(**env_config)
 
 core_stack = CoreInfraStack(
     app,
