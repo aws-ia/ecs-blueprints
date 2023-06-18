@@ -2,9 +2,9 @@
 This folder contains the CDK code to deploy the core infratructure for an ECS Fargate workload. The AWS resources created by the default script are:
 * Networking
   * VPC
-    * 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
-    * 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of private subnets as AZs.
-    * NAT Gateway per subnet
+    * 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs
+    * 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of private subnets as AZs
+    * 1 NAT Gateway
     * Associated Route Tables
     * 1 Internet Gateway
 * 1 ECS Cluster with AWS CloudWatch Container Insights enabled
@@ -44,11 +44,12 @@ cd ecs-blueprints/cdk/examples/core_infra/
 ```
 * Copy `sample.env` to `.env` and change the `account_number` and `aws_region` values in the `.env` file:
 ```bash
-cp sample.env .env
+# change the vales based on your aws account
+export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
+export AWS_REGION={AWS-Region-for-ECS-resources}
 
-# change the vales basd on your aws account
-account_number="<ACCOUNT_NUMBER>"
-aws_region="<REGION>"
+sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
+  -e "s/<REGION>/$AWS_REGION/g" sample.env > .env
 ```
 
 * Run CDK synth command to synthesize and do a dry run
@@ -72,13 +73,11 @@ After the execution of the CDK code, the outputs will be in the `output.json` fi
 
 Run the following command if you want to delete all the resources created before. If you have created other blueprints and they use these infrastructure then destroy those blueprint resources first.
 
-In case of cleaning up `backend_service` and `lb_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing `cdk destroy` command, executing `aws ecr delete-repository` is needed.
+In case of cleaning up `cicd_service` blueprints, AWS CloudFormation cannot delete a non-empty Amazon ECR repository. Therefore, before executing `cdk destroy` command, executing `aws ecr delete-repository` is needed.
 
 ```bash
-# backend_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-backend --force
-# lb_service repository deletion
-aws ecr delete-repository --repository-name ecsdemo-frontend --force
+# cicd_service repository deletion
+aws ecr delete-repository --repository-name ecsdemo-cicd --force
 ```
 
 ```bash
@@ -93,7 +92,7 @@ The input values ​​below can be modified in the `cdk.json` file.
 | <a name="input_core_stack_name"></a> [core\_stack\_name](#input\_core\_stack\_name) | The name of Core Infrastructure stack, feel free to rename it. Used for cluster and VPC names. | `string` | `"ecs-blueprint-infra"` | yes |
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS region | `string` | `us-east-1` | yes |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for VPC | `string` | `"10.0.0.0/16"` | yes |
-| <a name="input_namespaces"></a> [namespaces](#input\_namespaces) | List of service discovery namespaces for ECS services. Creates a default namespace | `list(string)` | <pre>[<br>  "default",<br>  "myapp"<br>]</pre> | yes |
+| <a name="input_namespaces"></a> [namespaces](#input\_namespaces) | List of service discovery namespaces for ECS services. Creates a default namespace | `list(string)` | <pre>[<br>  "default" <br>]</pre> | yes |
 | <a name="input_enable_nat_gw"></a> [enable\_nat\_gw](#input\_enable\_nat\_gw) | Provision a NAT Gateway in the VPC | `bool` | `true` | yes |
 | <a name="input_number_of_azs"></a> [number\_of\_azs](#input\_number\_of\_azs) | The number of Availability Zone in the VPC | `number` | 3 | yes |
 

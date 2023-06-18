@@ -6,8 +6,11 @@ This blueprint creates a web-facing load balanced ECS service for AWS FIS. Below
 * Copy `sample.env` to `.env` and change the `account_number` and `aws_region` values in the Essential Props of the `.env` file:
 ```bash
 # Essential Props
-account_number="<ACCOUNT_NUMBER>"
-aws_region="<REGION>"
+export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
+export AWS_REGION={AWS-Region-for-ECS-resources}
+
+sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
+  -e "s/<REGION>/$AWS_REGION/g" sample.env > .env
 ```
 
 * If you didn't deploy the [core_infra](../core_infra/README.md), set the value of **deploy_core_stack** in the `.env` file to **True**. This automatically provision not only *frontend service*, but also *core infra*. In this case, you can set the values of **core stack props**.
@@ -40,7 +43,7 @@ cdk deploy --all --require-approval never
 
 The solution has following key components:
 
-* **AWS Application Load Balancer**: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
+* **Application Load Balancer**: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
   * ALB security group - allows ingress from any IP address to port 80 and allows all egress
   * ALB subnet - ALB is created in a public subnet
   * Listener - listens on port 80 for protocol HTTP
