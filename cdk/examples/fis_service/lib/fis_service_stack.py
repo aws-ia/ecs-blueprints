@@ -42,8 +42,8 @@ class FISServiceStack(Stack):
             self.stack_props.sd_namespace if self.stack_props.sd_namespace else None
         )
 
-        self._create_ecs_task_role()
         self._create_ssm_managed_instance_role()
+        self._create_ecs_task_role()
 
         log_group = LogGroup(
             self,
@@ -153,28 +153,6 @@ class FISServiceStack(Stack):
             )
         return self._ecs_task_execution_role
 
-    def _create_ecs_task_role(self):
-        self.ecs_task_role = Role(
-            self,
-            "ECSTaskRole",
-            assumed_by=ServicePrincipal("ecs-tasks"),
-        )
-        self.ecs_task_role.add_to_policy(PolicyStatement(
-            effect=Effect.ALLOW,
-            actions=[
-                "iam:PassRole",
-            ],
-            resources=['arn:aws:iam::'+self.stack_props.account_number+':role/*'],
-        ))
-        self.ecs_task_role.add_to_policy(PolicyStatement(
-            effect=Effect.ALLOW,
-            actions=[
-                "ssm:CreateActivation",
-                "ssm:AddTagsToResource",
-            ],
-            resources=["*"],
-        ))
-
     def _create_ssm_managed_instance_role(self):
         self.ssm_managed_instance_role = Role(
             self,
@@ -201,6 +179,28 @@ class FISServiceStack(Stack):
                     "ssm:DeregisterManagedInstance",
                 ],
                 resources=['arn:aws:ssm:'+self.stack_props.aws_region+':'+self.stack_props.account_number+':managed-instance/*'],
+        ))
+    
+    def _create_ecs_task_role(self):
+        self.ecs_task_role = Role(
+            self,
+            "ECSTaskRole",
+            assumed_by=ServicePrincipal("ecs-tasks"),
+        )
+        self.ecs_task_role.add_to_policy(PolicyStatement(
+            effect=Effect.ALLOW,
+            actions=[
+                "iam:PassRole",
+            ],
+            resources=['arn:aws:iam::'+self.stack_props.account_number+':role/'+self.ssm_managed_instance_role.role_name],
+        ))
+        self.ecs_task_role.add_to_policy(PolicyStatement(
+            effect=Effect.ALLOW,
+            actions=[
+                "ssm:CreateActivation",
+                "ssm:AddTagsToResource",
+            ],
+            resources=["*"],
         ))
 
 
