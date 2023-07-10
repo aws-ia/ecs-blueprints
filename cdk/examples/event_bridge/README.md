@@ -85,7 +85,7 @@ This solution has following key components:
         "source": ["aws.ecs"],
         "detail-type": ["ECS Task State Change"],
         "detail": {
-            "clusterArn": [${ECS_CLUSTER_ARN}],
+            "clusterArn": ["${ECS_CLUSTER_ARN}"],
             "$or": [{
             "stopCode": ["TaskFailedToStart"]
             }, {
