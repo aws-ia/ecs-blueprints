@@ -62,7 +62,7 @@ class FISServiceStack(Stack):
         )
 
         ec2_task_image.add_container(
-            "nginx-container",
+            "app-container",
             container_name=self.stack_props.container_name,
             image=ContainerImage.from_registry(
                 self.stack_props.container_image
