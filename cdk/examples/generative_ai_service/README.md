@@ -35,7 +35,13 @@ deploy_jumpstart_stack="True"
 # SageMaker Props
 model_id="model-txt2img-stabilityai-stable-diffusion-v2-1-base"
 inference_instance_type="ml.g4dn.4xlarge"
+```
 
+* To work with python CDK project, below step is needed.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 * Run CDK ls command to figure out lists of the stacks in the app. The list of CDK stack may differ depending on the `deploy_core_stack` value.
