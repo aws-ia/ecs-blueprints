@@ -87,7 +87,7 @@ class GenAIServiceStack(Stack):
         
         # ECS Service Auto Scaling policy
         scalable_target = self.fargate_service.service.auto_scale_task_count(
-            min_capacity=2, max_capacity=5
+            min_capacity=1, max_capacity=5
         )
 
         scalable_target.scale_on_cpu_utilization(
