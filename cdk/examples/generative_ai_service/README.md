@@ -10,6 +10,8 @@ This blueprint creates Generative AI serving ECS service with [Amazon SageMaker 
 export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
 export AWS_REGION=${AWS_REGION:=us-west-2}
 
+aws configure set default.region ${AWS_REGION}
+
 sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
   -e "s/<REGION>/$AWS_REGION/g" sample.env > .env
 ```
