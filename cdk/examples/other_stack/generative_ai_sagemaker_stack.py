@@ -47,7 +47,7 @@ class GenerativeAiSagemakerStack(Stack):
                         "MMS_MAX_RESPONSE_SIZE": "20000000",
                         "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
                         "SAGEMAKER_PROGRAM": "inference.py",
-                        # "SAGEMAKER_REGION": model_info["region_name"],
+                        "SAGEMAKER_REGION": model_info["region_name"],
                         "SAGEMAKER_SUBMIT_DIRECTORY": "/opt/ml/model/code",
                     }
                 )

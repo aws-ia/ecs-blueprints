@@ -4,11 +4,11 @@ This sample is developed using [AWS Blog - Deploy generative AI models from Amaz
 
 This blueprint creates Generative AI serving ECS service with [Amazon SageMaker JumpStart](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-jumpstart.html). Below are the steps for deploying this service. This blueprint requires [Docker command line](https://docs.docker.com/engine/reference/commandline/cli/) for building ECS service container image locally.
 
-* Copy `sample.env` to `.env` and change the `account_number`, `aws_region` values in the Essential Props of the `.env` file:
+* Copy `sample.env` to `.env` and change the `account_number`, `aws_region`(example, us-west-2) values in the Essential Props of the `.env` file:
 ```bash
 # Essential Props
 export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
-export AWS_REGION={AWS-Region-for-ECS-resources}
+export AWS_REGION=${AWS_REGION:=us-west-2}
 
 sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
   -e "s/<REGION>/$AWS_REGION/g" sample.env > .env
@@ -49,7 +49,7 @@ python -m pip install -r requirements.txt
 cdk ls
 ```
 
-* Deploy the CDK templates in this repository using `cdk deploy`. While it's possible for you to deploy all three CDK stacks all at once, this guide proposes a method of deploying them in two steps. The deployment of the SageMaker environment is carried out in the first step. This step takes around 5+ minutes.
+* Deploy the CDK templates in this repository using `cdk deploy`. While it's possible for you to deploy all three CDK stacks all at once, this guide proposes a method of deploying them in two steps. The deployment of the SageMaker environment is carried out in the first step. This step takes around 8+ minutes.
 ```bash
 cdk deploy GenAISageMakerStack --require-approval never
 ```

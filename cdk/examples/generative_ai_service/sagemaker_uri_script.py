@@ -1,9 +1,10 @@
 import sagemaker
 from sagemaker import image_uris, model_uris
 
-session = sagemaker.Session()
 
 def get_sagemaker_uris(model_id, instance_type, region_name):
+    
+    session = sagemaker.Session()._region_name(region_name)
     
     # model_id: a unique identifier for the JumpStart model
     MODEL_VERSION = "*"  # latest version
