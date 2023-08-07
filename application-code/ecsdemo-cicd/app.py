@@ -30,7 +30,7 @@ def hello():
 
     app_name = os.environ.get('APP_NAME', 'Amazon ECS Flask Webpage')
     container_service = os.environ.get('CONTAINER_SERVICE', 'AWS')
-    infra_version = os.environ.get('INFRA_VERSION', '0.0.0')
+    infra_version = os.environ.get('INFRA_VERSION', '0.1.0')
     python_version = platform.python_version()
     now = datetime.datetime.now()
 

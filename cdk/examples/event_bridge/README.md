@@ -6,11 +6,11 @@ Given that we've configured an event pattern with the conditions that [ECS stopC
 
 Below are the steps for deploying this service:
 
-* Copy `sample.env` to `.env` and change the `account_number` an `aws_region` values in the **Essential Props** of the `.env` file:
+* Copy `sample.env` to `.env` and change the `account_number` an `aws_region`(example, us-west-2) values in the **Essential Props** of the `.env` file:
 ```bash
 # Essential Props
 export AWS_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
-export AWS_REGION={AWS-Region-for-ECS-resources}
+export AWS_REGION=${AWS_REGION:=us-west-2}
 
 sed -e "s/<ACCOUNT_NUMBER>/$AWS_ACCOUNT/g" \
   -e "s/<REGION>/$AWS_REGION/g" sample.env > .env

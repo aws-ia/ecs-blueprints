@@ -1,6 +1,6 @@
 # ECS service with CI/CD pipeline
 
-This blueprint creates ECS service with CI/CD pipeline by using AWS CodePipeline and CodeBuild. Below are the steps for deploying this service.
+This blueprint creates ECS service with CI/CD pipeline by using AWS CodePipeline and CodeBuild. Below are the steps for deploying this service. This blueprint requires [Git](https://github.com/git-guides/install-git) and creating a [Github token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) to access the forked repository. Please refer [this README file](https://github.com/aws-ia/ecs-blueprints/tree/main/cdk#:~:text=us%2Dwest%2D2-,Quick%20Start,-Fork%20this%20repository) ahead.
 
 * Copy `sample.env` to `.env` and change the `account_number`, `aws_region` and `repository_owner` values in the Essential Props of the `.env` file:
 ```bash
