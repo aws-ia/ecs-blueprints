@@ -100,7 +100,7 @@ module "lambda_function" {
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
-  source_path        = "../../application-code/lambda-function-queue-trigger/"
+  source_path        = "../../../application-code/lambda-function-queue-trigger/"
 
   cloudwatch_logs_retention_in_days = 90
 

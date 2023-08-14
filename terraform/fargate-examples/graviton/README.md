@@ -23,7 +23,8 @@ aws secretsmanager create-secret --name ecs-github-token --secret-string <your-g
 ```shell
 terraform init
 terraform plan
-terraform apply -auto-approve
+terraform apply 
+# type repository owner name and "yes"
 ```
 
 <p align="center">
