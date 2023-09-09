@@ -67,7 +67,7 @@ with st.spinner("Retrieving configurations..."):
                     response = runtime.invoke_endpoint(
                         EndpointName=endpoint_name,
                         Body=prompt,
-                        ContentType="application/json",
+                        ContentType="application/x-text",
                     )
                     response_body = json.loads(response["Body"].read().decode())
                     generated_text = response_body["generated_text"]
