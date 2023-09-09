@@ -8,7 +8,7 @@ from aws_cdk.aws_sagemaker import CfnModel, CfnEndpointConfig, CfnEndpoint
 from aws_cdk.aws_ssm import StringParameter
 from constructs import Construct
 
-class GenerativeAiSagemakerStack(Stack):
+class GenerativeAITxt2ImgSagemakerStack(Stack):
     def __init__(
         self,
         scope: Construct,

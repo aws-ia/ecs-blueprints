@@ -83,6 +83,7 @@ class GenAIServiceStack(Stack):
             actions=["sagemaker:InvokeEndpoint"],
             resources=["*"]
             )
+        )
 
         # ECS Service Auto Scaling policy
         scalable_target = self.fargate_service.service.auto_scale_task_count(

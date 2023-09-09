@@ -8,7 +8,9 @@ from lib.gen_ai_service_stack import GenAIServiceStack
 from lib.gen_ai_service_stack_props import GenAIServiceStackProps
 
 from sagemaker_uri_script import *
-from other_stack.generative_ai_sagemaker_stack import GenerativeAiSagemakerStack
+from other_stack.txt2img_generative_ai_stack import GenerativeAITxt2ImgSagemakerStack
+from other_stack.txt2txt_generative_ai_stack import GenerativeAITxt2TxtSagemakerStack
+
 
 app = App()
 
@@ -18,22 +20,40 @@ deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 deploy_jumpstart = bool(util.strtobool(env_config.pop("deploy_jumpstart_stack")))
 
 if deploy_jumpstart:
-    model_info=get_sagemaker_uris(
-        model_id=env_config.pop("model_id"),
-        instance_type=env_config.pop("inference_instance_type"),
-        region_name=env_config["aws_region"]
-    )
+    if "txt2img_model_id" in env_config:
+        model_info=get_sagemaker_uris(
+            model_id=env_config.pop("txt2img_model_id"),
+            instance_type=env_config.pop("txt2img_inference_instance_type"),
+            region_name=env_config["aws_region"]
+        )
 
-    # generative AI sagemaker stack
-    GenerativeAiSagemakerStack(
-        app,
-        "GenAISageMakerStack",
-        model_info=model_info,
-        env=Environment(
-            account=env_config["account_number"],
-            region=env_config["aws_region"],
-        ),
-    )
+        # Txt2Img generative AI sagemaker stack
+        GenerativeAITxt2ImgSagemakerStack(
+            app,
+            "GenAITxt2ImgSageMakerStack",
+            model_info=model_info,
+            env=Environment(
+                account=env_config["account_number"],
+                region=env_config["aws_region"],
+            ),
+        )
+    if "txt2txt_model_id" in env_config:
+        model_info=get_sagemaker_uris(
+            model_id=env_config.pop("txt2txt_model_id"),
+            instance_type=env_config.pop("txt2txt_inference_instance_type"),
+            region_name=env_config["aws_region"]
+        )
+
+        # Txt2Txt generative AI sagemaker stack
+        GenerativeAITxt2TxtSagemakerStack(
+            app,
+            "GenAITxt2TxtSageMakerStack",
+            model_info=model_info,
+            env=Environment(
+                account=env_config["account_number"],
+                region=env_config["aws_region"],
+            ),
+        ) 
 
 gen_ai_stack_props = GenAIServiceStackProps(**env_config)
 
