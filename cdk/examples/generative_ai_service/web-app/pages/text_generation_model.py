@@ -58,7 +58,7 @@ with st.spinner("Retrieving configurations..."):
     st.caption("e.g., write a summary")
 
     if st.button("Generate Response", key=query):
-        if endpoint_name == "" or query == "":        
+        if endpoint_name == "" or query == "":
             st.error("Please enter a valid endpoint name, API gateway url and query!")
         else:
             with st.spinner("Wait for it..."):
@@ -72,18 +72,17 @@ with st.spinner("Retrieving configurations..."):
                     response_body = json.loads(response["Body"].read().decode())
                     generated_text = response_body["generated_text"]
                     st.write(generated_text)
-                    
+
                 except requests.exceptions.ConnectionError as errc:
                     st.error("Error Connecting:",errc)
-                    
+
                 except requests.exceptions.HTTPError as errh:
                     st.error("Http Error:",errh)
-                    
+
                 except requests.exceptions.Timeout as errt:
-                    st.error("Timeout Error:",errt)    
-                    
+                    st.error("Timeout Error:",errt)
+
                 except requests.exceptions.RequestException as err:
-                    st.error("OOps: Something Else",err)                
-                                
+                    st.error("OOps: Something Else",err)
+
             st.success("Done!")
-        

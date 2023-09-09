@@ -53,7 +53,7 @@ if deploy_jumpstart:
                 account=env_config["account_number"],
                 region=env_config["aws_region"],
             ),
-        ) 
+        )
 
 gen_ai_stack_props = GenAIServiceStackProps(**env_config)
 

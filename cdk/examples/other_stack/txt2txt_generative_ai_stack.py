@@ -21,7 +21,7 @@ class GenerativeAITxt2TxtSagemakerStack(Stack):
 
         # model name
         model_info["model_name"]="HuggingfaceText2TextFlan"
-        
+
         # SageMaker Model IAM Role
         self.sagemaker_role = Role(
             self,
