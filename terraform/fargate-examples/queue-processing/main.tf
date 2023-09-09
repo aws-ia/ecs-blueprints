@@ -81,7 +81,7 @@ resource "aws_ecs_task_definition" "this" {
 
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/ecs/${local.name}"
-  retention_in_days = 90
+  retention_in_days = 30
 
   tags = local.tags
 }
@@ -96,13 +96,13 @@ module "lambda_function" {
   function_name      = "${local.name}-${random_id.this.hex}"
   description        = "Automatically invoke ECS tasks based on SQS queue size and available tasks"
   handler            = "lambda_function.lambda_handler"
-  runtime            = "python3.8"
+  runtime            = "python3.9"
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
   source_path        = "../../../application-code/lambda-function-queue-trigger/"
 
-  cloudwatch_logs_retention_in_days = 90
+  cloudwatch_logs_retention_in_days = 30
 
   allowed_triggers = {
     PollSSMScale = {
@@ -140,7 +140,6 @@ module "source_s3_bucket" {
   version = "~> 3.0"
 
   bucket = "${local.name}-source-${local.region}-${random_id.this.hex}"
-  acl    = "private"
 
   # For example only - please evaluate for your environment
   force_destroy = true
@@ -169,7 +168,6 @@ module "destination_s3_bucket" {
   version = "~> 3.0"
 
   bucket = "${local.name}-destination-${local.region}-${random_id.this.hex}"
-  acl    = "private"
 
   # For example only - please evaluate for your environment
   force_destroy = true
@@ -321,7 +319,6 @@ module "codepipeline_s3_bucket" {
   version = "~> 3.0"
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
-  acl    = "private"
 
   # For example only - please re-evaluate for your environment
   force_destroy = true
@@ -613,5 +610,6 @@ data "aws_ecs_cluster" "core_infra" {
 }
 
 data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-execution-*"
+  name_regex = "core-infra-*"
 }
+
