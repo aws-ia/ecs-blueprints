@@ -41,11 +41,11 @@ class GenAIServiceStack(Stack):
             retention=RetentionDays.ONE_WEEK,
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
-        
+
         # AWS Fargate task container defintion
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
-            # build container image from local folder 
+            # build container image from local folder
             image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
@@ -54,8 +54,8 @@ class GenAIServiceStack(Stack):
                 log_group=log_group,
             )
         )
-        
-        # ECS service with Application Load Balancer 
+
+        # ECS service with Application Load Balancer
         self.fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "GenAIFargateLBService",
@@ -69,8 +69,8 @@ class GenAIServiceStack(Stack):
             task_image_options=fargate_task_image,
             enable_ecs_managed_tags=True,
         )
-        
-        # Add ECS Task IAM Role 
+
+        # Add ECS Task IAM Role
         self.fargate_service.task_definition.add_to_task_role_policy(PolicyStatement(
             effect=Effect.ALLOW,
             actions = ["ssm:GetParameter"],
@@ -150,4 +150,3 @@ class GenAIServiceStack(Stack):
             raise ValueError(
                 "Environment values needs to be set for account_number, aws_region"
             )
-
