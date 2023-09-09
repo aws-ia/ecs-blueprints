@@ -47,7 +47,7 @@ The rest of the components provide CI/CD pipeline to build and update the ECS Fa
 * CodeBuild for building queue processing container image
     * Needs the S3 bucket created above
     * IAM role for the build service
-    * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](./application-code/container-queue-proc/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
+    * The *buildspec_path* is a key variable to note. It points to the [buildspec.yml](../../../application-code/container-queue-proc/templates/buildspec.yml) file which has all the instructions not only for building the container but also for pre-build processing and post-build artifacts preparation required for deployment.
     * A set of environment variables including repository URL and folder path.
 * CodePipeline to listen for changes to the repository and trigger build and deployment.
     * Needs the S3 bucket created above
