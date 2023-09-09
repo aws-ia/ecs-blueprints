@@ -8,7 +8,7 @@ from aws_cdk.aws_sagemaker import CfnModel, CfnEndpointConfig, CfnEndpoint
 from aws_cdk.aws_ssm import StringParameter
 from constructs import Construct
 
-class GenerativeAiSagemakerStack(Stack):
+class GenerativeAITxt2TxtSagemakerStack(Stack):
     def __init__(
         self,
         scope: Construct,
@@ -20,7 +20,7 @@ class GenerativeAiSagemakerStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # model name
-        model_info["model_name"]="StableDiffusionText2Img"
+        model_info["model_name"]="HuggingfaceText2TextFlan"
 
         # SageMaker Model IAM Role
         self.sagemaker_role = Role(
@@ -44,11 +44,14 @@ class GenerativeAiSagemakerStack(Stack):
                     image=model_info["model_docker_image"],
                     model_data_url= "s3://"+model_info["model_bucket_name"]+"/"+model_info["model_bucket_key"],
                     environment={
-                        "MMS_MAX_RESPONSE_SIZE": "20000000",
-                        "SAGEMAKER_CONTAINER_LOG_LEVEL": "20",
+                        "MODEL_CACHE_ROOT": "/opt/ml/model",
+                        "SAGEMAKER_ENV": "1",
+                        "SAGEMAKER_MODEL_SERVER_TIMEOUT": "3600",
+                        "SAGEMAKER_MODEL_SERVER_WORKERS": "1",
                         "SAGEMAKER_PROGRAM": "inference.py",
                         "SAGEMAKER_REGION": model_info["region_name"],
-                        "SAGEMAKER_SUBMIT_DIRECTORY": "/opt/ml/model/code",
+                        "SAGEMAKER_SUBMIT_DIRECTORY": "/opt/ml/model/code/",
+                        "TS_DEFAULT_WORKERS_PER_MODEL": "1"
                     }
                 )
             ]
@@ -82,4 +85,4 @@ class GenerativeAiSagemakerStack(Stack):
         # endpoint.node.add_dependency(ecr_policy)
 
         # Store SageMaker Endpoint name to Parameter Store
-        StringParameter(self, "txt2img_sm_endpoint", parameter_name="txt2img_sm_endpoint", string_value=self.sagemaker_endpoint.attr_endpoint_name)
+        StringParameter(self, "txt2txt_sm_endpoint", parameter_name="txt2txt_sm_endpoint", string_value=self.sagemaker_endpoint.attr_endpoint_name)
