@@ -16,12 +16,12 @@ class GenerativeAiSagemakerStack(Stack):
         model_info,
         **kwargs
     ) -> None:
-        
+
         super().__init__(scope, id, **kwargs)
-        
+
         # model name
         model_info["model_name"]="StableDiffusionText2Img"
-        
+
         # SageMaker Model IAM Role
         self.sagemaker_role = Role(
             self,
@@ -32,7 +32,7 @@ class GenerativeAiSagemakerStack(Stack):
                 ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
             ]
         )
-        
+
         # SageMaker model
         self.sagemaker_model = CfnModel(
             self,
@@ -53,7 +53,7 @@ class GenerativeAiSagemakerStack(Stack):
                 )
             ]
         )
-        
+
         # SageMaker Endpoint config
         self.sagemaker_config = CfnEndpointConfig(
             self,
@@ -69,7 +69,7 @@ class GenerativeAiSagemakerStack(Stack):
                 )
             ]
         )
-        
+
         # SageMaker Endpoint
         self.sagemaker_endpoint = CfnEndpoint(
             self,
@@ -77,10 +77,9 @@ class GenerativeAiSagemakerStack(Stack):
             endpoint_name=model_info["model_name"]+"-Endpoint",
             endpoint_config_name=self.sagemaker_config.attr_endpoint_config_name
         )
-        
+
         # endpoint.node.add_dependency(logs_policy)
         # endpoint.node.add_dependency(ecr_policy)
-        
-        # Store SageMaker Endpoint name to Parameter Store  
+
+        # Store SageMaker Endpoint name to Parameter Store
         StringParameter(self, "txt2img_sm_endpoint", parameter_name="txt2img_sm_endpoint", string_value=self.sagemaker_endpoint.attr_endpoint_name)
-    

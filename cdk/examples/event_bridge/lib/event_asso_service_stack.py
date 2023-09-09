@@ -27,7 +27,7 @@ class EventAssociatedServiceStack(Stack):
         self._sd_namespace = (
             self.stack_props.sd_namespace if self.stack_props.sd_namespace else None
         )
-        
+
         # event bridge target - cloudwatch log group
         self.event_bridge_log_group = LogGroup(
             self,
@@ -35,8 +35,8 @@ class EventAssociatedServiceStack(Stack):
             retention=RetentionDays.ONE_DAY,
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
-        
-        # event bridge rule 
+
+        # event bridge rule
         Rule(
             self,
             "EventBridgeForECSService",
@@ -55,7 +55,7 @@ class EventAssociatedServiceStack(Stack):
             ),
             targets = [CloudWatchLogGroup(self.event_bridge_log_group)]
         )
-        
+
         # metric filter for event bridge's cloudwatch log group
         self.task_fail_count = MetricFilter(
             self,
@@ -69,7 +69,7 @@ class EventAssociatedServiceStack(Stack):
             default_value=0,
             unit= Unit.COUNT
         ).metric(statistic=Stats.SAMPLE_COUNT, period=Duration.minutes(1))
-        
+
         # cloudwatch alarm based on ecs-task-fail-count metric
         self.task_fail_count.create_alarm(
             self,
@@ -79,8 +79,8 @@ class EventAssociatedServiceStack(Stack):
             evaluation_periods=1,
             alarm_name="ecs-task-fail-alarm",
         )
-                
-        # cloudwatch log group for ECS service          
+
+        # cloudwatch log group for ECS service
         log_group = LogGroup(
             self,
             "EventBridgeAssociatedServiceLogGroup",
@@ -88,7 +88,7 @@ class EventAssociatedServiceStack(Stack):
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
 
-        # fargate task definition 
+        # fargate task definition
         fargate_task_def = TaskDefinition(
             self,
             self.stack_props.container_name,

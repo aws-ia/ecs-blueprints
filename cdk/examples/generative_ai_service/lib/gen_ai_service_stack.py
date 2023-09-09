@@ -1,6 +1,6 @@
 from aws_cdk import PhysicalName, Stack
 from aws_cdk.aws_ec2 import Vpc
-from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver
+from aws_cdk.aws_ecs import Cluster, ContainerImage, LogDriver
 from aws_cdk.aws_ecr_assets import Platform
 from aws_cdk.aws_ecs_patterns import (
     ApplicationLoadBalancedFargateService,
@@ -23,7 +23,7 @@ class GenAIServiceStack(Stack):
         gen_ai_service_stack_prop: GenAIServiceStackProps,
         **kwargs
     ):
-        
+
         super().__init__(scope, id, **kwargs)
 
         self.stack_props = gen_ai_service_stack_prop
@@ -33,7 +33,7 @@ class GenAIServiceStack(Stack):
         self._sd_namespace = (
             self.stack_props.sd_namespace if self.stack_props.sd_namespace else None
         )
-        
+
         # Amazon CloudWatch log group
         log_group = LogGroup(
             self,
@@ -41,11 +41,11 @@ class GenAIServiceStack(Stack):
             retention=RetentionDays.ONE_WEEK,
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
-        
+
         # AWS Fargate task container defintion
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
-            # build container image from local folder 
+            # build container image from local folder
             image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
@@ -54,8 +54,8 @@ class GenAIServiceStack(Stack):
                 log_group=log_group,
             )
         )
-        
-        # ECS service with Application Load Balancer 
+
+        # ECS service with Application Load Balancer
         self.fargate_service = ApplicationLoadBalancedFargateService(
             self,
             "GenAIFargateLBService",
@@ -69,22 +69,22 @@ class GenAIServiceStack(Stack):
             task_image_options=fargate_task_image,
             enable_ecs_managed_tags=True,
         )
-        
-        # Add ECS Task IAM Role 
+
+        # Add ECS Task IAM Role
         self.fargate_service.task_definition.add_to_task_role_policy(PolicyStatement(
             effect=Effect.ALLOW,
             actions = ["ssm:GetParameter"],
             resources = ["arn:aws:ssm:*"],
             )
         )
-        
+
         self.fargate_service.task_definition.add_to_task_role_policy(PolicyStatement(
             effect=Effect.ALLOW,
             actions=["sagemaker:InvokeEndpoint"],
             resources=["*"]
             )
-        )   
-        
+        )
+
         # ECS Service Auto Scaling policy
         scalable_target = self.fargate_service.service.auto_scale_task_count(
             min_capacity=1, max_capacity=5
@@ -93,8 +93,8 @@ class GenAIServiceStack(Stack):
         scalable_target.scale_on_cpu_utilization(
             "CpuScaling", target_utilization_percent=50
         )
-        
-        
+
+
     @property
     def vpc(self):
         if not self._vpc:

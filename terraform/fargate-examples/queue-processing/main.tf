@@ -612,4 +612,3 @@ data "aws_ecs_cluster" "core_infra" {
 data "aws_iam_roles" "ecs_core_infra_exec_role" {
   name_regex = "core-infra-*"
 }
-

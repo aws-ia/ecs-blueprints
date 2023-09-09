@@ -23,12 +23,12 @@ if deploy_jumpstart:
         instance_type=env_config.pop("inference_instance_type"),
         region_name=env_config["aws_region"]
     )
-        
-    # generative AI sagemaker stack     
+
+    # generative AI sagemaker stack
     GenerativeAiSagemakerStack(
         app,
         "GenAISageMakerStack",
-        model_info=model_info, 
+        model_info=model_info,
         env=Environment(
             account=env_config["account_number"],
             region=env_config["aws_region"],
@@ -76,5 +76,5 @@ gen_ai_service_stack = GenAIServiceStack(
 )
 
 gen_ai_service_stack.validate_stack_props()
-    
+
 app.synth()

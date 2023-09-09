@@ -2,7 +2,7 @@
 
 This blueprint detects a failure event when your ECS tasks stopped due to [various reasons](https://docs.aws.amazon.com/AmazonECS/latest/userguide/stopped-task-error-codes.html). This blueprint consists of ECS service, [Amazon EventBridge rule](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-rules.html), Amazon CloudWatch Logs, Metrics and Alarm. When an event that matches the [*event pattern*](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html) specified in Amazon EventBridge rule occurs, it is send to the [*target*](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-targets.html) for processing. In this scenario, we set this target to CloudWatch log group. But you can configure target with other AWS services. Also, a single rule can have more than one target.
 
-Given that we've configured an event pattern with the conditions that [ECS stopCode](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Task.html#:~:text=Required%3A%20No-,stopCode,-The%20stop%20code) is **TaskFailedToStart** or **EssentialContainerExited**, any events fitting these conditions from the ECS cluster will be saved in the CloudWatch log group which name contains **ECSFailureDetection**. And each time the logs are accumulated, the metric named **ecs-task-fail-count** is counted by this log group's [*Metric filter*](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CreateMetricFilterProcedure.html). Subsequently, CloudWatch alarm associated with this metric will be triggered. 
+Given that we've configured an event pattern with the conditions that [ECS stopCode](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Task.html#:~:text=Required%3A%20No-,stopCode,-The%20stop%20code) is **TaskFailedToStart** or **EssentialContainerExited**, any events fitting these conditions from the ECS cluster will be saved in the CloudWatch log group which name contains **ECSFailureDetection**. And each time the logs are accumulated, the metric named **ecs-task-fail-count** is counted by this log group's [*Metric filter*](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CreateMetricFilterProcedure.html). Subsequently, CloudWatch alarm associated with this metric will be triggered.
 
 Below are the steps for deploying this service:
 
@@ -106,13 +106,13 @@ This solution has following key components:
     fields @timestamp, detail.lastStatus as status, detail.stopCode as stopCode, detail.stoppedReason as stoppedReason
     | sort @timestamp desc
     | limit 20
-   ``` 
+   ```
    <p align="center">
       <img src="../../docs/event-bridge-associated-service-log-insights.png"/>
    </p>
-   
+
 * **Amazon CloudWatch** Alarms:
-   * CloudWatch's *metric alarm* watches a single CloudWatch metric. Not in this blueprint, but you can add one or more *actions* triggering during a threshold over. For exmaple, the action can be sending to a notification to an Amazon SNS topic. 
+   * CloudWatch's *metric alarm* watches a single CloudWatch metric. Not in this blueprint, but you can add one or more *actions* triggering during a threshold over. For exmaple, the action can be sending to a notification to an Amazon SNS topic.
 
 # Cleanup
 To proceed with deleting the stack, use `cdk destroy`
