@@ -19,11 +19,11 @@ locals {
   tags = {
     Blueprint  = local.name
     GithubRepo = "github.com/aws-ia/ecs-blueprints"
-  }  
+  }
 }
 
 ################################################################################
-# Network 
+# Network
 ################################################################################
 
 module "vpc" {
@@ -105,10 +105,10 @@ module "service_alb" {
 
   load_balancer_type = "application"
 
-  vpc_id  = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
 
   # public ALB
-  subnets = module.vpc.public_subnets
+  subnets  = module.vpc.public_subnets
   internal = false
   # OR
   # private ALB
