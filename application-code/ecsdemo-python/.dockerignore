@@ -1,0 +1,26 @@
+.bandit
+tests/*
+
+*.swp
+package-lock.json
+.pytest_cache
+*.egg-info
+*/dist
+*/build
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Coverage
+.coverage
+reports/

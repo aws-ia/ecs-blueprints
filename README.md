@@ -87,6 +87,92 @@ This repository has 3 main folders
 * [examples](./terraform/fargate-examples/) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. If you are looking to contribute new blueprints, put them in the *examples* folder.
 * [application-code](./application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
+## Modules
+### Python Github pipeline
+
+This module is located in `terraform/modules/code_pipeline_python_github` folder. It generates a pipeline with the following structure:
+
+- **Source:** Get code from github
+- **Security:** run python security checks, docker image scanner and look for credentials
+- **CodeValidation:** python linter and unit tests
+- **Build:** build docker image and push to ECR
+- **Deploy:** deploy new image to an ECS Service
+
+The security checks include the following:
+
+- [Safety](https://docs.pyup.io/docs/getting-started-with-safety-cli) checks Python dependencies for known security vulnerabilities and suggests the proper remediations for vulnerabilities detected. 
+- [Bandit](https://bandit.readthedocs.io/en/latest/) is a tool designed to find common security issues in Python code.
+- [Trivy](https://aquasecurity.github.io/trivy/) is a security scanner that looks for security issues, and targets where it can find those issues.
+- [git-secrets](https://github.com/awslabs/git-secrets) prevents you from committing passwords and other sensitive information to a git repository.
+
+#### Pre-requisites
+You will need an existing **CodeStar connection** to be able to get source code from github in your pipeline.
+
+For more information check the official docs related to [create the connection.](https://docs.aws.amazon.com/codepipeline/latest/userguide/connections-github.html#connections-github-console)
+
+To tests this module you can push to a **Github repository** the python code inside `application-code/ecsdemo-python`.
+
+#### Usage example
+```
+module "python_microservice_pipeline" {
+  source                              = "../modules/code_pipeline_python_github"
+  repository_name                     = "pipeline-source-repository-name"
+  artifacts_bucket_arn                = "pipeline-artifacts-bucket-arn"
+  artifacts_bucket_encryption_key_arn = "pipeline-artifacts-bucket-encryption-key-arn"
+  account_id                          = "account-id"
+  aws_region                          = "region"
+  pipeline_articats_bucket_name       = "pipeline-artifacts-bucket-name"
+  ecr_repository_name                 = "ecr-repository-name"
+  cluster_name                        = "ecs-cluster-name"
+  container_name                      = "ecs-service-container-name"
+  service_name                        = "ecs-service-name"
+}
+```
+
+#### Use github actions inside pipeline
+You can use GitHub Actions during the building and testing of software packages inside CodeBuild.
+
+For example if you want to implement the **Trivy** step using [trivy github action](https://github.com/marketplace/actions/aqua-security-trivy), you can do it like this:
+```
+resource "aws_codebuild_project" "trivy" {
+  name           = "${local.pipeline_name}-trivy"
+  description    = "${var.repository_name} Trivy Scan"
+  service_role   = aws_iam_role.codebuild_step_role.arn
+  build_timeout  = "15"
+  encryption_key = var.artifacts_bucket_encryption_key_arn
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = <<EOF
+version: 0.2
+phases:
+  build:
+    steps:
+      - name: Build local image
+        run: |
+          docker build -t app:local .
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: app:local
+          format: 'table'
+EOF
+  }
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type    = var.build_compute_type
+    image           = var.build_image
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
+  }
+}
+```
+
+
 ## Support & Feedback
 
 ECS Blueprints for Terraform is maintained by AWS Solution Architects. It is not part of an AWS service and support is provided best-effort by the ECS Blueprints community.
