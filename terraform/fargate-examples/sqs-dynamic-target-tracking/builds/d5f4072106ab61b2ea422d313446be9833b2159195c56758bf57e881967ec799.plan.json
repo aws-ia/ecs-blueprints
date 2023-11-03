@@ -1,0 +1,1 @@
+{"filename": "builds/d5f4072106ab61b2ea422d313446be9833b2159195c56758bf57e881967ec799.zip", "runtime": "python3.9", "artifacts_dir": "builds", "build_plan": [["zip", "../../../application-code/message-producer/", null]]}

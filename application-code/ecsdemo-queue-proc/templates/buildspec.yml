@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - REPOSITORY=${REPO_URL%/*}
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+  build:
+    commands:
+      - docker build -t $REPO_URL $FOLDER_PATH
+  post_build:
+    commands:
+      - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
+      - docker push $REPO_URL:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPO_URL:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - '**/*'
