@@ -9,4 +9,4 @@ CMD streamlit run web_app.py \
     --browser.serverAddress="0.0.0.0" \
     --server.enableCORS true \
     --browser.gatherUsageStats false \
-    --server.port 80 
+    --server.port 80
