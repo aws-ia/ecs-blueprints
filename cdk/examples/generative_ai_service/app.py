@@ -10,7 +10,7 @@ from lib.gen_ai_service_stack_props import GenAIServiceStackProps
 from sagemaker_uri_script import *
 from other_stack.txt2img_generative_ai_stack import GenerativeAITxt2ImgSagemakerStack
 from other_stack.txt2txt_generative_ai_stack import GenerativeAITxt2TxtSagemakerStack
-
+from other_stack.opensearch_vector_stack import OpenSearchVectorEngineStack
 
 app = App()
 
@@ -18,6 +18,12 @@ env_config = dotenv_values(".env")
 
 deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 deploy_jumpstart = bool(util.strtobool(env_config.pop("deploy_jumpstart_stack")))
+
+# opensearch stack 
+if 'deploy_opensearch' not in env_config:
+    deploy_opensearch = False
+else: 
+    deploy_opensearch = bool(util.strtobool(env_config.pop("deploy_opensearch")))
 
 if deploy_jumpstart:
     if "txt2img_model_id" in env_config:
@@ -54,6 +60,16 @@ if deploy_jumpstart:
                 region=env_config["aws_region"],
             ),
         )
+
+if deploy_opensearch:
+    OpenSearchVectorEngineStack(
+        app,
+        "OpenSearchVectorEngineStack",
+        env=Environment(
+            account=env_config["account_number"],
+            region=env_config["aws_region"],
+        ),
+    )
 
 gen_ai_stack_props = GenAIServiceStackProps(**env_config)
 
