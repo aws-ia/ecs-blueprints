@@ -3,3 +3,5 @@ python-dotenv==0.21.0
 streamlit
 boto3
 sagemaker
+sentence_transformers
+opensearch-py
