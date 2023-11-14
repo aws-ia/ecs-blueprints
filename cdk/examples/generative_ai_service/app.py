@@ -92,11 +92,9 @@ if deploy_core:
     )
     gen_ai_stack_props.vpc = core_stack.vpc
     gen_ai_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
-    gen_ai_stack_props.sd_namespace = [
-        ns
-        for ns in core_stack.private_dns_namespaces
-        if ns.namespace_name == gen_ai_stack_props.namespace_name
-    ][0]
+    namespaces = [ns for ns in core_stack.private_dns_namespaces if ns.namespace_name == gen_ai_stack_props.namespace_name]
+    if namespaces:
+        gen_ai_stack_props.sd_namespace = namespaces[0]
 
     gen_ai_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
 
