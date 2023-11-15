@@ -27,8 +27,6 @@ region = get_parameter("aoss_region")
 
 service = 'aoss'
 credentials = boto3.Session().get_credentials()
-# awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, region, service,
-# session_token=credentials.token)
 awsauth = AWS4Auth(region=region, service=service,refreshable_credentials=credentials)
 
 # Create an OpenSearch client
