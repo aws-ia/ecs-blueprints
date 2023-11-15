@@ -57,6 +57,7 @@ class GenAIServiceStack(Stack):
             container_name=self.stack_props.container_name,
             # build container image from local folder
             image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
             log_driver=LogDriver.aws_logs(

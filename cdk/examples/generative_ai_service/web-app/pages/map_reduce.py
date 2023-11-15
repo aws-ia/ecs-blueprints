@@ -6,6 +6,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import streamlit as st
 import time
+import os
 
 st.header("Generative AI Demo - Q&A Using Map Reduce")
 st.caption("Using FLAN-T5-XL model from Hugging Face")
@@ -99,7 +100,7 @@ with st.spinner("Retrieving configurations..."):
             st.error("Please enter a valid endpoint name and prompt!")
         else:
             with st.spinner("Wait for it..."):
-                generated_text = invoke_map_reduce(context, query, endpoint_name, get_parameter("aoss_region"))
+                generated_text = invoke_map_reduce(context, query, endpoint_name, os.getenv('region'))
                 st.write(generated_text)
 
             st.success("Done!")
