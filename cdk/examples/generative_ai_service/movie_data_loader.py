@@ -86,7 +86,8 @@ def full_load(index_name, client):
 
 
 def main(argv):
-    host = os.environ.get('AOSS_VECOTRSEARCH_ENDPOINT')
+    opensearch_endpoint = os.environ.get('AOSS_VECOTRSEARCH_ENDPOINT')
+    host = opensearch_endpoint.replace("https://", "")
     region = os.environ.get('AOSS_VECOTRSEARCH_REGION')
     index = "opensearch_movies"
     service = 'aoss'
@@ -103,6 +104,7 @@ def main(argv):
         verify_certs = True,
         connection_class = RequestsHttpConnection
     )
+    
     print(f"OpenSearch Client - Sending to Amazon OpenSearch Serverless host {host} in Region {region} \n")
     full_load(index, client)
 
