@@ -9,7 +9,8 @@ from aws_cdk.aws_ecs_patterns import (
 from aws_cdk.aws_iam import (
     Role,
     PolicyStatement,
-    Effect
+    Effect,
+    ServicePrincipal
 )
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
@@ -42,17 +43,28 @@ class GenAIServiceStack(Stack):
             log_group_name=PhysicalName.GENERATE_IF_NEEDED,
         )
 
+        # ECS Task Role
+        self.task_role = Role(
+            self,
+            'GenAIServiceTaskRole',
+            role_name='GenAIServiceTaskRole',
+            assumed_by=ServicePrincipal('ecs-tasks.amazonaws.com'),
+            description='ECS Task role for Gen AI service'
+        )
+
         # AWS Fargate task container defintion
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
             # build container image from local folder
             image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
             log_driver=LogDriver.aws_logs(
                 stream_prefix="ecs",
                 log_group=log_group,
-            )
+            ),
+            task_role=self.task_role
         )
 
         # ECS service with Application Load Balancer
@@ -67,21 +79,23 @@ class GenAIServiceStack(Stack):
             enable_execute_command=True,
             public_load_balancer=True,
             task_image_options=fargate_task_image,
-            enable_ecs_managed_tags=True,
+            enable_ecs_managed_tags=True
         )
 
         # Add ECS Task IAM Role
-        self.fargate_service.task_definition.add_to_task_role_policy(PolicyStatement(
-            effect=Effect.ALLOW,
-            actions = ["ssm:GetParameter"],
-            resources = ["arn:aws:ssm:*"],
+        self.task_role.add_to_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions = ["ssm:GetParameter"],
+                resources = ["arn:aws:ssm:*"]
             )
         )
 
-        self.fargate_service.task_definition.add_to_task_role_policy(PolicyStatement(
-            effect=Effect.ALLOW,
-            actions=["sagemaker:InvokeEndpoint"],
-            resources=["*"]
+        self.task_role.add_to_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=["sagemaker:InvokeEndpoint", "aoss:*"],
+                resources=["*"]
             )
         )
 

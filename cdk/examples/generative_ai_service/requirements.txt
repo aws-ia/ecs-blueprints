@@ -1,6 +1,7 @@
 aws-cdk-lib==2.84.0
 python-dotenv==0.21.0
-
 streamlit
 boto3
-sagemaker
+sagemaker==2.183.0
+sentence_transformers
+opensearch-py
