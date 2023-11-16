@@ -4,7 +4,13 @@ import numpy as np
 import time
 import boto3
 
-st.header("Generative AI Demo - Image Generation")
+st.set_page_config(
+    page_title="image generation",
+    layout="wide",
+    page_icon=":technologist:"
+)
+
+st.header("Generative AI Demo - Image Generation :frame_with_picture:")
 st.caption("Using Stable Diffusion model from Hugging Face")
 
 def get_parameter(name):

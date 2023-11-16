@@ -62,22 +62,16 @@ def query_qna(query, index):
     )
     return relevant_documents
 
-
+# Search result from OpenSearch
 def query_movies(query, sort, genres, rating, size, index):
-    if sort == 'year':
-        sort_type = "year"
-    elif sort == 'rating':
-        sort_type = "rating"
-    else:
-        sort_type = "_score"
-
-    if genres == '':
-        genres = '*'
-
-    if rating == '':
-        rating = 0
+    
+    sort_type = sort if sort in ['year', 'rating'] else "_score"
+    genres = genres if genres else '*'
+    rating = rating if rating else 0
 
     query_embedding = model.encode(query).tolist()
+    
+    # semantic search
     query_knn = {
         "size": size,
         "sort": [
@@ -138,6 +132,7 @@ def query_movies(query, sort, genres, rating, size, index):
             }
         }
     }
+    
     response_knn = client.search(body = query_knn, index = index)
 
     # Extract relevant information from the search result
@@ -145,7 +140,64 @@ def query_movies(query, sort, genres, rating, size, index):
     doc_count_knn = response_knn['hits']['total']['value']
     results_knn = [{'genres':  hit['_source']['genres'],'poster':  hit['_source']['poster'],'title': hit['_source']['title'], 'rating': hit['_source']['rating'], 'year': hit['_source']['year'], 'plot' : hit['_source']['plot'], 'actor' : hit['_source']['actors']} for hit in hits_knn]
 
+    # lexical search
+    query_kw = {
+        "size": size,
+        "sort": [
+            {
+                sort_type: {
+                    "order": "desc"
+                }
+            }
+        ],
+        "_source": {
+            "includes": [
+                "title",
+                "plot",
+                "rating",
+                "year",
+                "poster",
+                "genres",
+                "actors"
+            ]
+        },
+        "query": {
+            "bool": {
+                "must": {
+                    "multi_match": {
+                        "query": query,
+                        "fields": ["plot", "title"]
+                    }
+                },
+                "filter": [
+                    {
+                        "query_string": {
+                            "query": genres,
+                            "fields": [
+                                "genres"
+                            ]
+                        }
+                    },
+                    {
+                      "range": {
+                        "rating": {
+                          "gte": rating
+                        }
+                      }
+                    }
+                ]
+            }
+        }
+    }
 
-    # print (f"Search Results: {search_results}")
-    return results_knn, doc_count_knn
+    response_kw = client.search(body = query_kw, index = index)
+
+    # Extract relevant information from the search result
+    hits_kw = response_kw['hits']['hits']
+    doc_count_kw = response_kw['hits']['total']['value']
+    results_kw = [{'genres':  hit['_source']['genres'],'poster':  hit['_source']['poster'],'title': hit['_source']['title'], 'rating': hit['_source']['rating'], 'year': hit['_source']['year'], 'plot' : hit['_source']['plot'], 'actor' : hit['_source']['actors']} for hit in hits_kw]
+
+
+    
+    return results_knn, doc_count_knn, results_kw, doc_count_kw
 

@@ -7,7 +7,13 @@ import streamlit as st
 import time
 import os
 
-st.header("Generative AI Demo - Q&A Using Map Reduce")
+st.set_page_config(
+    page_title="langchain",
+    layout="wide",
+    page_icon=":technologist:"
+)
+
+st.header("Generative AI Demo - Q&A Using Map Reduce :books:")
 st.caption("Using FLAN-T5-XL model from Hugging Face")
 
 def get_parameter(name):

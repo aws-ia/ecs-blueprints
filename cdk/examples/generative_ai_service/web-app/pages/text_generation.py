@@ -4,7 +4,13 @@ import json
 import time
 import boto3
 
-st.header("Generative AI Demo - Text Generation")
+st.set_page_config(
+    page_title="text generation",
+    layout="wide",
+    page_icon=":technologist:"
+)
+
+st.header("Generative AI Demo - Text Generation :books:")
 st.caption("Using FLAN-T5-XL model from Hugging Face")
 
 def get_parameter(name):

@@ -86,9 +86,9 @@ def full_load(index_name, client):
 
 
 def main(argv):
-    opensearch_endpoint = os.environ.get('AOSS_VECOTRSEARCH_ENDPOINT')
+    opensearch_endpoint = os.environ.get('AOSS_VECTORSEARCH_ENDPOINT')
     host = opensearch_endpoint.replace("https://", "")
-    region = os.environ.get('AOSS_VECOTRSEARCH_REGION')
+    region = os.environ.get('AOSS_VECTORSEARCH_REGION')
     index = "opensearch_movies"
     service = 'aoss'
 
