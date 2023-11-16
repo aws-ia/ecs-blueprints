@@ -56,6 +56,7 @@ if question:
                 st.header(response_kw[i]["title"] + " (" +  str(response_kw[i]["year"]) + ")")
                 st.write("**" + response_kw[i]["plot"] + "**")
                 st.write("**"  + str(response_kw[i]["rating"]) + "** :star2:     " + "**" + str(response_kw[i]["genres"]) + "**")
+                st.write(response_knn[i]["actor"])
         with image_kw:
             if i < len(response_kw):
                 st.image(response_kw[i]["poster"], caption=response_kw[i]["title"], width=100)
