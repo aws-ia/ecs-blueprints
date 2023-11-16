@@ -51,7 +51,7 @@ class GenAIServiceStack(Stack):
             assumed_by=ServicePrincipal('ecs-tasks.amazonaws.com'),
             description='ECS Task role for Gen AI service'
         )
-        
+
         # AWS Fargate task container defintion
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
@@ -79,7 +79,7 @@ class GenAIServiceStack(Stack):
             enable_execute_command=True,
             public_load_balancer=True,
             task_image_options=fargate_task_image,
-            enable_ecs_managed_tags=True            
+            enable_ecs_managed_tags=True
         )
 
         # Add ECS Task IAM Role
@@ -88,7 +88,7 @@ class GenAIServiceStack(Stack):
                 effect=Effect.ALLOW,
                 actions = ["ssm:GetParameter"],
                 resources = ["arn:aws:ssm:*"]
-            ) 
+            )
         )
 
         self.task_role.add_to_policy(
@@ -96,7 +96,7 @@ class GenAIServiceStack(Stack):
                 effect=Effect.ALLOW,
                 actions=["sagemaker:InvokeEndpoint", "aoss:*"],
                 resources=["*"]
-            ) 
+            )
         )
 
         # ECS Service Auto Scaling policy

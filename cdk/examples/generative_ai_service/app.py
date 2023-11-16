@@ -19,10 +19,10 @@ env_config = dotenv_values(".env")
 deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
 deploy_jumpstart = bool(util.strtobool(env_config.pop("deploy_jumpstart_stack")))
 
-# opensearch stack 
+# opensearch stack
 if 'deploy_opensearch' not in env_config:
     deploy_opensearch = False
-else: 
+else:
     deploy_opensearch = bool(util.strtobool(env_config.pop("deploy_opensearch")))
 
 if deploy_jumpstart:

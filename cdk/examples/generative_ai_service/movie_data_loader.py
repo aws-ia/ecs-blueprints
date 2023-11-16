@@ -43,11 +43,11 @@ def full_load(index_name, client):
                 }
             }
         }
-        
-        # create index 
+
+        # create index
         client.indices.create(index=index_name, body=index_body)
         time.sleep(5)
-    
+
     actions = []
     i = 0
     j = 0
@@ -64,17 +64,17 @@ def full_load(index_name, client):
             title = json_data['title']
             v_title = model.encode([title])[0].tolist()
             json_data['v_title'] = v_title
-    
+
             if 'plot' in json_data:
                 #encode plot
                 plot = json_data['plot']
                 v_plot = model.encode([plot])[0].tolist()
                 json_data['v_plot'] = v_plot
-    
+
             # Prepare bulk request
             actions.append(action)
             actions.append(json_data.copy())
-    
+
             if(i > 99 ):
                 client.bulk(body=actions)
                 print(f"bulk request sent with size: {i}")
@@ -94,7 +94,7 @@ def main(argv):
 
     credentials = boto3.Session().get_credentials()
     auth = AWSV4SignerAuth(credentials, region, service)
-    
+
     # Build the OpenSearch client
     client = OpenSearch(
         hosts = [{'host': host, 'port': 443}],
@@ -104,7 +104,7 @@ def main(argv):
         verify_certs = True,
         connection_class = RequestsHttpConnection
     )
-    
+
     print(f"OpenSearch Client - Sending to Amazon OpenSearch Serverless host {host} in Region {region} \n")
     full_load(index, client)
 
