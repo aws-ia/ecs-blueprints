@@ -1,7 +1,7 @@
 import json, boto3
 from langchain.prompts import PromptTemplate
 from langchain.llms.sagemaker_endpoint import LLMContentHandler, SagemakerEndpoint
-from langchain import LLMChain 
+from langchain import LLMChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import streamlit as st
@@ -55,17 +55,17 @@ def simple_map_reduce(context, map_query, reduce_query, endpoint_name, region_na
                     region_name= region_name,
                     content_handler=content_handler
                 )
-    
+
     map_template = """In the following text find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + map_query + """```\n"""
     map_prompt = PromptTemplate(template=map_template,
                                 input_variables=["text"])
     map_chain = LLMChain(llm=llm,prompt=map_prompt)
-    
+
     output_list =[]
     for doc in docs:
         output = map_chain.run(doc)
         output_list.append(output)
-    
+
     reduce_template = """In the following comma separate text list find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + reduce_query + """```\n"""
     reduce_prompt = PromptTemplate(template=reduce_template,
                                 input_variables=["text"])

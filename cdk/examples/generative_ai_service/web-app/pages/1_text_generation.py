@@ -20,30 +20,7 @@ def get_parameter(name):
 
 runtime = boto3.client("runtime.sagemaker")
 
-conversation = """Customer: Hi there, I'm having a problem with my iPhone.
-Agent: Hi! I'm sorry to hear that. What's happening?
-Customer: The phone is not charging properly, and the battery seems to be draining very quickly. I've tried different charging cables and power adapters, but the issue persists.
-Agent: Hmm, that's not good. Let's try some troubleshooting steps. Can you go to Settings, then Battery, and see if there are any apps that are using up a lot of battery life?
-Customer: Yes, there are some apps that are using up a lot of battery.
-Agent: Okay, try force quitting those apps by swiping up from the bottom of the screen and then swiping up on the app to close it.
-Customer: I did that, but the issue is still there.
-Agent: Alright, let's try resetting your iPhone's settings to their default values. This won't delete any of your data. Go to Settings, then General, then Reset, and then choose Reset All Settings.
-Customer: Okay, I did that. What's next?
-Agent: Now, let's try restarting your iPhone. Press and hold the power button until you see the "slide to power off" option. Slide to power off, wait a few seconds, and then turn your iPhone back on.
-Customer: Alright, I restarted it, but it's still not charging properly.
-Agent: I see. It looks like we need to run a diagnostic test on your iPhone. Please visit the nearest Apple Store or authorized service provider to get your iPhone checked out.
-Customer: Do I need to make an appointment?
-Agent: Yes, it's always best to make an appointment beforehand so you don't have to wait in line. You can make an appointment online or by calling the Apple Store or authorized service provider.
-Customer: Okay, will I have to pay for the repairs?
-Agent: That depends on whether your iPhone is covered under warranty or not. If it is, you won't have to pay anything. However, if it's not covered under warranty, you will have to pay for the repairs.
-Customer: How long will it take to get my iPhone back?
-Agent: It depends on the severity of the issue, but it usually takes 1-2 business days.
-Customer: Can I track the repair status online?
-Agent: Yes, you can track the repair status online or by calling the Apple Store or authorized service provider.
-Customer: Alright, thanks for your help.
-Agent: No problem, happy to help. Is there anything else I can assist you with?
-Customer: No, that's all for now.
-Agent: Alright, have a great day and good luck with your iPhone!"""
+conversation = """Customers were very excited about the wireless charging feature, but the launch has not lived up to their expectations. The phones are not reliably charging and that is frustrating since it is such a fundamental aspect of any electronic device."""
 
 with st.spinner("Retrieving configurations..."):
     all_configs_loaded = False
@@ -60,7 +37,7 @@ with st.spinner("Retrieving configurations..."):
 
     context = st.text_area("Input Context:", conversation, height=300)
 
-    query = st.text_area("Input Query:", "What steps were suggested to the customer to fix the issue?")
+    query = st.text_area("Input Query:", "Are customers happy?")
     st.caption("e.g., write a summary")
 
     if st.button("Generate Response", key=query):
