@@ -56,7 +56,11 @@ class GenAIServiceStack(Stack):
         fargate_task_image = ApplicationLoadBalancedTaskImageOptions(
             container_name=self.stack_props.container_name,
             # build container image from local folder
-            image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            # image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            # load pre-built image from public repository
+            image=ContainerImage.from_registry(
+                self.stack_props.container_image
+            ),
             environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,

@@ -1,6 +1,7 @@
 import json, boto3
 from langchain.prompts import PromptTemplate
 from langchain.llms.sagemaker_endpoint import LLMContentHandler, SagemakerEndpoint
+from langchain import LLMChain
 from langchain.chains.summarize import load_summarize_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import streamlit as st
@@ -46,17 +47,41 @@ def create_chunks(context):
 
     return docs
 
-def invoke_map_reduce(context, query, endpoint_name, region_name):
+def simple_map_reduce(context, map_query, reduce_query, endpoint_name, region_name):
+    docs = create_chunks(context)
+    content_handler = ContentHandler()
+    llm = SagemakerEndpoint(
+                    endpoint_name = endpoint_name,
+                    region_name= region_name,
+                    content_handler=content_handler
+                )
+
+    map_template = """In the following text find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + map_query + """```\n"""
+    map_prompt = PromptTemplate(template=map_template,
+                                input_variables=["text"])
+    map_chain = LLMChain(llm=llm,prompt=map_prompt)
+
+    output_list =[]
+    for doc in docs:
+        output = map_chain.run(doc)
+        output_list.append(output)
+
+    reduce_template = """In the following comma separated text list, find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + reduce_query + """```\n"""
+    reduce_prompt = PromptTemplate(template=reduce_template,
+                                input_variables=["text"])
+    reduce_chain = LLMChain(llm=llm,prompt=reduce_prompt)
+    reduce_output = reduce_chain.run(','.join(output_list))
+    return {"map_answers":output_list, "reduce_answer":reduce_output}
+
+def langchain_map_reduce(context, map_query, reduce_query, endpoint_name, region_name):
     content_handler = ContentHandler()
 
     map_template = """{text}
     Question: {question}
-    Question's answer:"""
+    Answer:"""
     map_prompt_template = PromptTemplate(template=map_template, input_variables=["text","question"])
 
-    combine_template = """{text}
-    Combine above texts and rewrite into summary.
-    """
+    combine_template = """{text} """ + """ Question: """ + reduce_query + """ Answer:"""
 
     combine_prompt_template = PromptTemplate(template=combine_template, input_variables=["text"])
 
@@ -77,7 +102,7 @@ def invoke_map_reduce(context, query, endpoint_name, region_name):
 
     # split pharagraph
     docs = create_chunks(context)
-    summary = summary_chain({"input_documents": docs, "question": query, 'token_max': 10000}, return_only_outputs=True)
+    summary = summary_chain({"input_documents": docs, "question": map_query, 'token_max': 10000}, return_only_outputs=True)
     return summary.get("output_text","**no response found**")
 
 conversation = """
@@ -103,14 +128,16 @@ with st.spinner("Retrieving configurations..."):
 
     context = st.text_area("Input Context:", conversation, height=700)
 
-    query = st.text_area("Input Query:", "What are being introduced in detail?")
+    map_query = st.text_area("Map Query:", "What is being introduced in this blog text?")
 
-    if st.button("Generate Response", key=query):
-        if endpoint_name == "" or query == "":
+    reduce_query = st.text_area("Reduce Query:", "What is the common topic?")
+
+    if st.button("Generate Response", key=map_query):
+        if endpoint_name == "" or map_query == "":
             st.error("Please enter a valid endpoint name and prompt!")
         else:
             with st.spinner("Wait for it..."):
-                generated_text = invoke_map_reduce(context, query, endpoint_name, os.getenv('region'))
+                generated_text = simple_map_reduce(context, map_query, reduce_query, endpoint_name, os.getenv('region'))
                 st.info(generated_text)
 
             st.success("Done!")
