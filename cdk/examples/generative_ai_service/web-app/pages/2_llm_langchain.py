@@ -66,7 +66,7 @@ def simple_map_reduce(context, map_query, reduce_query, endpoint_name, region_na
         output = map_chain.run(doc)
         output_list.append(output)
 
-    reduce_template = """In the following comma separate text list find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + reduce_query + """```\n"""
+    reduce_template = """In the following comma separated text list, find all answers to the question which is delimited by ```. {text}. Provide answer as complete sentence.""" + """```""" + reduce_query + """```\n"""
     reduce_prompt = PromptTemplate(template=reduce_template,
                                 input_variables=["text"])
     reduce_chain = LLMChain(llm=llm,prompt=reduce_prompt)
