@@ -1,6 +1,8 @@
 # ECS machine learning distributed training
 
-This solution blueprint creates the infrastructure to run distributed training jobs using a Ray cluster and PyTorch. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances.
+This solution blueprint creates the infrastructure to run distributed training jobs using a [Ray cluster](https://docs.ray.io/en/latest/cluster/getting-started.html) and (https://pytorch.org/)[PyTorch]. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances.
+
+![Solution architecture](docs/architecture.jpg)
 
 ## Cost warning!
 
@@ -15,6 +17,7 @@ By default, this blueprint uses g5.12xlarge (with 4 GPUs) to showcase multi-GPU 
     * Service discovery ARN is used in the service definition. ECS will automatically manage the registration and deregistration of tasks to this service discovery registry.
     * Tasks for this service will be deployed in single private subnet to avoid AZ data transfer costs
     * Task definitions with GPU resource requirements
+* EFS file system for shared storage between the ECS cluster tasks
 
 ## Deployment
 
@@ -26,7 +29,7 @@ terraform apply
 
 ## Example: training the resnet18 model with the FashionMNIST dataset
 
-Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - [https://aws.amazon.com/sagemaker/notebooks/](SageMaker notebooks) provide a better user experience to run training jobs in python than using the bash shell
+Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - [SageMaker notebooks](https://aws.amazon.com/sagemaker/notebooks/) provide a better user experience to run training jobs in python than using the bash shell
 
 ```bash
 HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
