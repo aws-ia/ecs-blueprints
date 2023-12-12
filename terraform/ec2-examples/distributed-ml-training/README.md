@@ -1,6 +1,6 @@
 # ECS machine learning distributed training
 
-This solution blueprint creates the infrastructure to run distributed training jobs using a Ray cluster and Pytorch. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances. 
+This solution blueprint creates the infrastructure to run distributed training jobs using a Ray cluster and PyTorch. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances. 
 
 ## Cost warning!
 
@@ -24,9 +24,9 @@ terraform plan
 terraform apply 
 ```
 
-## Example training script: training the resnet18 model with the FashionMNIST dataset
+## Example: training the resnet18 model with the FashionMNIST dataset
 
-Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - sagemaker notebooks provide a better user experience to run training jobs in python than using the bash shell
+Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - [https://aws.amazon.com/sagemaker/notebooks/](SageMaker notebooks) provide a better user experience to run training jobs in python than using the bash shell
 
 ```bash
 HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
