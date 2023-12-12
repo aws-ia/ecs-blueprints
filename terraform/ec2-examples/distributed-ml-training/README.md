@@ -1,6 +1,6 @@
 # ECS machine learning distributed training
 
-This solution blueprint creates the infrastructure to run distributed training jobs using a Ray cluster and PyTorch. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances. 
+This solution blueprint creates the infrastructure to run distributed training jobs using a Ray cluster and PyTorch. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances.
 
 ## Cost warning!
 
@@ -11,7 +11,7 @@ By default, this blueprint uses g5.12xlarge (with 4 GPUs) to showcase multi-GPU 
 * Service discovery using AWS Cloud Map: The head node is registerer to a private DNS using loca zones via cloud map. This allow workers to discover the head service and join the cluster
 * 2 autoscaling groups: One for the head instance and other for the worker instances
 * ECS service definition:
-    * Task security group, task role and task execution role and 
+    * Task security group, task role and task execution role and
     * Service discovery ARN is used in the service definition. ECS will automatically manage the registration and deregistration of tasks to this service discovery registry.
     * Tasks for this service will be deployed in single private subnet to avoid AZ data transfer costs
     * Task definitions with GPU resource requirements
@@ -21,7 +21,7 @@ By default, this blueprint uses g5.12xlarge (with 4 GPUs) to showcase multi-GPU 
 ```shell
 terraform init
 terraform plan
-terraform apply 
+terraform apply
 ```
 
 ## Example: training the resnet18 model with the FashionMNIST dataset
@@ -63,24 +63,24 @@ ray.init()
 
 # Download the data in the shared storage
 transform = Compose([ToTensor(), Normalize((0.5,), (0.5,))])
-train_data = FashionMNIST(root='/home/ray/ray_results/data', 
-                          train=True, download=True, 
+train_data = FashionMNIST(root='/home/ray/ray_results/data',
+                          train=True, download=True,
                           transform=transform)
 
 # Define the training function that the distributed processes will run
 def train_func(config):
     import os
-    # The NVIDIA Collective Communications Library (NCCL) implements multi-GPU 
-    # and multi-node communication primitives optimized for NVIDIA GPUs. 
+    # The NVIDIA Collective Communications Library (NCCL) implements multi-GPU
+    # and multi-node communication primitives optimized for NVIDIA GPUs.
     # Since containers can have multiple interfaces, we explicitly set which one
     # NCCL should use.
-    os.environ['NCCL_SOCKET_IFNAME']='eth0' 
+    os.environ['NCCL_SOCKET_IFNAME']='eth0'
     #os.environ['NCCL_DEBUG']='INFO' Uncomment this line if you want to debug NCCL
     # Set up the model
     model = resnet18(num_classes=10)
-    model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7), 
-                                  stride=(2, 2), 
-                                  padding=(3, 3), 
+    model.conv1 = torch.nn.Conv2d(1, 64, kernel_size=(7, 7),
+                                  stride=(2, 2),
+                                  padding=(3, 3),
                                   bias=False)
     # Prepare model for distributed training
     model = ray.train.torch.prepare_model(model)
@@ -105,20 +105,20 @@ def train_func(config):
         print(f"[GPU{torch.cuda.current_device()}: Process rank {torch.distributed.get_rank()}] | [Epoch {epoch} | Batchsize: {128} | Steps: {len(train_loader)} | Total epoch time: {time.time()-start}]")
         # Only save checkpoint after the last epoch
         if epoch == 9:
-            checkpoint_dir = tempfile.gettempdir()    
+            checkpoint_dir = tempfile.gettempdir()  
             checkpoint_path = checkpoint_dir + "/model.checkpoint"
             torch.save(model.state_dict(), checkpoint_path)
             # Report metrics and checkpoint to Ray.
             ray.train.report({"loss": loss.item()},checkpoint=Checkpoint.from_directory(checkpoint_dir))
 
-# The scaling config defines how many workers 
-# In this case is equal to the total GPU count            
+# The scaling config defines how many workers
+# In this case is equal to the total GPU count  
 scaling_config = ScalingConfig(num_workers=8, use_gpu=True)
 
 # Create the trainer instance
-trainer = TorchTrainer(train_func, 
+trainer = TorchTrainer(train_func,
                        scaling_config=scaling_config)
-                       
+
 # Run the training
 result = trainer.fit()
 

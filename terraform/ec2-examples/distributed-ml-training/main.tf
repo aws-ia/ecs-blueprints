@@ -9,11 +9,11 @@ locals {
   name   = "ecs-demo-distributed-ml-training"
   region = "us-east-1"
 
-  vpc_cidr      = "10.0.0.0/16"
-  azs           = slice(data.aws_availability_zones.available.names, 0, 1)
-  instance_type_workers = "g5.12xlarge"
-  instance_type_head = "m5.xlarge"
-  ray_head_container_image = "docker.io/rayproject/ray-ml:2.7.1.artur.c9f4c6-py38"
+  vpc_cidr                   = "10.0.0.0/16"
+  azs                        = slice(data.aws_availability_zones.available.names, 0, 1)
+  instance_type_workers      = "g5.12xlarge"
+  instance_type_head         = "m5.xlarge"
+  ray_head_container_image   = "docker.io/rayproject/ray-ml:2.7.1.artur.c9f4c6-py38"
   ray_worker_container_image = "docker.io/rayproject/ray-ml:2.7.1.artur.c9f4c6-py38-gpu"
 
   user_data_head = <<-EOT
@@ -28,7 +28,7 @@ locals {
     cat <<'EOF' >> /etc/ecs/ecs.config
     ECS_CLUSTER=${local.name}
     EOF
-    echo "ip_resolve=4" >> /etc/yum.conf 
+    echo "ip_resolve=4" >> /etc/yum.conf
   EOT
 
   tags = {
@@ -50,7 +50,7 @@ module "ecs_cluster" {
   default_capacity_provider_use_fargate = false
   autoscaling_capacity_providers = {
     distributed_ml_training_head = {
-      auto_scaling_group_arn         = module.autoscaling_head.autoscaling_group_arn
+      auto_scaling_group_arn = module.autoscaling_head.autoscaling_group_arn
 
       managed_scaling = {
         maximum_scaling_step_size = 1
@@ -65,10 +65,11 @@ module "ecs_cluster" {
       }
     },
     distributed_ml_training_workers = {
-      auto_scaling_group_arn         = module.autoscaling_workers.autoscaling_group_arn
+      auto_scaling_group_arn = module.autoscaling_workers.autoscaling_group_arn
       managed_scaling = {
         maximum_scaling_step_size = 1
         minimum_scaling_step_size = 1
+        _scaling_step_size        = 1
         status                    = "ENABLED"
         target_capacity           = 60
       }
@@ -77,18 +78,18 @@ module "ecs_cluster" {
 
   # Shared task execution role
   create_task_exec_iam_role = false
-  tags = local.tags
+  tags                      = local.tags
 }
 
 resource "aws_service_discovery_private_dns_namespace" "this" {
   name        = "default.${local.name}.local"
   description = "Service discovery namespace.clustername.local"
   vpc         = module.vpc.vpc_id
-  tags = local.tags
+  tags        = local.tags
 }
 
 resource "aws_service_discovery_service" "this" {
-  name        = "head"
+  name = "head"
   dns_config {
     namespace_id = aws_service_discovery_private_dns_namespace.this.id
     dns_records {
@@ -156,9 +157,9 @@ module "autoscaling_head" {
   iam_role_name               = local.name
   iam_role_description        = "ECS role for ${local.name}"
   iam_role_policies = {
-    AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+    AmazonEC2ContainerServiceforEC2Role      = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
     AmazonSSMManagedEC2InstanceDefaultPolicy = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
-    AmazonElasticFileSystemClientFullAccess = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+    AmazonElasticFileSystemClientFullAccess  = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   }
 
   vpc_zone_identifier = module.vpc.private_subnets
@@ -193,7 +194,7 @@ module "autoscaling_workers" {
   iam_role_name               = local.name
   iam_role_description        = "ECS role for ${local.name}"
   iam_role_policies = {
-    AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
+    AmazonEC2ContainerServiceforEC2Role      = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
     AmazonSSMManagedEC2InstanceDefaultPolicy = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
   }
 
@@ -249,10 +250,10 @@ module "ecs_service_head" {
   desired_count      = 1
   cluster_arn        = module.ecs_cluster.arn
   enable_autoscaling = false
-  memory = 10240
-  cpu = 3072
+  memory             = 10240
+  cpu                = 3072
   # Task Definition
-  
+
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
@@ -261,45 +262,45 @@ module "ecs_service_head" {
       base              = 1
     }
   }
-  
-  task_exec_iam_role_arn = aws_iam_role.task_execution_role.arn
+
+  task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
   tasks_iam_role_name        = "dt-role-tasks"
   tasks_iam_role_description = "Tasks IAM role for ${local.name}"
   tasks_iam_role_policies = {
     AmazonElasticFileSystemClientFullAccess = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   }
-  create_task_exec_iam_role = false
-  enable_execute_command = false
+  create_task_exec_iam_role          = false
+  enable_execute_command             = false
   deployment_minimum_healthy_percent = 0
   container_definitions = {
-    
+
     ray_head = {
       image                    = local.ray_head_container_image
-      user = 1000
+      user                     = 1000
       readonly_root_filesystem = false
-      cpu = 3072
-      memory = 10240
-      memory_reservation = 10240
-      command = ["/bin/bash","-lc","--","ulimit -n 65536; ray start --head --dashboard-host=0.0.0.0 --metrics-export-port=8080 --num-cpus=0 --memory=10737418240 --block"]
+      cpu                      = 3072
+      memory                   = 10240
+      memory_reservation       = 10240
+      command                  = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --head --dashboard-host=0.0.0.0 --metrics-export-port=8080 --num-cpus=0 --memory=10737418240 --block"]
       linux_parameters = {
         sharedMemorySize = 20480
       }
       mount_points = [{
-          sourceVolume = "ray_results"
-          containerPath = "/home/ray/ray_results"
-          readOnly = false
+        sourceVolume  = "ray_results"
+        containerPath = "/home/ray/ray_results"
+        readOnly      = false
       }]
     }
   }
   volume = {
-    "ray_results" ={
+    "ray_results" = {
       efs_volume_configuration = {
-        file_system_id = module.efs.id,
-        root_directory = "/"
-        transit_encryption= "ENABLED",
+        file_system_id     = module.efs.id,
+        root_directory     = "/"
+        transit_encryption = "ENABLED",
         authorization_config = {
-            access_point_id = module.efs.access_points.ray_results.id
-            iam="ENABLED"
+          access_point_id = module.efs.access_points.ray_results.id
+          iam             = "ENABLED"
         }
       }
     }
@@ -310,10 +311,10 @@ module "ecs_service_head" {
   }
 
   network_mode = "awsvpc"
-  subnet_ids = module.vpc.private_subnets
+  subnet_ids   = module.vpc.private_subnets
   security_group_rules = {
     ingress_private_ips = {
-      type                     = "ingress"
+      type        = "ingress"
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
@@ -333,17 +334,17 @@ module "ecs_service_head" {
 
 
 module "ecs_service_workers" {
-  source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.0"
+  source                             = "terraform-aws-modules/ecs/aws//modules/service"
+  version                            = "~> 5.0"
   deployment_minimum_healthy_percent = 0
-  name               = "distributed_ml_training_worker_service"
-  desired_count      = 2
-  cluster_arn        = module.ecs_cluster.arn
-  enable_autoscaling = false
-  memory = 189440
-  cpu = 10240
+  name                               = "distributed_ml_training_worker_service"
+  desired_count                      = 2
+  cluster_arn                        = module.ecs_cluster.arn
+  enable_autoscaling                 = false
+  memory                             = 189440
+  cpu                                = 10240
   # Task Definition
-  
+
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
@@ -352,52 +353,52 @@ module "ecs_service_workers" {
       base              = 1
     }
   }
-  
-  task_exec_iam_role_arn = aws_iam_role.task_execution_role.arn
+
+  task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
   tasks_iam_role_name        = "dt-role-tasks"
   tasks_iam_role_description = "Tasks IAM role for ${local.name}"
   tasks_iam_role_policies = {
     AmazonElasticFileSystemClientFullAccess = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   }
   create_task_exec_iam_role = false
-  enable_execute_command = false
+  enable_execute_command    = false
 
   container_definitions = {
     ray_work = {
       image                    = local.ray_worker_container_image
-      user = 1000
+      user                     = 1000
       readonly_root_filesystem = false
-      cpu = 10240
-      memory = 189440
-      memory_reservation = 189440
-      command = ["/bin/bash","-lc","--","ray start --block --num-cpus=10 --num-gpus=4 --address=head.default.ecs-demo-distributed-ml-training.local:6379 --metrics-export-port=8080 --memory=198642237440"]
+      cpu                      = 10240
+      memory                   = 189440
+      memory_reservation       = 189440
+      command                  = ["/bin/bash", "-lc", "--", "ray start --block --num-cpus=10 --num-gpus=4 --address=head.default.ecs-demo-distributed-ml-training.local:6379 --metrics-export-port=8080 --memory=198642237440"]
       linux_parameters = {
         sharedMemorySize = 20480
       }
       resource_requirements = [{
-        type="GPU"
-        value=4
+        type  = "GPU"
+        value = 4
       }]
       mount_points = [{
-          sourceVolume = "ray_results"
-          containerPath = "/home/ray/ray_results"
-          readOnly = false
+        sourceVolume  = "ray_results"
+        containerPath = "/home/ray/ray_results"
+        readOnly      = false
       }]
     }
   }
-  # We are using network=host because there will be a single container in each host with GPUs. There is less overhead when using a single container with 
-  # access to all 4 GPUs available in g5.12xlarge than 4 containers with 1 GPU each. 
+  # We are using network=host because there will be a single container in each host with GPUs. There is less overhead when using a single container with
+  # access to all 4 GPUs available in g5.12xlarge than 4 containers with 1 GPU each.
   network_mode = "host"
 
   volume = {
-    "ray_results" ={
+    "ray_results" = {
       efs_volume_configuration = {
-        file_system_id = module.efs.id,
-        root_directory = "/"
-        transit_encryption= "ENABLED",
+        file_system_id     = module.efs.id,
+        root_directory     = "/"
+        transit_encryption = "ENABLED",
         authorization_config = {
-            access_point_id = module.efs.access_points.ray_results.id
-            iam="ENABLED"
+          access_point_id = module.efs.access_points.ray_results.id
+          iam             = "ENABLED"
         }
       }
     }
@@ -418,7 +419,7 @@ module "efs" {
   name           = "distributed-storage-shared"
   creation_token = "distributed-storage-shared"
   encrypted      = true
-  attach_policy = false
+  attach_policy  = false
 
   lifecycle_policy = {
     transition_to_ia = "AFTER_30_DAYS"
@@ -436,18 +437,18 @@ module "efs" {
     ray_results = {
       name = "ray_results"
       posix_user = {
-        uid            = 1000
-        gid            = 100
+        uid = 1000
+        gid = 100
       }
       root_directory = {
-          path = "/ray_results" 
+        path = "/ray_results"
 
-          creation_info ={
-              owner_uid   = 1000
-              owner_gid   = 100 
-              permissions = "755"
-            }
+        creation_info = {
+          owner_uid   = 1000
+          owner_gid   = 100
+          permissions = "755"
         }
+      }
 
       tags = local.tags
     }
@@ -472,29 +473,29 @@ resource "aws_iam_role" "task_execution_role" {
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "ECSTasksAssumeRole",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "ecs-tasks.amazonaws.com"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {
-                    "aws:SourceAccount": data.aws_caller_identity.current.account_id
-                },
-                "ArnLike": {
-                    "aws:SourceArn": "arn:aws:ecs:us-east-1:${data.aws_caller_identity.current.account_id}:*"
-                }
-            }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "ECSTasksAssumeRole",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole",
+        "Condition" : {
+          "StringEquals" : {
+            "aws:SourceAccount" : data.aws_caller_identity.current.account_id
+          },
+          "ArnLike" : {
+            "aws:SourceArn" : "arn:aws:ecs:us-east-1:${data.aws_caller_identity.current.account_id}:*"
+          }
         }
+      }
     ]
-})
+  })
   managed_policy_arns = [
-  "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-  "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   ]
 
   tags = local.tags
