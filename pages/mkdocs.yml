@@ -1,0 +1,54 @@
+site_name: ECS Blueprints
+docs_dir: "pages"
+copyright: "Copyright © Amazon 2023"
+site_author: "AWS"
+site_url: "https://github.com/sjeversaws/ecs-blueprints"
+repo_name: "ecs-blueprints"
+repo_url: "https://github.com/sjeversaws/ecs-blueprints"
+theme:
+  logo: images/aws-logo.png
+  favicon: images/aws-favicon.png
+  name: material
+  font:
+    text: ember
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs.sticky
+    - navigation.sections
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: en
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline 
+        name: Switch to dark mode
+      primary: teal
+      accent: purple 
+    - scheme: slate 
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode    
+      primary: teal
+      accent: lime  
+nav:
+  - Introduction: 'index.md'
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - pymdownx.critic
+  - toc:
+      permalink: "¤"
+  - toc:
+      permalink: true
+plugins:
+  - search
+copyright: |
+  &copy; Amazon 2023
