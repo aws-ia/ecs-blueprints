@@ -1,6 +1,6 @@
 # ECS machine learning distributed training
 
-This solution blueprint creates the infrastructure to run distributed training jobs using a [Ray cluster](https://docs.ray.io/en/latest/cluster/getting-started.html) and (https://pytorch.org/)[PyTorch]. The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances.
+This solution blueprint creates the infrastructure to run distributed training jobs using a [Ray cluster](https://docs.ray.io/en/latest/cluster/getting-started.html) and [PyTorch](https://pytorch.org/). The Ray head node runs on a m5.xlarge instance, while the 2 workers run on g5.12xlarge instances.
 
 ![Solution architecture](docs/architecture.jpg)
 
