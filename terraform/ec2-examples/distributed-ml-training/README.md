@@ -10,7 +10,7 @@ By default, this blueprint uses g5.12xlarge (with 4 GPUs) to showcase multi-GPU 
 
 ## Components
 
-* Service discovery using AWS Cloud Map: The head node is registerer to a private DNS using loca zones via cloud map. This allow workers to discover the head service and join the cluster
+* Service discovery using AWS Cloud Map: The head node is registered to a private DNS using loca zones via cloud map. This allow workers to discover the head service and join the cluster
 * 2 autoscaling groups: One for the head instance and other for the worker instances
 * ECS service definition:
     * Task security group, task role and task execution role and
