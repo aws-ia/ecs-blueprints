@@ -3,15 +3,13 @@ provider "aws" {
 }
 
 data "aws_availability_zones" "available" {}
-data "aws_caller_identity" "current" {}
 
 locals {
   name   = basename(path.cwd)
-  region = "us-east-2"
+  region = "us-west-2"
 
-  vpc_cidr      = "10.0.0.0/16"
-  azs           = slice(data.aws_availability_zones.available.names, 0, 3)
-  instance_type = "m5.xlarge"
+  vpc_cidr = "10.0.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   user_data = <<-EOT
     #!/bin/bash
@@ -34,7 +32,7 @@ locals {
 
 module "ecs_cluster" {
   source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.0"
+  version = "~> 5.6"
 
   cluster_name = local.name
 
@@ -63,19 +61,16 @@ module "ecs_cluster" {
     }
   }
 
-  # Shared task execution role
-  create_task_exec_iam_role = false
-  # Allow read access to all SSM params in current account for demo
-  task_exec_ssm_param_arns = ["arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*"]
-  # Allow read access to all secrets in current account for demo
-  task_exec_secret_arns = ["arn:aws:secretsmanager:${local.region}:${data.aws_caller_identity.current.account_id}:secret:*"]
-
   tags = local.tags
 }
 
+################################################################################
+# Service Discovery
+################################################################################
+
 resource "aws_service_discovery_private_dns_namespace" "this" {
   name        = "default.${local.name}.local"
-  description = "Service discovery namespace.clustername.local"
+  description = "Service discovery <namespace>.<clustername>.local"
   vpc         = module.vpc.vpc_id
 
   tags = local.tags
@@ -87,7 +82,7 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 3.0"
+  version = "~> 5.0"
 
   name = local.name
   cidr = local.vpc_cidr
@@ -96,10 +91,8 @@ module "vpc" {
   private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
   public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
 
-  enable_nat_gateway      = true
-  single_nat_gateway      = true
-  enable_dns_hostnames    = true
-  map_public_ip_on_launch = false
+  enable_nat_gateway = true
+  single_nat_gateway = true
 
   # Manage so we can name
   manage_default_network_acl    = true
@@ -119,12 +112,12 @@ data "aws_ssm_parameter" "ecs_optimized_ami" {
 
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.5"
+  version = "~> 7.2"
 
   name = local.name
 
   image_id      = jsondecode(data.aws_ssm_parameter.ecs_optimized_ami.value)["image_id"]
-  instance_type = local.instance_type
+  instance_type = "m5.xlarge"
 
   security_groups                 = [module.autoscaling_sg.security_group_id]
   user_data                       = base64encode(local.user_data)
@@ -156,14 +149,14 @@ module "autoscaling" {
 
 module "autoscaling_sg" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
-  name                = local.name
-  description         = "Autoscaling group security group"
-  vpc_id              = module.vpc.vpc_id
+  name        = local.name
+  description = "Autoscaling group security group"
+  vpc_id      = module.vpc.vpc_id
+
   ingress_cidr_blocks = [module.vpc.vpc_cidr_block]
-
-  ingress_rules = ["http-80-tcp"]
+  ingress_rules       = ["http-80-tcp"]
 
   egress_rules = ["all-all"]
 
