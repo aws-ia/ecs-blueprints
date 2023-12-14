@@ -275,9 +275,9 @@ module "ecs_service_head" {
   container_definitions = {
 
     ray_head = {
+      readonly_root_filesystem = true
       image                    = local.ray_head_container_image
       user                     = 1000
-      readonly_root_filesystem = false
       cpu                      = 3072
       memory                   = 10240
       memory_reservation       = 10240
@@ -289,10 +289,21 @@ module "ecs_service_head" {
         sourceVolume  = "ray_results"
         containerPath = "/home/ray/ray_results"
         readOnly      = false
+      },
+      {
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
+        readOnly      = false
       }]
     }
   }
   volume = {
+    "tmp" = {
+      docker_volume_configuration = {
+        scope = "task"
+        driver = "local"
+      }
+    }
     "ray_results" = {
       efs_volume_configuration = {
         file_system_id     = module.efs.id,
@@ -365,9 +376,9 @@ module "ecs_service_workers" {
 
   container_definitions = {
     ray_work = {
+      readonly_root_filesystem = true
       image                    = local.ray_worker_container_image
       user                     = 1000
-      readonly_root_filesystem = false
       cpu                      = 10240
       memory                   = 189440
       memory_reservation       = 189440
@@ -383,6 +394,11 @@ module "ecs_service_workers" {
         sourceVolume  = "ray_results"
         containerPath = "/home/ray/ray_results"
         readOnly      = false
+      },
+      {
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
+        readOnly      = false
       }]
     }
   }
@@ -391,6 +407,12 @@ module "ecs_service_workers" {
   network_mode = "host"
 
   volume = {
+     "tmp" = {
+      docker_volume_configuration = {
+        scope = "task"
+        driver = "local"
+      }
+    }
     "ray_results" = {
       efs_volume_configuration = {
         file_system_id     = module.efs.id,

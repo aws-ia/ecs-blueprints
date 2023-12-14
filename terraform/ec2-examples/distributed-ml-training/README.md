@@ -29,7 +29,7 @@ terraform apply
 
 Due to the size of the container images, it might take several minutes until the cluster is ready
 
-## Example: training the resnet18 model with the FashionMNIST dataset
+## Example: training the resnet18 model with the [FashionMNIST](https://github.com/zalandoresearch/fashion-mnist) dataset
 
 Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or [Cloud 9](https://aws.amazon.com/cloud9/) provide a better user experience to run training jobs in python than using the bash shell
 
@@ -39,11 +39,16 @@ HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
   --query 'Reservations[*].Instances[*].InstanceId' --output text)
 
 aws ssm start-session --target $HEAD_INSTANCE_ID
+```
+
+Connect to the bash shell of the conntainer
+
+```bash
 CONTAINER_ID=$(sudo docker ps -qf "name=.*-rayhead-.*")
 sudo docker exec -it $CONTAINER_ID bash
 ```
 
-Inside the container shell, check the cluster status 
+Inside the container shell, check the cluster status - you should see three healthy nodes and 8 GPUs available
 ```bash
 ray status
 ```
@@ -52,6 +57,7 @@ Run the [training script example](./training_example.py) - you can look at the c
 
 ```bash
 export RAY_DEDUP_LOGS=0 # Makes the logs verbose per each process in the training
+cd /tmp
 wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-ml-training/training_example.py
 python training_example.py
 ```
