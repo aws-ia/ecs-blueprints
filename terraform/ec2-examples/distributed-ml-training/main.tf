@@ -140,6 +140,11 @@ data "aws_ssm_parameter" "ecs_gpu_optimized_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended"
 }
 
+resource "aws_placement_group" "workers" {
+  name     = "ml-training"
+  strategy = "cluster"
+}
+
 module "autoscaling_head" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "~> 6.5"
@@ -159,7 +164,6 @@ module "autoscaling_head" {
   iam_role_policies = {
     AmazonEC2ContainerServiceforEC2Role      = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
     AmazonSSMManagedEC2InstanceDefaultPolicy = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
-    AmazonElasticFileSystemClientFullAccess  = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   }
 
   vpc_zone_identifier = module.vpc.private_subnets
@@ -182,9 +186,9 @@ module "autoscaling_workers" {
 
   name = "${local.name}-workers"
 
-  #image_id      = data.aws_ssm_parameter.ecs_bottlerocket_gpu_optimized_ami.value
-  image_id      = jsondecode(data.aws_ssm_parameter.ecs_gpu_optimized_ami.value)["image_id"]
-  instance_type = local.instance_type_workers
+  placement_group = aws_placement_group.workers.name
+  image_id        = jsondecode(data.aws_ssm_parameter.ecs_gpu_optimized_ami.value)["image_id"]
+  instance_type   = local.instance_type_workers
 
   security_groups                 = [module.autoscaling_sg.security_group_id]
   user_data                       = base64encode(local.user_data_workers)
@@ -264,11 +268,20 @@ module "ecs_service_head" {
   }
 
   task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
-  tasks_iam_role_name        = "dt-role-tasks"
-  tasks_iam_role_description = "Tasks IAM role for ${local.name}"
+  tasks_iam_role_name        = "taskRole"
+  tasks_iam_role_description = "Task role for ${local.name}"
   tasks_iam_role_policies = {
-    AmazonElasticFileSystemClientFullAccess = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+    ReadOnlyAccess = "arn:aws:iam::aws:policy/ReadOnlyAccess"
   }
+  tasks_iam_role_statements = [
+    {
+      actions = ["s3:*"]
+      resources = [
+        "arn:aws:s3:::${aws_s3_bucket.results.bucket}",
+        "arn:aws:s3:::${aws_s3_bucket.results.bucket}/*"
+      ]
+    }
+  ]
   create_task_exec_iam_role          = false
   enable_execute_command             = false
   deployment_minimum_healthy_percent = 0
@@ -286,22 +299,18 @@ module "ecs_service_head" {
         sharedMemorySize = 20480
       }
       mount_points = [{
-        sourceVolume  = "ray_results"
-        containerPath = "/home/ray/ray_results"
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
         readOnly      = false
       }]
     }
   }
   volume = {
-    "ray_results" = {
-      efs_volume_configuration = {
-        file_system_id     = module.efs.id,
-        root_directory     = "/"
-        transit_encryption = "ENABLED",
-        authorization_config = {
-          access_point_id = module.efs.access_points.ray_results.id
-          iam             = "ENABLED"
-        }
+    "tmp" = {
+      dockerVolumeConfiguration = {
+        scope         = "shared",
+        driver        = "local",
+        autoprovision = true
       }
     }
   }
@@ -355,11 +364,21 @@ module "ecs_service_workers" {
   }
 
   task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
-  tasks_iam_role_name        = "dt-role-tasks"
-  tasks_iam_role_description = "Tasks IAM role for ${local.name}"
+  tasks_iam_role_name        = "taskRole"
+  tasks_iam_role_description = "Task role for ${local.name}"
   tasks_iam_role_policies = {
-    AmazonElasticFileSystemClientFullAccess = "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+    ReadOnlyAccess = "arn:aws:iam::aws:policy/ReadOnlyAccess"
   }
+  tasks_iam_role_statements = [
+    {
+      actions = ["s3:*"]
+      resources = [
+        "arn:aws:s3:::${aws_s3_bucket.results.bucket}",
+        "arn:aws:s3:::${aws_s3_bucket.results.bucket}/*"
+      ]
+    }
+  ]
+
   create_task_exec_iam_role = false
   enable_execute_command    = false
 
@@ -380,92 +399,52 @@ module "ecs_service_workers" {
         value = 4
       }]
       mount_points = [{
-        sourceVolume  = "ray_results"
-        containerPath = "/home/ray/ray_results"
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
         readOnly      = false
       }]
     }
   }
-  # We are using network=host because there will be a single container in each host with GPUs. There is less overhead when using a single container with
-  # access to all 4 GPUs available in g5.12xlarge than 4 containers with 1 GPU each.
-  network_mode = "host"
-
   volume = {
-    "ray_results" = {
-      efs_volume_configuration = {
-        file_system_id     = module.efs.id,
-        root_directory     = "/"
-        transit_encryption = "ENABLED",
-        authorization_config = {
-          access_point_id = module.efs.access_points.ray_results.id
-          iam             = "ENABLED"
-        }
+    "tmp" = {
+      dockerVolumeConfiguration = {
+        scope         = "shared",
+        driver        = "local",
+        autoprovision = true
       }
     }
   }
-  tags = local.tags
-}
 
-
-################################################################################
-# Shared storage - EFS
-################################################################################
-
-
-module "efs" {
-  source = "terraform-aws-modules/efs/aws"
-
-  # File system
-  name           = "distributed-storage-shared"
-  creation_token = "distributed-storage-shared"
-  encrypted      = true
-  attach_policy  = false
-
-  lifecycle_policy = {
-    transition_to_ia = "AFTER_30_DAYS"
-  }
-
-  # Mount targets / security group
-  mount_targets = {
-    (local.azs[0]) = {
-      subnet_id = module.vpc.private_subnets[0]
-    }
-  }
-
-  # Access point
-  access_points = {
-    ray_results = {
-      name = "ray_results"
-      posix_user = {
-        uid = 1000
-        gid = 100
-      }
-      root_directory = {
-        path = "/ray_results"
-
-        creation_info = {
-          owner_uid   = 1000
-          owner_gid   = 100
-          permissions = "755"
-        }
-      }
-
-      tags = local.tags
-    }
-  }
-  security_group_description = "EFS distributed training security group"
-  security_group_vpc_id      = module.vpc.vpc_id
+  network_mode = "awsvpc"
+  subnet_ids   = module.vpc.private_subnets
   security_group_rules = {
-    vpc = {
-      # relying on the defaults provdied for EFS/NFS (2049/TCP + ingress)
-      description = "NFS ingress from VPC private subnets"
+    ingress_private_ips = {
+      type        = "ingress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
       cidr_blocks = ["10.0.0.0/8"]
     }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
   }
-
   tags = local.tags
 }
 
+resource "random_id" "bucket_name" {
+  byte_length = 8
+}
+
+resource "aws_s3_bucket" "results" {
+  bucket        = "dt-results-${random_id.bucket_name.hex}"
+  tags          = local.tags
+  force_destroy = true
+}
 
 resource "aws_iam_role" "task_execution_role" {
   name = "distributed_training_task_execution_role"
@@ -495,8 +474,6 @@ resource "aws_iam_role" "task_execution_role" {
   })
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-    "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
   ]
-
   tags = local.tags
 }

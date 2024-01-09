@@ -36,7 +36,12 @@ output "cluster_name" {
   value       = module.ecs_cluster.name
 }
 
-output "cluster_capacity_providers" {
-  description = "Map of cluster capacity providers attributes"
-  value       = module.ecs_cluster.cluster_capacity_providers
+
+################################################################################
+# S3
+################################################################################
+
+output "s3_bucket" {
+  description = "ARN that identifies the bucket for results"
+  value       = aws_s3_bucket.results.arn
 }
