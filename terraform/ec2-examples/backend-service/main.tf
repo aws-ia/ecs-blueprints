@@ -4,11 +4,10 @@ provider "aws" {
 
 locals {
   name   = "ecsdemo-backend"
-  region = "us-east-2"
+  region = "us-west-2"
 
   container_image = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
   container_port  = 3000 # Container port is specific to this app example
-  container_name  = "ecsdemo-nodejs"
 
   tags = {
     Blueprint  = local.name
@@ -22,7 +21,7 @@ locals {
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.0"
+  version = "~> 5.6"
 
   name               = local.name
   desired_count      = 3
@@ -30,6 +29,7 @@ module "ecs_service" {
   enable_autoscaling = false
 
   # Task Definition
+  enable_execute_command   = true
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
@@ -38,20 +38,15 @@ module "ecs_service" {
       base              = 1
     }
   }
-  create_iam_role        = false
-  task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command = true
 
   container_definitions = {
-    (local.container_name) = {
+    ecsdemo-nodejs = {
       image                    = local.container_image
       readonly_root_filesystem = false
       port_mappings = [
         {
-          name          = "${local.container_name}-${local.container_port}"
           protocol      = "tcp",
           containerPort = local.container_port
-          hostPort      = local.container_port
         }
       ]
     }
@@ -69,6 +64,13 @@ module "ecs_service" {
       to_port     = local.container_port
       protocol    = "tcp"
       description = "Service port"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    egress_all = {
+      type        = "egress"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
@@ -108,10 +110,6 @@ data "aws_subnets" "private" {
 
 data "aws_ecs_cluster" "core_infra" {
   cluster_name = "core-infra"
-}
-
-data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-execution*"
 }
 
 data "aws_service_discovery_dns_namespace" "this" {

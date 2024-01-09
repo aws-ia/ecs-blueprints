@@ -1,3 +1,7 @@
+################################################################################
+# VPC
+################################################################################
+
 output "vpc_id" {
   description = "The ID of the VPC"
   value       = module.vpc.vpc_id
@@ -18,24 +22,23 @@ output "private_subnets_cidr_blocks" {
   value       = module.vpc.private_subnets_cidr_blocks
 }
 
-output "ecs_cluster_name" {
-  description = "The name of the ECS cluster and the name of the core stack"
-  value       = module.ecs.cluster_name
+################################################################################
+# Cluster
+################################################################################
+
+output "cluster_arn" {
+  description = "ARN that identifies the cluster"
+  value       = module.ecs_cluster.arn
 }
 
-output "ecs_cluster_id" {
-  description = "The ID of the ECS cluster"
-  value       = module.ecs.cluster_id
+output "cluster_id" {
+  description = "ID that identifies the cluster"
+  value       = module.ecs_cluster.id
 }
 
-output "ecs_task_execution_role_name" {
-  description = "The ARN of the task execution role"
-  value       = module.ecs.task_exec_iam_role_name
-}
-
-output "ecs_task_execution_role_arn" {
-  description = "The ARN of the task execution role"
-  value       = module.ecs.task_exec_iam_role_arn
+output "cluster_name" {
+  description = "Name that identifies the cluster"
+  value       = module.ecs_cluster.name
 }
 
 output "service_discovery_namespaces" {

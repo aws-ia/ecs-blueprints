@@ -288,9 +288,9 @@ module "ecs_service_head" {
   container_definitions = {
 
     ray_head = {
+      readonly_root_filesystem = true
       image                    = local.ray_head_container_image
       user                     = 1000
-      readonly_root_filesystem = false
       cpu                      = 3072
       memory                   = 10240
       memory_reservation       = 10240
@@ -299,6 +299,11 @@ module "ecs_service_head" {
         sharedMemorySize = 20480
       }
       mount_points = [{
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
+        readOnly      = false
+      },
+      {
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
@@ -384,9 +389,9 @@ module "ecs_service_workers" {
 
   container_definitions = {
     ray_work = {
+      readonly_root_filesystem = true
       image                    = local.ray_worker_container_image
       user                     = 1000
-      readonly_root_filesystem = false
       cpu                      = 10240
       memory                   = 189440
       memory_reservation       = 189440
@@ -399,6 +404,11 @@ module "ecs_service_workers" {
         value = 4
       }]
       mount_points = [{
+        sourceVolume  = "tmp"
+        containerPath = "/tmp"
+        readOnly      = false
+      },
+      {
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
