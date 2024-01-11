@@ -93,7 +93,7 @@ Demands:
 ```
 
 4. Run the [training script example](./training_example.py) - you can look at the comments inside the python script to learn more about each step.
-A bucket is created as part of the terraform plan (Bucket ARN is printed as output). Make sure to add the name of that bucket (starts with "dt-results-") as argument of the training_example.py script
+A bucket is created as part of the terraform plan (Bucket name is printed as output). Make sure to add the name of that bucket (starts with "dt-results-") as argument of the training_example.py script
 
 ```bash
 export RAY_DEDUP_LOGS=0 # Makes the logs verbose per each process in the training
