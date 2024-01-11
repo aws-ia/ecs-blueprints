@@ -12,6 +12,6 @@ output "cluster_arn" {
 ################################################################################
 
 output "s3_bucket" {
-  description = "ARN that identifies the bucket for results"
-  value       = aws_s3_bucket.results.arn
+  description = "Bucket name for results"
+  value       = aws_s3_bucket.results.id
 }

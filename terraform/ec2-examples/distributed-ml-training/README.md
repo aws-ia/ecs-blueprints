@@ -40,10 +40,11 @@ Once the cluster is deployed, you can connect to the EC2 instance running the he
 1. Connect to the instance
 ```bash
 HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
-  --filters 'Name=tag:Name,Values=ecs-demo-distributed-ml-training-head' \
-  --query 'Reservations[*].Instances[*].InstanceId' --output text)
+  --filters 'Name=tag:Name,Values=ecs-demo-distributed-ml-training-head' 'Name=instance-state-name,Values=running' \
+  --query 'Reservations[*].Instances[0].InstanceId' --output text --region us-west-2
+)
 
-aws ssm start-session --target $HEAD_INSTANCE_ID
+aws ssm start-session --target $HEAD_INSTANCE_ID --region us-west-2
 ```
 
 2. Connect to the container
@@ -55,7 +56,8 @@ CONTAINER_ID=$(sudo docker ps -qf "name=.*-rayhead-.*")
 sudo docker exec -it $CONTAINER_ID bash
 ```
 
-3. Inside the container shell, check the cluster status. 3 nodes should be listed as healthy with 2.0 GPUs available
+3. Inside the container shell, check the cluster status. 3 nodes should be listed as healthy with 2.0 GPUs available - If you do not see 2.0 GPUs, the workers have not started yet.
+
 ```bash
 ray status
 ```
