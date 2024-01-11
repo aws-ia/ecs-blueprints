@@ -23,7 +23,6 @@ By default, this blueprint uses g5.xlarge (with 1 GPU) instances to showcase a m
 cd ./terraform/ec2-examples/core-infra
 terraform init
 terraform apply -target=module.vpc -target=aws_service_discovery_private_dns_namespace.this
-
 ```
 
 2. Deploy this blueprint
