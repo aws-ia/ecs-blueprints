@@ -92,9 +92,8 @@ def train_func(config):
             # Report metrics and checkpoint to Ray.
             ray.train.report(metrics={"loss": test_loss, "accuracy": accuracy})
 
-# The scaling config defines how many workers
-# In this case is equal to the total GPU count
-scaling_config = ScalingConfig(num_workers=8, use_gpu=True)
+# The scaling config defines how many worker processes to use for the training. Usually equals to the number of GPUs
+scaling_config = ScalingConfig(num_workers=2, use_gpu=True)
 
 # Create the trainer instance
 trainer = TorchTrainer(train_func,

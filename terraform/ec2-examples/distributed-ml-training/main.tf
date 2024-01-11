@@ -2,16 +2,12 @@ provider "aws" {
   region = local.region
 }
 
-data "aws_availability_zones" "available" {}
 data "aws_caller_identity" "current" {}
 
 locals {
-  name   = "ecs-demo-distributed-ml-training"
-  region = "us-east-1"
-
-  vpc_cidr                   = "10.0.0.0/16"
-  azs                        = slice(data.aws_availability_zones.available.names, 0, 1)
-  instance_type_workers      = "g5.12xlarge"
+  name                       = "ecs-demo-distributed-ml-training"
+  region                     = "us-west-2"
+  instance_type_workers      = "g5.xlarge"
   instance_type_head         = "m5.xlarge"
   ray_head_container_image   = "docker.io/rayproject/ray-ml:2.7.1.artur.c9f4c6-py38"
   ray_worker_container_image = "docker.io/rayproject/ray-ml:2.7.1.artur.c9f4c6-py38-gpu"
@@ -81,17 +77,10 @@ module "ecs_cluster" {
   tags                      = local.tags
 }
 
-resource "aws_service_discovery_private_dns_namespace" "this" {
-  name        = "default.${local.name}.local"
-  description = "Service discovery namespace.clustername.local"
-  vpc         = module.vpc.vpc_id
-  tags        = local.tags
-}
-
 resource "aws_service_discovery_service" "this" {
   name = "head"
   dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.this.id
+    namespace_id = data.aws_service_discovery_dns_namespace.core_infra.id
     dns_records {
       ttl  = 300
       type = "A"
@@ -100,45 +89,6 @@ resource "aws_service_discovery_service" "this" {
   }
 }
 
-################################################################################
-# Supporting Resources
-################################################################################
-
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.2.0"
-
-  name = local.name
-  cidr = local.vpc_cidr
-
-  azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
-
-  enable_nat_gateway      = true
-  single_nat_gateway      = true
-  enable_dns_hostnames    = true
-  map_public_ip_on_launch = false
-
-  # Manage so we can name
-  manage_default_network_acl    = true
-  default_network_acl_tags      = { Name = "${local.name}-default" }
-  manage_default_route_table    = true
-  default_route_table_tags      = { Name = "${local.name}-default" }
-  manage_default_security_group = true
-  default_security_group_tags   = { Name = "${local.name}-default" }
-
-  tags = local.tags
-}
-
-# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
-data "aws_ssm_parameter" "ecs_optimized_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
-}
-
-data "aws_ssm_parameter" "ecs_gpu_optimized_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended"
-}
 
 resource "aws_placement_group" "workers" {
   name     = "ml-training"
@@ -166,7 +116,7 @@ module "autoscaling_head" {
     AmazonSSMManagedEC2InstanceDefaultPolicy = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
   }
 
-  vpc_zone_identifier = module.vpc.private_subnets
+  vpc_zone_identifier = data.aws_subnets.private.ids
   health_check_type   = "EC2"
   min_size            = 1
   max_size            = 1
@@ -202,7 +152,7 @@ module "autoscaling_workers" {
     AmazonSSMManagedEC2InstanceDefaultPolicy = "arn:aws:iam::aws:policy/AmazonSSMManagedEC2InstanceDefaultPolicy"
   }
 
-  vpc_zone_identifier = module.vpc.private_subnets
+  vpc_zone_identifier = data.aws_subnets.private.ids
   health_check_type   = "EC2"
   min_size            = 2
   max_size            = 2
@@ -233,12 +183,19 @@ module "autoscaling_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "~> 4.0"
 
-  name                = local.name
-  description         = "Autoscaling group security group"
-  vpc_id              = module.vpc.vpc_id
-  ingress_cidr_blocks = [module.vpc.vpc_cidr_block]
+  name        = local.name
+  description = "Autoscaling group security group"
+  vpc_id      = data.aws_vpc.core_infra.id
 
-  ingress_rules = ["all-all"]
+  ingress_with_cidr_blocks = [
+    {
+      from_port   = -1
+      to_port     = -1
+      protocol    = -1
+      description = "Allow all from VPC CIDR block"
+      cidr_blocks = data.aws_vpc.core_infra.cidr_block
+    },
+  ]
 
   egress_rules = ["all-all"]
 
@@ -288,7 +245,7 @@ module "ecs_service_head" {
   container_definitions = {
 
     ray_head = {
-      readonly_root_filesystem = true
+      readonly_root_filesystem = false
       image                    = local.ray_head_container_image
       user                     = 1000
       cpu                      = 3072
@@ -299,11 +256,6 @@ module "ecs_service_head" {
         sharedMemorySize = 20480
       }
       mount_points = [{
-        sourceVolume  = "tmp"
-        containerPath = "/tmp"
-        readOnly      = false
-      },
-      {
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
@@ -325,7 +277,7 @@ module "ecs_service_head" {
   }
 
   network_mode = "awsvpc"
-  subnet_ids   = module.vpc.private_subnets
+  subnet_ids   = data.aws_subnets.private.ids
   security_group_rules = {
     ingress_private_ips = {
       type        = "ingress"
@@ -355,8 +307,8 @@ module "ecs_service_workers" {
   desired_count                      = 2
   cluster_arn                        = module.ecs_cluster.arn
   enable_autoscaling                 = false
-  memory                             = 189440
-  cpu                                = 10240
+  memory                             = 15360
+  cpu                                = 3072
   # Task Definition
 
   requires_compatibilities = ["EC2"]
@@ -389,26 +341,21 @@ module "ecs_service_workers" {
 
   container_definitions = {
     ray_work = {
-      readonly_root_filesystem = true
+      readonly_root_filesystem = false
       image                    = local.ray_worker_container_image
       user                     = 1000
-      cpu                      = 10240
-      memory                   = 189440
-      memory_reservation       = 189440
-      command                  = ["/bin/bash", "-lc", "--", "ray start --block --num-cpus=10 --num-gpus=4 --address=head.default.ecs-demo-distributed-ml-training.local:6379 --metrics-export-port=8080 --memory=198642237440"]
+      cpu                      = 3072
+      memory                   = 15360
+      memory_reservation       = 15360
+      command                  = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --block --num-cpus=3 --num-gpus=1 --address=head.default.core-infra.local:6379 --metrics-export-port=8080 --memory=15032385536"]
       linux_parameters = {
-        sharedMemorySize = 20480
+        sharedMemorySize = 10240
       }
       resource_requirements = [{
         type  = "GPU"
-        value = 4
+        value = 1
       }]
       mount_points = [{
-        sourceVolume  = "tmp"
-        containerPath = "/tmp"
-        readOnly      = false
-      },
-      {
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
@@ -426,7 +373,7 @@ module "ecs_service_workers" {
   }
 
   network_mode = "awsvpc"
-  subnet_ids   = module.vpc.private_subnets
+  subnet_ids   = data.aws_subnets.private.ids
   security_group_rules = {
     ingress_private_ips = {
       type        = "ingress"
@@ -476,7 +423,7 @@ resource "aws_iam_role" "task_execution_role" {
             "aws:SourceAccount" : data.aws_caller_identity.current.account_id
           },
           "ArnLike" : {
-            "aws:SourceArn" : "arn:aws:ecs:us-east-1:${data.aws_caller_identity.current.account_id}:*"
+            "aws:SourceArn" : "arn:aws:ecs:${local.region}:${data.aws_caller_identity.current.account_id}:*"
           }
         }
       }
@@ -486,4 +433,36 @@ resource "aws_iam_role" "task_execution_role" {
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
   ]
   tags = local.tags
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
+data "aws_ssm_parameter" "ecs_optimized_ami" {
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
+}
+
+data "aws_ssm_parameter" "ecs_gpu_optimized_ami" {
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended"
+}
+
+data "aws_subnets" "private" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra-private-${local.region}a"]
+  }
+}
+
+data "aws_vpc" "core_infra" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
+
+data "aws_service_discovery_dns_namespace" "core_infra" {
+  name = "default.core-infra.local"
+  type = "DNS_PRIVATE"
 }
