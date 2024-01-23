@@ -58,9 +58,7 @@ class GenAIServiceStack(Stack):
             # build container image from local folder
             # image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             # load pre-built image from public repository
-            image=ContainerImage.from_registry(
-                self.stack_props.container_image
-            ),
+            image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,

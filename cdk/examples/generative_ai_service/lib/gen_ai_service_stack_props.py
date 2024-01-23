@@ -9,7 +9,6 @@ class GenAIServiceStackProps(StackProps):
         account_number=None,
         aws_region=None,
         az_count=None,
-        container_image=None,
         container_name=None,
         container_port="3000",
         desired_count="2",
@@ -30,7 +29,6 @@ class GenAIServiceStackProps(StackProps):
     ):
         self.account_number = account_number
         self.aws_region = aws_region
-        self.container_image = container_image
         self.container_name = container_name
         self.container_port = int(container_port)
         self.desired_count = int(desired_count)
