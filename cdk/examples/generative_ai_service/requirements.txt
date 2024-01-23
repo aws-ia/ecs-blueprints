@@ -5,3 +5,4 @@ boto3
 sagemaker==2.183.0
 sentence_transformers
 opensearch-py
+torch==2.1.1
