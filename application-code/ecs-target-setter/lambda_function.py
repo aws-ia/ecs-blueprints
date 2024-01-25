@@ -25,37 +25,37 @@ config=Config(
 # Define session and resources
 session=boto3.Session()
 # sqs:session.resource('sqs', config=config)
-cloudwatch=session.client('cloudwatch', config=config)
-appautoscaling=boto3.client('application-autoscaling', config=config)
+cloudwatch=session.client('cloudwatch', config=config, region_name='us-west-2')
+appautoscaling=boto3.client('application-autoscaling', config=config, region_name='us-west-2')
 
 # Read environment variables
 ecs_sqs_app_scaling_policy_name=os.environ['scaling_policy_name']
-desired_latency=int(os.environ['desired_latency'])
-default_msg_proc_duration=int(os.environ['default_msg_proc_duration'])
+desiredLatency=int(os.environ['desired_latency'])
+defaultMsgProcDuration=int(os.environ['default_msg_proc_duration'])
 
-queue_name=os.environ['queue_name']
-app_metric_name = os.environ['app_metric_name']
-bpi_metric_name=os.environ['bpi_metric_name']
-metric_type=os.environ['metric_type']
-metric_namespace=os.environ['metric_namespace']
+queueName=os.environ['queue_name']
+appMetricName = os.environ['app_metric_name']
+bpiMetricName=os.environ['bpi_metric_name']
+metricType=os.environ['metric_type']
+metricNamespace=os.environ['metric_namespace']
 
 
 def publishMetricValue(metricValue):
 
     response = cloudwatch.put_metric_data(
-        Namespace = metric_namespace,
+        Namespace = metricNamespace,
         MetricData = [
             {
-                'MetricName': bpi_metric_name,
+                'MetricName': bpiMetricName,
                 'Value': metricValue,
                 'Dimensions': [
                     {
                         'Name': 'Type',
-                        'Value': metric_type
+                        'Value': metricType
                     },
                     {
                         'Name': 'QueueName',
-                        'Value': queue_name
+                        'Value': queueName
                     }                    
                 ],
                 'StorageResolution': 1
@@ -63,23 +63,23 @@ def publishMetricValue(metricValue):
         ]
     )
 
-def getMetricValue(metric_namespace, metricName):
+def getMetricValue(metricNamespace, metricName):
 
     # Define query
     query={
         'Id': 'query_123',
         'MetricStat': {
             'Metric': {
-                'Namespace': metric_namespace,
-                'MetricName': app_metric_name,
+                'Namespace': metricNamespace,
+                'MetricName': appMetricName,
                     'Dimensions': [
                         {
                             'Name': 'Type',
-                            'Value': metric_type
+                            'Value': metricType
                         },
                         {
                             'Name': 'QueueName',
-                            'Value': queue_name
+                            'Value': queueName
                         },                        
                     ]                
             },
@@ -97,13 +97,15 @@ def getMetricValue(metric_namespace, metricName):
     #print(response)
     
     if not response.get('MetricDataResults')[0].get('Values'): 
-        msgProcessingDuration=default_msg_proc_duration
+        msgProcessingDuration=defaultMsgProcDuration
     else: 
         values = response.get('MetricDataResults')[0].get('Values')
         total = sum(values)
         count = len(values)
         msgProcessingDuration =  total / count
-        print("count={} total={} msgProcessingDuration={}".format(count, total, msgProcessingDuration))        
+        print("count={} total={} msgProcessingDuration={}".format(count, total, msgProcessingDuration))
+        msgProcessingDuration=response.get('MetricDataResults')[0].get('Values')[0]
+        
     # Return 
     return msgProcessingDuration
     
@@ -112,41 +114,34 @@ def getMetricValue(metric_namespace, metricName):
 def lambda_handler(event, context):
 
     # Get cloudwatch metric for msg processing duration
-    msgProcessingDuration=getMetricValue(metric_namespace, app_metric_name)
+    msgProcessingDuration=getMetricValue(metricNamespace, appMetricName)
     print('Most recent message processing duration is {}'.format(msgProcessingDuration))
 
     # Calculate new target BPI (assuming latency of 5mins)
-    newTargetBPI =int(desired_latency / msgProcessingDuration)
+    newTargetBPI =int(desiredLatency / msgProcessingDuration)
     print('New Target BPI is {}'.format(newTargetBPI))
 
     # Get scaling policy of ASG
     
-    response =appautoscaling.describe_scaling_policies(PolicyNames=[ecs_sqs_app_scaling_policy_name], ServiceNamespace='ecs')
+    print("ecs_sqs_app_scaling_policy_name={}".format(ecs_sqs_app_scaling_policy_name))
+    
+    response = appautoscaling.describe_scaling_policies(PolicyNames=[ecs_sqs_app_scaling_policy_name], ServiceNamespace='ecs')
     policies =response.get('ScalingPolicies')  
     #pprint(policies)
     policy=policies[0]
-    print(policy)
+    #print(policy)
 
     # Get target tracking config and update target value
     TargetTrackingConfig=policy.get('TargetTrackingScalingPolicyConfiguration')
     #print(TargetTrackingConfig)
     TargetTrackingConfig['TargetValue'] = newTargetBPI
-    TargetTrackingConfig['CustomizedMetricSpecification']['MetricName'] = bpi_metric_name
-    TargetTrackingConfig['CustomizedMetricSpecification']['Namespace'] = metric_namespace
-    TargetTrackingConfig['CustomizedMetricSpecification']['Statistic'] = 'Average'
-    # TargetTrackingConfig['CustomizedMetricSpecification']['Dimensions'] =  [
-    #                     {
-    #                         'Name': 'Type',
-    #                         'Value': metric_type
-    #                     },
-    #                     {
-    #                         'Name': 'QueueName',
-    #                         'Value': queue_name
-    #                     }
-    # ]
+    TargetTrackingConfig['ScaleOutCooldown'] = 240
+    TargetTrackingConfig['ScaleInCooldown'] = 240
     
-                        
-    # Update scaling policy of ASG
+    TargetTrackingConfig['CustomizedMetricSpecification']['MetricName'] = bpiMetricName
+    TargetTrackingConfig['CustomizedMetricSpecification']['Namespace'] = metricNamespace
+    TargetTrackingConfig['CustomizedMetricSpecification']['Statistic'] = 'Average'
+
     appautoscaling.put_scaling_policy(
         ServiceNamespace='ecs', 
         ResourceId=policy.get('ResourceId'),
@@ -159,9 +154,3 @@ def lambda_handler(event, context):
 
     # Publish new target BPI
     publishMetricValue(newTargetBPI)
-
-
-# if __name__=="__main__":
-
-#     logger.info('Calling lambda_handler...')
-#     lambda_handler("", "")

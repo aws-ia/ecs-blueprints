@@ -10,7 +10,7 @@ from botocore.exceptions import ClientError
 from botocore.config import Config
 import datetime
 
-# Create logger 
+# Create logger
 #logging.basicConfig(filename='consumer.log', level=logging.INFO)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -52,7 +52,7 @@ def publishMetricValue(metricValue):
                     {
                         'Name': 'QueueName',
                         'Value': queue_name
-                    }                    
+                    }
                 ],
                 'StorageResolution': 1
             }
@@ -61,7 +61,7 @@ def publishMetricValue(metricValue):
 
 if __name__=="__main__":
 
-    # Initialize variables 
+    # Initialize variables
     logger.info('Environment queue_name {} app_metric_name {} metric_type {} metric_namespace {}'.format(queue_name, app_metric_name, metric_type, metric_namespace))
     logger.info('Calling get_queue_by_name....')
     queue = sqs.get_queue_by_name(QueueName=queue_name)
@@ -70,18 +70,18 @@ if __name__=="__main__":
 
     # start continuous loop
     logger.info('Starting queue consumer process....')
-    while True: 
+    while True:
 
         try:
-            
+
             # Read messages from queue
             logger.info('Polling messages from the   processing queue')
-            messages = queue.receive_messages(AttributeNames=['All'], MaxNumberOfMessages=batchSize, WaitTimeSeconds=queueWaitTime) 
+            messages = queue.receive_messages(AttributeNames=['All'], MaxNumberOfMessages=batchSize, WaitTimeSeconds=queueWaitTime)
             if not messages: continue
-        
-            
+
+
             logger.info('-- Received {} messages'.format(len(messages)))
-            
+
             # Process messages
             for message in messages:
                 now = datetime.datetime.now()
@@ -89,19 +89,17 @@ if __name__=="__main__":
                 processingDuration = messageBody.get('duration')
                 logger.info('Time {} Processing message_id {} messageBody {}...'.format(now, message.message_id, messageBody))
                 time.sleep(processingDuration)
-                
+
                 # Delete the message
                 message.delete()
                 now = datetime.datetime.now()
-                
+
                 # Report message duration to cloudwatch
                 publishMetricValue(processingDuration)
 
-        except ClientError as error: 
+        except ClientError as error:
             logger.error('SQS Service Exception - Code: {}, Message: {}'.format(error.response['Error']['Code'],error.response['Error']['Message']))
-            continue   
+            continue
 
-        except Exception as e: 
+        except Exception as e:
             logger.error('Unexpected error - {}'.format(e))
-
-

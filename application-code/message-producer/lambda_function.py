@@ -3,7 +3,7 @@
 import boto3
 import os
 import random
-import os 
+import os
 import struct
 import json
 from pprint import pprint
@@ -39,8 +39,8 @@ def lambda_handler(event, context):
     queue = sqs.get_queue_by_name(QueueName=queue_name)
 
     # Send N messages
-    for i in range(number_of_messages): 
-        
+    for i in range(number_of_messages):
+
         # Build Msg body
         randomNumber = struct.unpack('H', os.urandom(2))[0]
         messageBody = {"id": randomNumber, "duration": default_msg_proc_duration}
@@ -48,9 +48,7 @@ def lambda_handler(event, context):
 
         # Call API
         response = queue.send_message(
-            MessageBody=json.dumps(messageBody), 
+            MessageBody=json.dumps(messageBody),
             MessageGroupId=str(messageBody['id']),
             MessageDeduplicationId=str(messageBody['id']) + ':' + str(randomNumber),
         )
-
-
