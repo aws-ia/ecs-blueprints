@@ -50,13 +50,13 @@ output "aws_cloudwatch_event_rule" {
 
 
 output "processing_queue_id" {
-  value       = module.processing_queue.this_sqs_queue_id 
+  value       = module.processing_queue.this_sqs_queue_id
   description = "SQS processing_queue_id"
 }
 
 
 output "processing_queue_arn" {
-  value       = module.processing_queue.this_sqs_queue_arn 
+  value       = module.processing_queue.this_sqs_queue_arn
   description = "SQS processing_queue_arn"
 }
 
@@ -143,5 +143,3 @@ output "ecs_sqs_app_scaling_policy" {
   value       = aws_appautoscaling_policy.ecs_sqs_app_scaling_policy.target_tracking_scaling_policy_configuration
   description = "ecs_sqs_app_scaling_policy"
 }
-
-

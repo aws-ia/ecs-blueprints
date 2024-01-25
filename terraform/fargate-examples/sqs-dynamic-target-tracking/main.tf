@@ -28,10 +28,9 @@ module "container_image_ecr" {
 
   repository_name = local.container_name
 
-  repository_force_delete           = true
-  create_lifecycle_policy           = false
-  repository_read_access_arns       = [sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]]
-  #repository_read_access_arns       = [one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)]
+  repository_force_delete     = true
+  create_lifecycle_policy     = false
+  repository_read_access_arns = [sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]]
   repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
@@ -58,7 +57,7 @@ resource "aws_ecs_task_definition" "this" {
           name  = "app_metric_name",
           value = local.app_metric_name
         },
-                {
+        {
           name  = "metric_type",
           value = local.metric_type
         },
@@ -66,8 +65,8 @@ resource "aws_ecs_task_definition" "this" {
           name  = "metric_namespace",
           value = local.metric_namespace
         },
-                
-      ]      
+
+      ]
       logConfiguration = {
         "logDriver" : "awslogs",
         "options" : {
@@ -98,7 +97,7 @@ module "ecs_service_definition" {
   enable_autoscaling = false
 
   subnet_ids = data.aws_subnets.private.ids
-    security_group_rules = {
+  security_group_rules = {
     egress_all = {
       type        = "egress"
       from_port   = 0
@@ -107,14 +106,13 @@ module "ecs_service_definition" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
- 
-  # Task Definition
+
   create_iam_role        = false
   create_task_definition = false
-  task_definition_arn = aws_ecs_task_definition.this.arn
-  
+  task_definition_arn    = aws_ecs_task_definition.this.arn
+
   enable_execute_command = true
-  
+
   tags = local.tags
 }
 
@@ -134,15 +132,12 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
   service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
-    target_value = 12
+    target_value       = 12
     scale_out_cooldown = 240
     scale_in_cooldown  = 240
-    
+
     customized_metric_specification {
-      #metric_name = "BPI"
-      #namespace   = "ECS-SQS-BPI"
-      #statistic = "Average"
-      
+
       metrics {
         label = "Get the queue size (the number of messages waiting to be processed)"
         id    = "m1"
@@ -191,29 +186,9 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
       }
 
       metrics {
-        label       = "Calculate the backlog per instance"
-        id          = "e1"
-        expression  = "m1 / m2"
-        
-        # metric_stat {
-        #   metric {
-        #     metric_name = local.bpi_metric_name
-        #     namespace   = local.metric_namespace
-
-        #     dimensions {
-        #       name  = "Type"
-        #       value = local.metric_type
-        #     }
-
-        #     dimensions {
-        #       name  = "QueueName"
-        #       value = module.processing_queue.this_sqs_queue_name
-        #     }
-        #   }
-
-        #   stat = "Average"
-        # }
-        
+        label      = "Calculate the backlog per instance"
+        id         = "e1"
+        expression = "m1 / m2"
         return_data = true
       }
     }
@@ -245,9 +220,9 @@ module "lambda_function_message_producer" {
   source_path        = "../../../application-code/message-producer/"
 
   environment_variables = {
-    queue_name      = module.processing_queue.this_sqs_queue_name
-    default_msg_proc_duration =  local.default_msg_proc_duration
-    number_of_messages = local.number_of_messages
+    queue_name                = module.processing_queue.this_sqs_queue_name
+    default_msg_proc_duration = local.default_msg_proc_duration
+    number_of_messages        = local.number_of_messages
   }
 
   allowed_triggers = {
@@ -256,7 +231,7 @@ module "lambda_function_message_producer" {
       source_arn = aws_cloudwatch_event_rule.sqs_message_producer.arn
     }
   }
-  
+
   cloudwatch_logs_retention_in_days = 30
 
   tags = local.tags
@@ -275,23 +250,23 @@ module "lambda_function_target_bpi_update" {
   source_path        = "../../../application-code/ecs-target-setter/"
 
   environment_variables = {
-    scaling_policy_name = local.scaling_policy_name
-    queue_name      = module.processing_queue.this_sqs_queue_name
-    app_metric_name = local.app_metric_name
-    metric_type = local.metric_type
-    metric_namespace = local.metric_namespace
-    bpi_metric_name = local.bpi_metric_name
-    default_msg_proc_duration =  local.default_msg_proc_duration
-    desired_latency = local.desired_latency
+    scaling_policy_name       = local.scaling_policy_name
+    queue_name                = module.processing_queue.this_sqs_queue_name
+    app_metric_name           = local.app_metric_name
+    metric_type               = local.metric_type
+    metric_namespace          = local.metric_namespace
+    bpi_metric_name           = local.bpi_metric_name
+    default_msg_proc_duration = local.default_msg_proc_duration
+    desired_latency           = local.desired_latency
   }
-  
+
   allowed_triggers = {
     PollSSMScale = {
       principal  = "events.amazonaws.com"
       source_arn = aws_cloudwatch_event_rule.fargate_scaling.arn
     }
   }
-  
+
   cloudwatch_logs_retention_in_days = 30
 
   tags = local.tags
@@ -305,7 +280,7 @@ resource "aws_cloudwatch_event_rule" "fargate_scaling" {
   name                = "ECSAutoscaleTargetBPIUpdate"
   description         = "This rule is used for update ECS Autoscaling Target BPI"
   schedule_expression = "rate(60 minutes)"
-  
+
   is_enabled = false
 
   tags = local.tags
@@ -320,7 +295,7 @@ resource "aws_cloudwatch_event_rule" "sqs_message_producer" {
   name                = "SQSTestMessageProducer"
   description         = "This rule is used for Send Messages to SQS Queue for testing"
   schedule_expression = "rate(1 minute)"
-  
+
   is_enabled = false
 
   tags = local.tags
@@ -341,10 +316,10 @@ module "processing_queue" {
   source  = "terraform-aws-modules/sqs/aws"
   version = "~> 2.0"
 
-  name = "${local.name}-processing-queue.fifo"
-  fifo_queue = true
+  name                        = "${local.name}-processing-queue.fifo"
+  fifo_queue                  = true
   content_based_deduplication = true
-  
+
   tags = local.tags
 }
 
@@ -424,7 +399,7 @@ module "codebuild_ci" {
         }, {
         name  = "FOLDER_PATH"
         value = "./application-code/ecsdemo-queue-proc/."
-        },
+      },
     ]
   }
 
@@ -475,25 +450,25 @@ module "codepipeline_ci_cd" {
         ProjectName = module.codebuild_ci.project_id
       }
     }],
-  }
-, {
-    name = "Deploy"
-    action = [{
-      name             = "Deploy_app"
-      category         = "Deploy"
-      owner            = "AWS"
-      provider         = "ECS"
-      version          = "1"
-      input_artifacts  = ["BuildArtifact_app"]
-      configuration = {
-        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-        ServiceName = module.ecs_service_definition.name
-        FileName    = "imagedefinitions.json"
-      }
+    }
+    , {
+      name = "Deploy"
+      action = [{
+        name            = "Deploy_app"
+        category        = "Deploy"
+        owner           = "AWS"
+        provider        = "ECS"
+        version         = "1"
+        input_artifacts = ["BuildArtifact_app"]
+        configuration = {
+          ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+          ServiceName = module.ecs_service_definition.name
+          FileName    = "imagedefinitions.json"
+        }
 
-    }],
-  }
-  
+      }],
+    }
+
   ]
 
   create_iam_role = true
@@ -507,14 +482,12 @@ module "codepipeline_ci_cd" {
 ################################################################################
 
 resource "aws_iam_role" "task" {
-  name               = "${local.name}-task"
-  assume_role_policy = data.aws_iam_policy_document.task.json
+  name                = "${local.name}-task"
+  assume_role_policy  = data.aws_iam_policy_document.task.json
   managed_policy_arns = ["arn:aws:iam::aws:policy/CloudWatchFullAccess"]
-  
+
   tags = local.tags
 }
-
-
 
 data "aws_iam_policy_document" "task" {
   statement {
@@ -569,21 +542,21 @@ data "aws_iam_policy_document" "task_role" {
 data "aws_iam_policy_document" "lambda_role" {
 
   statement {
-    sid       = "CWMetrics"
-    actions   = [
+    sid = "CWMetrics"
+    actions = [
       "cloudwatch:PutMetricData",
       "cloudwatch:GetMetricData"
     ]
     resources = ["*"]
   }
   statement {
-    sid       = "AppAutoscalingUpdate"
-    actions   = [
+    sid = "AppAutoscalingUpdate"
+    actions = [
       "application-autoscaling:PutScalingPolicy",
       "application-autoscaling:DescribeScalingPolicies"
     ]
     resources = ["*"]
-  }  
+  }
   statement {
     sid       = "IAMPassRole"
     actions   = ["iam:PassRole"]

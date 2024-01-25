@@ -8,7 +8,7 @@ This solution blueprint deploys an end to end data processing pipeline using ECS
 
 For latency-sensitive applications, [AWS guidance describes a common pattern](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-using-sqs-queue.html) that allows an ECS Service to scale in response to the backlog of an Amazon SQS queue while accounting for the average message processing duration (MPD) and the application’s desired latency.
 
-This blueprint expects samples messages to be available in the SQS Queue. The blueprint provisions a lambda which runs every minute via Event bridge rule with a cron expression. This Eventbridge rule is disabled by default. Once the workload is ready to test, you can enable it to start sending `50` messages to SQS Queue every 1 minute. 
+This blueprint expects samples messages to be available in the SQS Queue. The blueprint provisions a lambda which runs every minute via Event bridge rule with a cron expression. This Eventbridge rule is disabled by default. Once the workload is ready to test, you can enable it to start sending `50` messages to SQS Queue every 1 minute.
 
 Every message in the SQS Queue has a field to denote the message processes time in seconds. The ECS Task does the following Operations.
 
@@ -17,7 +17,7 @@ Every message in the SQS Queue has a field to denote the message processes time 
 3. delete the message from SQS Queue
 4. Publish a metric to CloudWatch with value of the message processing time
 
-The ECS Servie is scaled using Target Tracking using a custom metric. The custom metric is ecsBPI and is calculated as follows.
+The ECS Servie is scaled using Target Tracking using a custom metric. The custom metric is ecsBPI (ecs Backlog per instance) and is calculated as follows.
 
 ecsBPI =  ApproximateNumberOfMessages / no of ECS tasks
 
@@ -46,14 +46,14 @@ terraform apply -auto-approve
 ## Blueprint Architecture
 
 <p align="center">
-  <img src="../../../docs/ecs-scaling-arch.png"/>
+  <img src="../../../docs/ecs-sqs-scaling-arch.png"/>
 </p>
 
 The solutions has following key components:
 
 * Lambda function to send test message to the SQS Queue
 * SQS queue which holds the messages
-* Lambda function that runs every 1 hour to adjust the Targets for the Target Tracking Scaling policy. 
+* Lambda function that runs every 1 hour to adjust the Targets for the Target Tracking Scaling policy.
 * ECS Service whoch processes the message from SQS Queue by reading it and sleeping for MPD
 * CodePipeline to build and deploy the image to the ECS Cluster.
 
