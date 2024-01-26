@@ -71,21 +71,6 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
   role       = aws_iam_role.codepipeline_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "vpc_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonVPCFullAccess"  # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"  # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "ec2_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"  # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
 # CodePipeline
 resource "aws_codepipeline" "example_pipeline" {
   name     = "example-iac-pipeline"

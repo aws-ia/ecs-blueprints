@@ -74,8 +74,17 @@ resource "aws_iam_role" "codebuild_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild_policy_attachment" {
-  #policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"  # Attach a policy that provides necessary permissions
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codebuild_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_codebuild_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codebuild_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecr_codebuild_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"  # Attach a policy that provides necessary permissions
   role       = aws_iam_role.codebuild_role.name
 }
 

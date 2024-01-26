@@ -192,7 +192,6 @@ module "ecs_service_definition" {
   tags = local.tags
 }
 
-
 ################################################################################
 # Code Deploy 
 ################################################################################
@@ -232,9 +231,13 @@ resource "aws_iam_role" "codedeploy_service_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
-  #policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"  # Attach a policy that provides necessary permissions
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+resource "aws_iam_role_policy_attachment" "ecs_codedeploy_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+  role       = aws_iam_role.codedeploy_service_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_codedeploy_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
   role       = aws_iam_role.codedeploy_service_role.name
 }
 
