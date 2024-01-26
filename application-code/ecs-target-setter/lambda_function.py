@@ -24,7 +24,6 @@ config=Config(
 
 # Define session and resources
 session=boto3.Session()
-# sqs:session.resource('sqs', config=config)
 cloudwatch=session.client('cloudwatch', config=config, region_name='us-west-2')
 appautoscaling=boto3.client('application-autoscaling', config=config, region_name='us-west-2')
 
@@ -121,27 +120,73 @@ def lambda_handler(event, context):
     newTargetBPI =int(desiredLatency / msgProcessingDuration)
     print('New Target BPI is {}'.format(newTargetBPI))
 
-    # Get scaling policy of ASG
-    
-    print("ecs_sqs_app_scaling_policy_name={}".format(ecs_sqs_app_scaling_policy_name))
+    # Get aplication auto scaling policy of ECS
     
     response = appautoscaling.describe_scaling_policies(PolicyNames=[ecs_sqs_app_scaling_policy_name], ServiceNamespace='ecs')
-    policies =response.get('ScalingPolicies')  
-    #pprint(policies)
+    policies =response.get('ScalingPolicies') 
     policy=policies[0]
-    #print(policy)
+ 
 
     # Get target tracking config and update target value
     TargetTrackingConfig=policy.get('TargetTrackingScalingPolicyConfiguration')
-    #print(TargetTrackingConfig)
     TargetTrackingConfig['TargetValue'] = newTargetBPI
     TargetTrackingConfig['ScaleOutCooldown'] = 240
     TargetTrackingConfig['ScaleInCooldown'] = 240
-    
-    TargetTrackingConfig['CustomizedMetricSpecification']['MetricName'] = bpiMetricName
-    TargetTrackingConfig['CustomizedMetricSpecification']['Namespace'] = metricNamespace
-    TargetTrackingConfig['CustomizedMetricSpecification']['Statistic'] = 'Average'
 
+    customMetric = {
+            'Metrics': [
+                {
+                    'Id': 'm1',
+                    'Label': 'Get the queue size (the number of messages waiting to be processed)',
+                    'MetricStat': {
+                        'Metric': {
+                            'Dimensions': [
+                                {
+                                    'Name': 'QueueName',
+                                    'Value': queueName
+                                },
+                            ],
+                            'MetricName': 'ApproximateNumberOfMessagesVisible',
+                            'Namespace': 'AWS/SQS'
+                        },
+                        'Stat': 'Average'
+                    },
+                    'ReturnData': False
+                },
+                {
+                    'Id': 'm2',
+                    'Label': 'Get the ECS running task count (the number of currently running tasks)',
+                    'MetricStat': {
+                        'Metric': {
+                            'Dimensions': [
+                                {
+                                    'Name': 'ClusterName',
+                                    'Value': 'core-infra'
+                                },
+                                {
+                                    'Name': 'ServiceName',
+                                    'Value': 'ecsdemo-queue-proc3'
+                                },                                
+                            ],
+                            'MetricName': 'RunningTaskCount',
+                            'Namespace': 'ECS/ContainerInsights'
+                        },
+                        'Stat': 'Average'
+                    },
+                    'ReturnData': False
+                },
+                {
+                    'Id': 'm3',
+                    'Label': 'Calculate the backlog per instance',
+                    'Expression': 'm1 / m2',
+                    'ReturnData': True
+                },                
+            ]
+    }
+    
+    
+    TargetTrackingConfig['CustomizedMetricSpecification'] = customMetric
+    # Update scaling policy of ASG
     appautoscaling.put_scaling_policy(
         ServiceNamespace='ecs', 
         ResourceId=policy.get('ResourceId'),
@@ -154,3 +199,4 @@ def lambda_handler(event, context):
 
     # Publish new target BPI
     publishMetricValue(newTargetBPI)
+

@@ -43,9 +43,14 @@ output "lambda_function_target_bpi_update" {
   description = "lambda_function_target_bpi_update"
 }
 
-output "aws_cloudwatch_event_rule" {
+output "fargate_scaling_cw_event_rule_arn" {
   value       = aws_cloudwatch_event_rule.fargate_scaling.arn
-  description = "aws_cloudwatch_event_rule"
+  description = "fargate_scaling_cw_event_rule_arn"
+}
+
+output "sqs_message_producer_cw_event_rule_arn" {
+  value       = aws_cloudwatch_event_rule.sqs_message_producer.arn
+  description = "sqs_message_producer_cw_event_rule_arn"
 }
 
 
@@ -113,11 +118,6 @@ output "ecs_service_definition_name" {
   description = "ecs_service_definition_name"
 }
 
-output "autoscaling_policies" {
-  value       = module.ecs_service_definition.autoscaling_policies
-  description = "autoscaling_policies"
-}
-
 output "ecs_target" {
   value       = aws_appautoscaling_target.ecs_target.resource_id
   description = "ecs_target"
@@ -136,10 +136,4 @@ output "ecs_target_max" {
 output "ecs_sqs_app_scaling_policy_arn" {
   value       = aws_appautoscaling_policy.ecs_sqs_app_scaling_policy.arn
   description = "ecs_sqs_app_scaling_policy_arn"
-}
-
-
-output "ecs_sqs_app_scaling_policy" {
-  value       = aws_appautoscaling_policy.ecs_sqs_app_scaling_policy.target_tracking_scaling_policy_configuration
-  description = "ecs_sqs_app_scaling_policy"
 }
