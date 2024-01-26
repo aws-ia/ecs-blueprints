@@ -49,7 +49,7 @@ aws ssm start-session --target $HEAD_INSTANCE_ID --region us-west-2
 
 2. Connect to the container
 
-Due to the size of the container images, it might take several minutes until the containers reach a running state. The following command will fail if the container is not running.
+Due to the size of the container images, it might take several minutes until the containers reach a running state. The following command will fail if the contains is not running.
 
 ```
 CONTAINER_ID=$(sudo docker ps -qf "name=.*-rayhead-.*")
