@@ -2,14 +2,10 @@
 
 # terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-dev.tfstate" -backend-config="region=us-west-2" 
 # terraform apply -var-file=../dev.tfvars
-
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-dev.tfstate" -backend-config="region=us-west-2" 
 # terraform destroy -var-file=../dev.tfvars 
 
 # terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-qa.tfstate" -backend-config="region=us-west-2" 
 # terraform apply -var-file=../qa.tfvars 
-
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-qa.tfstate" -backend-config="region=us-west-2" 
 # terraform destroy -var-file=../qa.tfvars
 
 provider "aws" {

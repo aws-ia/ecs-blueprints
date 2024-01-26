@@ -86,10 +86,35 @@ Before deploying this example, ensure you have the following:
     git push origin main
     ```
 
-## Warning
+## Clean up
+
+Starting from the ECS-Blueprints/Terraform folder
+
+```
+cd cicd-examples/lb-service-container-pipeline/
+terraform init
+terraform destroy -var="s3_bucket=$STATE_BUCKET"
+```
+
+    
+```
+cd ../iac-pipeline
+terraform init
+terraform destroy -var="s3_bucket=$STATE_BUCKET"
+```
 
 
-**Note:** Delete or secure the AWS CodePipeline artifacts, IAM roles, and resources properly before or after using this example.
+```
+cd ../lb-service-external-state
+terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-dev.tfstate" -backend-config="region=us-west-2" -reconfigure
+terraform destroy -var-file=../dev.tfvars 
+```
+
+```
+terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2" 
+
+terraform destroy -var-file=../dev.tfvars 
+```
 
 For detailed information on AWS CodePipeline and ECS, refer to the [AWS documentation](https://docs.aws.amazon.com/).
 
