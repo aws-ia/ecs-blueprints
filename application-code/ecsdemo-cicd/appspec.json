@@ -1,0 +1,29 @@
+{
+    "version": 0.0,
+    "Resources": [
+      {
+        "TargetService": {
+          "Type": "AWS::ECS::Service",
+          "Properties": {
+            "TaskDefinition": "<PLACEHOLDER>",
+            "LoadBalancerInfo": {
+              "ContainerName": "fargate_task_container",
+              "ContainerPort": 80
+            },
+            "PlatformVersion": "LATEST",
+            "NetworkConfiguration": {
+              "awsvpcConfiguration": {
+                "subnets": [
+                  "<PLACEHOLDER>"
+                ],
+                "securityGroups": [
+                  "<PLACEHOLDER>"
+                ],
+                "assignPublicIp": "DISABLED"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }

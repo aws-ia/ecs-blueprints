@@ -1,0 +1,43 @@
+{
+    "family": "<PLACEHOLDER>",
+    "containerDefinitions": [
+        {
+            "portMappings": [
+                {
+                    "hostPort": 80,
+                    "protocol": "tcp",
+                    "containerPort": 80
+                }
+            ],
+            "image": "<PLACEHOLDER>",
+            "essential": true,
+            "name": "<PLACEHOLDER>",
+            "logConfiguration": {
+               "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "<PLACEHOLDER>",
+                    "awslogs-region": "<PLACEHOLDER>",
+                    "awslogs-stream-prefix": "<PLACEHOLDER>"
+                }
+            },
+            "privileged": false,
+            "linuxParameters": {
+               "capabilities": {
+                  "drop": [
+                    "SYS_ADMIN",
+                    "NET_ADMIN"
+                  ]
+                }
+            }
+        }
+    ],
+    "cpu": "<PLACEHOLDER>",
+    "memory": "<PLACEHOLDER>",
+    "taskRoleArn": "<PLACEHOLDER>",
+    "executionRoleArn": "<PLACEHOLDER>",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "networkMode": "awsvpc"
+}
+

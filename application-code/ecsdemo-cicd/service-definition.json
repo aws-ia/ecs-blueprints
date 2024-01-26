@@ -1,0 +1,28 @@
+{
+    "taskDefinition": "<PLACEHOLDER>",
+    "cluster": "default",
+    "loadBalancers": [
+        {
+            "targetGroupArn": "<PLACEHOLDER>",
+            "containerName": "<PLACEHOLDER>",
+            "containerPort": 80
+        }
+    ],
+    "desiredCount": 3,
+    "launchType": "FARGATE",
+    "schedulingStrategy": "REPLICA",
+    "deploymentController": {
+        "type": "CODE_DEPLOY"
+    },
+    "networkConfiguration": {
+        "awsvpcConfiguration": {
+            "subnets": [
+                "<PLACEHOLDER>"
+            ],
+            "securityGroups": [
+                "<PLACEHOLDER>"
+            ],
+            "assignPublicIp": "DISABLED"
+        }
+    }
+}

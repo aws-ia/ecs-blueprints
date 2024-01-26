@@ -20,18 +20,22 @@ variable "service_role" {
   type        = string
 }
 
-variable "environment" {
-  description = "CodeBuild environment configuration details. At least one attribute is required since `environment` is a required by CodeBuild"
-  type        = any
-  default = {
-    image = "aws/codebuild/standard:4.0"
-  }
+variable "compute_type" {
+  description = "Information about the compute resources the build project will use"
+  type        = string
+  default     = "BUILD_GENERAL1_SMALL"
 }
 
-variable "logs_config" {
-  description = "CodeBuild logs configuration details"
-  type        = any
-  default     = {}
+variable "build_image" {
+  description = "Docker image to use for this build project"
+  type        = string
+  default     = "aws/codebuild/standard:5.0"
+}
+
+variable "image_type" { 
+  description = "Type of build environment image"
+  type        = string
+  default     = "LINUX_CONTAINER"
 }
 
 variable "buildspec_path" {
@@ -65,14 +69,18 @@ variable "create_iam_role" {
 }
 
 variable "ecr_repository" {
-  description = "The ECR repositories to which grant IAM access"
+  description = "The ECR repositories ARN"
   type        = string
+}
+
+variable "ecr_repository_url" {
+  description = "The ECR repositories to which grant IAM access"
+  type        = string 
 }
 
 variable "s3_bucket" {
   description = "S3 bucket used for the artifact store"
-  type = object({
-    s3_bucket_id  = string
-    s3_bucket_arn = string
-  })
+  type = string
+  default = ""
 }
+
