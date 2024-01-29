@@ -28,6 +28,10 @@ Before deploying this example, ensure you have the following:
     cd ecs-blueprints
     ```
 
+2. Copy Git ignore to sub dir for future push.
+    ```bash
+    cp .gitignore ./terraform/.gitignore
+
 2. Deploy S3 bucket used for external state.
 
     ```bash
@@ -48,15 +52,8 @@ Before deploying this example, ensure you have the following:
     terraform init
     terraform apply -var="s3_bucket=$STATE_BUCKET"
     ```
-5. Deploy the CodePipeline which will build and deploy new containers.
 
-    ```bash
-    cd ../lb-service-container-pipeline
-    terraform init
-    terraform apply -var="s3_bucket=$STATE_BUCKET"
-    ```
-
-6. Commit Terraform code to IAC repository. This will deploy the VPC, ECS Cluster, Load Balancer, and ECS Service. This make take several minutes. 
+5. Commit Terraform code to IAC repository. This will deploy the VPC, ECS Cluster, Load Balancer, and ECS Service. This make take several minutes. 
 
     ```
     #Get IAC code commit repo
@@ -71,17 +68,25 @@ Before deploying this example, ensure you have the following:
     git push origin main
 
     ```
+6. Deploy the CodePipeline which will build and deploy new containers.
+
+    ```bash
+    cd ../lb-service-container-pipeline
+    terraform init
+    terraform apply -var="s3_bucket=$STATE_BUCKET"
+    ```
+
 7. Once the Pipeline has fully deployed the environment we can begin to CI/CD new containers. 
 
     ```
     # CD to sample app director
     cd ../application-code/ecsdemo-cicd/
 
-    #Get IAC code commit repo
+    #Get Application code commit repo
     aws codecommit get-repository --repository-name iac_sample_repo --query 'repositoryMetadata.cloneUrlHttp'
 
     git init 
-    git remote add origin YOUR_CODE_COMMIT_IAC_REPO
+    git remote add origin YOUR_CODE_COMMIT_APP_REPO
     git commit -m "initial application deployment"
     git push origin main
     ```
@@ -92,14 +97,12 @@ Starting from the ECS-Blueprints/Terraform folder
 
 ```
 cd cicd-examples/lb-service-container-pipeline/
-terraform init
 terraform destroy -var="s3_bucket=$STATE_BUCKET"
 ```
 
     
 ```
 cd ../iac-pipeline
-terraform init
 terraform destroy -var="s3_bucket=$STATE_BUCKET"
 ```
 
@@ -111,8 +114,8 @@ terraform destroy -var-file=../dev.tfvars
 ```
 
 ```
-terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2" 
-
+cd ../core-infra-external-state
+terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2" -reconfigure 
 terraform destroy -var-file=../dev.tfvars 
 ```
 

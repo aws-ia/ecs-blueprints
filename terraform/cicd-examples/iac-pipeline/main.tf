@@ -14,6 +14,10 @@ resource "aws_codecommit_repository" "example_repo" {
   repository_name = "iac_sample_repo"
 }
 
+################################################################################
+# CodeBuild Modules to Deploy Terraform IAC
+################################################################################
+
 module "deploy_dev_core_infra" {
   source = "../../modules/codebuild-iac"
   iam_role_name = "deploy_dev_core_infra"
@@ -48,7 +52,10 @@ module "deploy_qa_lb_service" {
 }
 */
 
-#IAM role for Code Pipeline 
+################################################################################
+# CodePipeline Permissions
+################################################################################
+
 resource "aws_iam_role" "codepipeline_role" {
   name = "codepipeline-role"
   
@@ -71,7 +78,30 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
   role       = aws_iam_role.codepipeline_role.name
 }
 
+resource "aws_iam_role_policy_attachment" "codecommit_codepipeline_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codepipeline_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "s3_codepipeline_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codepipeline_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "codebuild_codepipeline_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codepipeline_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_codepipeline_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"  # Attach a policy that provides necessary permissions
+  role       = aws_iam_role.codepipeline_role.name
+}
+
+################################################################################
 # CodePipeline
+################################################################################
+
 resource "aws_codepipeline" "example_pipeline" {
   name     = "example-iac-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
