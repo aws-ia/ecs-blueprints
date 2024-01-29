@@ -1,12 +1,3 @@
-terraform apply -var-file=dev.tfvars -state-out=dev.tfstate
-terraform apply -var-file=qa.tfvars -state-out=qa.tfstate
-
-terraform destroy -var-file=dev.tfvars -state=dev.tfstate
-terraform destroy -var-file=qa.tfvars -state=qa.tfstate
-
-aws ecs list-clusters --region us-west-2
-aws ecs list-clusters --region us-east-1
-
 # Core Infrastructure
 This folder contains the Terraform code to deploy the core infratructure for an ECS Fargate workload. The AWS resources created by the script are:
 * Networking
