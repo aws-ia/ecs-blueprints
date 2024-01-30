@@ -1,7 +1,7 @@
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
-  default     = "jalawala"
+  default     = "aws-ia"
 }
 
 variable "repository_name" {
