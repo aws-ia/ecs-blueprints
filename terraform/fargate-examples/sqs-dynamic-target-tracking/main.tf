@@ -381,7 +381,7 @@ module "codebuild_ci" {
 
   name           = "codebuild-${local.name}"
   service_role   = module.codebuild_ci.codebuild_role_arn
-  buildspec_path = "./application-code/container-queue-proc/templates/buildspec.yml"
+  buildspec_path = "./application-code/ecsdemo-queue-proc/templates/buildspec.yml"
   s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
