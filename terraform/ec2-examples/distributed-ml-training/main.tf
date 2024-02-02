@@ -128,11 +128,6 @@ module "autoscaling_head" {
   }
 
   tags = local.tags
-
-  metadata_options = {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
 }
 
 module "autoscaling_workers" {
@@ -182,11 +177,6 @@ module "autoscaling_workers" {
   ]
 
   tags = local.tags
-
-  metadata_options = {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
-  }
 }
 
 module "autoscaling_sg" {
