@@ -236,7 +236,7 @@ resource "aws_iam_role_policy_attachment" "ecs_codedeploy_policy_attachment" {
   role       = aws_iam_role.codedeploy_service_role.name
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_codedeploy_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "codedeploy_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
   role       = aws_iam_role.codedeploy_service_role.name
 }
