@@ -144,9 +144,7 @@ Wrapping provided model in DistributedDataParallel.
 
 Result(
   metrics={'loss': 0.4192830347106792, 'accuracy': 0.8852},
-  path='dt-results-EXAMPLE/ecs_dt_results/TorchTrainer_d1824_00000_0_(...)',
-  filesystem='s3',
-  checkpoint=None
+  (...)
 )
 ```
 
@@ -165,6 +163,11 @@ cd ../core-infra
 terraform destroy
 
 ```
+
+## Troubleshooting
+
+* Error: creating ECS Service (...): InvalidParameterException: The specified capacity provider (...) was not found: There are some cases where the capacity provider is still being created and is not ready to be used by a service. Execute "terraform apply" again to solve the issue.
+
 
 ## Support
 
