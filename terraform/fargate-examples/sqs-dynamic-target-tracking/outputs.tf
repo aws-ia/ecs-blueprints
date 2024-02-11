@@ -1,8 +1,3 @@
-output "container_image_ecr_url" {
-  value       = module.container_image_ecr.repository_url
-  description = "container_image_ecr_url"
-}
-
 output "lambda_function_message_producer" {
   value       = module.lambda_function_message_producer.lambda_function_arn
   description = "lambda_function_message_producer"

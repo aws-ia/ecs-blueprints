@@ -110,8 +110,6 @@ module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
   version = "~> 5.6"
 
-  deployment_controller = "ECS"
-
   name               = local.name
   desired_count      = 1
   cluster_arn        = data.aws_ecs_cluster.core_infra.arn
@@ -466,23 +464,21 @@ module "codepipeline_ci_cd" {
         ProjectName = module.codebuild_ci.project_id
       }
     }],
-    }
-    , {
-      name = "Deploy"
-      action = [{
-        name            = "Deploy_app"
-        category        = "Deploy"
-        owner           = "AWS"
-        provider        = "ECS"
-        version         = "1"
-        input_artifacts = ["BuildArtifact_app"]
-        configuration = {
-          ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-          ServiceName = module.ecs_service.name
-          FileName    = "imagedefinitions.json"
-        }
-
-      }],
+    }, {
+    name = "Deploy"
+    action = [{
+      name            = "Deploy_app"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["BuildArtifact_app"]
+      configuration = {
+        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ServiceName = module.ecs_service.name
+        FileName    = "imagedefinitions.json"
+      }
+    }],
     }
 
   ]
