@@ -55,7 +55,7 @@ def publishMetricValue(metricValue):
                     {
                         'Name': 'QueueName',
                         'Value': queueName
-                    }                    
+                    }
                 ],
                 'StorageResolution': 1
             }
@@ -79,8 +79,8 @@ def getMetricValue(metricNamespace, metricName):
                         {
                             'Name': 'QueueName',
                             'Value': queueName
-                        },                        
-                    ]                
+                        },
+                    ]
             },
             'Period': 1,
             'Stat': 'Average',
@@ -92,22 +92,22 @@ def getMetricValue(metricNamespace, metricName):
         StartTime=datetime.now(timezone.utc) - timedelta(seconds=86400),
         EndTime=datetime.now(timezone.utc),
     )
-    
+
     #print(response)
-    
-    if not response.get('MetricDataResults')[0].get('Values'): 
+
+    if not response.get('MetricDataResults')[0].get('Values'):
         msgProcessingDuration=defaultMsgProcDuration
-    else: 
+    else:
         values = response.get('MetricDataResults')[0].get('Values')
         total = sum(values)
         count = len(values)
         msgProcessingDuration =  total / count
         print("count={} total={} msgProcessingDuration={}".format(count, total, msgProcessingDuration))
         msgProcessingDuration=response.get('MetricDataResults')[0].get('Values')[0]
-        
-    # Return 
+
+    # Return
     return msgProcessingDuration
-    
+
 
 
 def lambda_handler(event, context):
@@ -121,11 +121,11 @@ def lambda_handler(event, context):
     print('New Target BPI is {}'.format(newTargetBPI))
 
     # Get aplication auto scaling policy of ECS
-    
+
     response = appautoscaling.describe_scaling_policies(PolicyNames=[ecs_sqs_app_scaling_policy_name], ServiceNamespace='ecs')
-    policies =response.get('ScalingPolicies') 
+    policies =response.get('ScalingPolicies')
     policy=policies[0]
- 
+
 
     # Get target tracking config and update target value
     TargetTrackingConfig=policy.get('TargetTrackingScalingPolicyConfiguration')
@@ -166,7 +166,7 @@ def lambda_handler(event, context):
                                 {
                                     'Name': 'ServiceName',
                                     'Value': 'ecsdemo-queue-proc3'
-                                },                                
+                                },
                             ],
                             'MetricName': 'RunningTaskCount',
                             'Namespace': 'ECS/ContainerInsights'
@@ -180,23 +180,22 @@ def lambda_handler(event, context):
                     'Label': 'Calculate the backlog per instance',
                     'Expression': 'm1 / m2',
                     'ReturnData': True
-                },                
+                },
             ]
     }
-    
-    
+
+
     TargetTrackingConfig['CustomizedMetricSpecification'] = customMetric
     # Update scaling policy of ASG
     appautoscaling.put_scaling_policy(
-        ServiceNamespace='ecs', 
+        ServiceNamespace='ecs',
         ResourceId=policy.get('ResourceId'),
         ScalableDimension=policy.get('ScalableDimension'),
         PolicyName=policy.get('PolicyName'),
         PolicyType=policy.get('PolicyType'),
-        TargetTrackingScalingPolicyConfiguration=TargetTrackingConfig        
-    )    
+        TargetTrackingScalingPolicyConfiguration=TargetTrackingConfig
+    )
     print('Scaling policy of ECS has been successfully updated!')
 
     # Publish new target BPI
     publishMetricValue(newTargetBPI)
-
