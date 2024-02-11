@@ -1,10 +1,6 @@
-
-# Import modules
 import boto3
 import os
-from pprint import pprint
 import logging
-from botocore.exceptions import ClientError
 from botocore.config import Config
 from datetime import datetime
 from datetime import timedelta
@@ -92,8 +88,6 @@ def getMetricValue(metricNamespace, metricName):
         StartTime=datetime.now(timezone.utc) - timedelta(seconds=86400),
         EndTime=datetime.now(timezone.utc),
     )
-
-    #print(response)
 
     if not response.get('MetricDataResults')[0].get('Values'):
         msgProcessingDuration=defaultMsgProcDuration

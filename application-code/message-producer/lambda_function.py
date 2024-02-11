@@ -1,14 +1,9 @@
 
-# Import modules
 import boto3
-import os
-import random
 import os
 import struct
 import json
-from pprint import pprint
 import logging
-from botocore.exceptions import ClientError
 from botocore.config import Config
 
 # Create logger

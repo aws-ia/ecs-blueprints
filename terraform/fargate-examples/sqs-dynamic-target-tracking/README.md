@@ -144,7 +144,3 @@ task_aws_iam_role = "arn:aws:iam::ACCOUNT_ID:role/ecsdemo-queue-proc3-task"
 <p align="center">
   <img src="../../../docs/ecs_auto_scaling.png"/>
 </p>
-
-
-
-

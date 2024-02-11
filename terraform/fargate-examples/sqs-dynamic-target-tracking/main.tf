@@ -28,9 +28,9 @@ module "container_image_ecr" {
 
   repository_name = local.container_name
 
-  repository_force_delete     = true
-  create_lifecycle_policy     = false
-  repository_read_access_arns = [sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]]
+  repository_force_delete           = true
+  create_lifecycle_policy           = false
+  repository_read_access_arns       = [sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]]
   repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
@@ -186,9 +186,9 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
       }
 
       metrics {
-        label      = "Calculate the backlog per instance"
-        id         = "e1"
-        expression = "m1 / m2"
+        label       = "Calculate the backlog per instance"
+        id          = "e1"
+        expression  = "m1 / m2"
         return_data = true
       }
     }

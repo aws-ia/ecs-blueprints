@@ -4,7 +4,6 @@ import boto3
 import os
 import json
 import time
-from pprint import pprint
 import logging
 from botocore.exceptions import ClientError
 from botocore.config import Config
