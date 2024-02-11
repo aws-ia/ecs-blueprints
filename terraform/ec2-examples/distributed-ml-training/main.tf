@@ -228,7 +228,7 @@ module "ecs_service_head" {
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
-      capacity_provider = "distributed_ml_training_head" # needs to match name of capacity provider
+      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["distributed_ml_training_head"].name # needs to match name of capacity provider
       weight            = 1
       base              = 1
     }
@@ -324,7 +324,7 @@ module "ecs_service_workers" {
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
-      capacity_provider = "distributed_ml_training_workers" # needs to match name of capacity provider
+      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["distributed_ml_training_workers"].name # needs to match name of capacity provider
       weight            = 1
       base              = 1
     }

@@ -44,7 +44,7 @@ def train_func(config):
     # Setup loss and optimizer
     criterion = CrossEntropyLoss()
     optimizer = Adam(model.parameters(), lr=0.001)
-    
+
     # Prepare data
     transform = Compose([ToTensor(), Normalize((0.5,), (0.5,))])
     with FileLock(os.path.expanduser("./data.lock")):
@@ -83,14 +83,14 @@ def train_func(config):
 
                 test_loss /= len(test_loader)
                 accuracy = num_correct / num_total
-                
+
                 # Save the checkpoint
                 with tempfile.TemporaryDirectory() as temp_checkpoint_dir:
                     checkpoint = None
                     # Only the global rank 0 worker saves the checkpoint
                     if ray.train.get_context().get_world_rank() == 0:
                         torch.save(
-                            model.module.state_dict(), 
+                            model.module.state_dict(),
                             os.path.join(temp_checkpoint_dir, "model.pt"),
                         )
                         checkpoint = ray.train.Checkpoint.from_directory(os.path.join(temp_checkpoint_dir, "model.pt"))
