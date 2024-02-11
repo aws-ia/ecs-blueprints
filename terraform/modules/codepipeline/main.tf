@@ -190,7 +190,8 @@ data "aws_iam_policy_document" "this" {
       "ecs:StopTask",
       "ecs:UpdateService",
       "ecs:UpdateCluster",
-      "ecs:UpdateTaskSet"
+      "ecs:UpdateTaskSet",
+      "ecs:TagResource"
     ]
     resources = ["*"]
   }
