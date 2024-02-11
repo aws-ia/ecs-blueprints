@@ -281,7 +281,7 @@ resource "aws_cloudwatch_event_rule" "fargate_scaling" {
   description         = "This rule is used for update ECS Autoscaling Target BPI"
   schedule_expression = "rate(60 minutes)"
 
-  is_enabled = false
+  state = "DISABLED"
 
   tags = local.tags
 }
@@ -296,7 +296,7 @@ resource "aws_cloudwatch_event_rule" "sqs_message_producer" {
   description         = "This rule is used for Send Messages to SQS Queue for testing"
   schedule_expression = "rate(1 minute)"
 
-  is_enabled = false
+  state = "DISABLED"
 
   tags = local.tags
 }
