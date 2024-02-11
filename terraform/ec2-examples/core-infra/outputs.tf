@@ -50,16 +50,6 @@ output "cluster_autoscaling_capacity_providers" {
   value       = module.ecs_cluster.autoscaling_capacity_providers
 }
 
-output "ecs_task_execution_role_name" {
-  description = "The ARN of the task execution role"
-  value       = module.ecs_cluster.task_exec_iam_role_name
-}
-
-output "ecs_task_execution_role_arn" {
-  description = "The ARN of the task execution role"
-  value       = module.ecs_cluster.task_exec_iam_role_arn
-}
-
 output "service_discovery_namespaces" {
   description = "Service discovery namespaces already available"
   value       = aws_service_discovery_private_dns_namespace.this
