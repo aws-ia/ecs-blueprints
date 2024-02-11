@@ -1,8 +1,29 @@
 provider "aws" {
-  region = local.region
+  region = "us-west-2"
 }
 
 data "aws_caller_identity" "current" {}
+
+locals {
+  name   = "ecsdemo-queue"
+  region = "us-west-2"
+
+  container_name = "ecsdemo-queue"
+
+  scaling_policy_name       = "ecs_sqs_scaling"
+  desired_latency           = 60
+  default_msg_proc_duration = 5
+  number_of_messages        = 50
+  app_metric_name           = "MsgProcessingDuration"
+  bpi_metric_name           = "ecsTargetBPI"
+  metric_type               = "Single-Queue"
+  metric_namespace          = "ECS-SQS-BPI"
+
+  tags = {
+    Blueprint  = local.name
+    GithubRepo = "github.com/aws-ia/ecs-blueprints"
+  }
+}
 
 ################################################################################
 # ECS Blueprint
@@ -10,7 +31,7 @@ data "aws_caller_identity" "current" {}
 
 module "service_task_security_group" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  version = "~> 5.0"
 
   name        = "${local.name}-task-sg"
   description = "Security group for task"
@@ -24,7 +45,7 @@ module "service_task_security_group" {
 
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
-  version = "~> 1.4"
+  version = "~> 1.6"
 
   repository_name = local.container_name
 
@@ -51,7 +72,7 @@ resource "aws_ecs_task_definition" "this" {
       environment = [
         {
           name  = "queue_name",
-          value = module.processing_queue.this_sqs_queue_name
+          value = module.processing_queue.queue_name
         },
         {
           name  = "app_metric_name",
@@ -87,7 +108,7 @@ resource "aws_ecs_task_definition" "this" {
 
 module "ecs_service_definition" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.2.2"
+  version = "~> 5.6"
 
   deployment_controller = "ECS"
 
@@ -149,7 +170,7 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
 
             dimensions {
               name  = "QueueName"
-              value = module.processing_queue.this_sqs_queue_name
+              value = module.processing_queue.queue_name
             }
           }
 
@@ -220,7 +241,7 @@ module "lambda_function_message_producer" {
   source_path        = "../../../application-code/message-producer/"
 
   environment_variables = {
-    queue_name                = module.processing_queue.this_sqs_queue_name
+    queue_name                = module.processing_queue.queue_name
     default_msg_proc_duration = local.default_msg_proc_duration
     number_of_messages        = local.number_of_messages
   }
@@ -251,7 +272,7 @@ module "lambda_function_target_bpi_update" {
 
   environment_variables = {
     scaling_policy_name       = local.scaling_policy_name
-    queue_name                = module.processing_queue.this_sqs_queue_name
+    queue_name                = module.processing_queue.queue_name
     app_metric_name           = local.app_metric_name
     metric_type               = local.metric_type
     metric_namespace          = local.metric_namespace
@@ -314,9 +335,9 @@ resource "aws_cloudwatch_event_target" "sqs_message_producer_lambda_function" {
 
 module "processing_queue" {
   source  = "terraform-aws-modules/sqs/aws"
-  version = "~> 2.0"
+  version = "~> 4.0"
 
-  name                        = "${local.name}-processing-queue.fifo"
+  name                        = "${local.name}-processing-queue-fifo"
   fifo_queue                  = true
   content_based_deduplication = true
 
@@ -329,7 +350,7 @@ module "processing_queue" {
 
 module "codepipeline_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 3.0"
+  version = "~> 3.15"
 
   bucket = "codepipeline-${local.region}-${random_id.this.hex}"
 
@@ -524,7 +545,7 @@ data "aws_iam_policy_document" "task_role" {
       "sqs:GetQueueUrl",
       "sqs:ReceiveMessage"
     ]
-    resources = [module.processing_queue.this_sqs_queue_arn]
+    resources = [module.processing_queue.queue_arn]
   }
   statement {
     sid = "SSMRead"
@@ -574,7 +595,7 @@ data "aws_iam_policy_document" "lambda_role" {
       "sqs:GetQueueUrl",
       "sqs:ReceiveMessage"
     ]
-    resources = [module.processing_queue.this_sqs_queue_arn]
+    resources = [module.processing_queue.queue_arn]
 
   }
   statement {
