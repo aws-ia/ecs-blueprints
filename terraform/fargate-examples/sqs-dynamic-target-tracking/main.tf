@@ -106,13 +106,13 @@ resource "aws_ecs_task_definition" "this" {
   tags = local.tags
 }
 
-module "ecs_service_definition" {
+module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
   version = "~> 5.6"
 
   deployment_controller = "ECS"
 
-  name               = local.container_name
+  name               = local.name
   desired_count      = 1
   cluster_arn        = data.aws_ecs_cluster.core_infra.arn
   enable_autoscaling = false
@@ -140,7 +140,7 @@ module "ecs_service_definition" {
 resource "aws_appautoscaling_target" "ecs_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${data.aws_ecs_cluster.core_infra.cluster_name}/${module.ecs_service_definition.name}"
+  resource_id        = "service/${data.aws_ecs_cluster.core_infra.cluster_name}/${module.ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
@@ -196,7 +196,7 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
 
             dimensions {
               name  = "ServiceName"
-              value = module.ecs_service_definition.name
+              value = module.ecs_service.name
             }
           }
 
@@ -360,11 +360,6 @@ module "codepipeline_s3_bucket" {
   attach_deny_insecure_transport_policy = true
   attach_require_latest_tls_policy      = true
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-
   server_side_encryption_configuration = {
     rule = {
       apply_server_side_encryption_by_default = {
@@ -483,7 +478,7 @@ module "codepipeline_ci_cd" {
         input_artifacts = ["BuildArtifact_app"]
         configuration = {
           ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
-          ServiceName = module.ecs_service_definition.name
+          ServiceName = module.ecs_service.name
           FileName    = "imagedefinitions.json"
         }
 
