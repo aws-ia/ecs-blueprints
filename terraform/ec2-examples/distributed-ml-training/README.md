@@ -144,9 +144,7 @@ Wrapping provided model in DistributedDataParallel.
 
 Result(
   metrics={'loss': 0.4192830347106792, 'accuracy': 0.8852},
-  path='dt-results-EXAMPLE/ecs_dt_results/TorchTrainer_d1824_00000_0_(...)',
-  filesystem='s3',
-  checkpoint=None
+  (...)
 )
 ```
 
@@ -165,6 +163,12 @@ cd ../core-infra
 terraform destroy
 
 ```
+
+## Troubleshooting
+
+* Error: creating ECS Service (...): InvalidParameterException: The specified capacity provider (...) was not found: There are some cases where the capacity provider is still being created and is not ready to be used by a service. Execute "terraform apply" again to solve the issue.
+
+* Error: waiting for ECS Service (...) delete: timeout while waiting for state to become 'INACTIVE' (last state: 'DRAINING', timeout: 20m0s): It can take several minutes for the service to finish draining. Wait 30 minutes and execute "terraform destroy" again to solve the issue.
 
 ## Support
 
