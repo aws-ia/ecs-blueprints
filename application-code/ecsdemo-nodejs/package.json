@@ -10,7 +10,7 @@
 		"express": "^4.18.2",
 		"express-healthcheck": "^0.1.0",
 		"internal-ip": "^3.0.1",
-		"ip": "^1.1.5",
+		"ip": "^1.1.9",
 		"morgan": "^1.10.0"
 	},
 	"devDependencies": {
