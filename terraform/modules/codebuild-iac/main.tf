@@ -3,7 +3,7 @@
 # IAM role for role for code build
 resource "aws_iam_role" "this" {
   name = var.iam_role_name
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -25,8 +25,8 @@ resource "aws_iam_policy" "codebuild_all_permissions" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
-        Action    = [
+        Effect = "Allow",
+        Action = [
           "ssm:GetParameter",
           "ssm:GetParameters",
           "ssm:PutParameter",
@@ -83,7 +83,7 @@ resource "aws_iam_policy" "codebuild_all_permissions" {
           "s3:ListAllMyBuckets",
           "s3:GetBucketLocation",
         ],
-        Resource  = "*",
+        Resource = "*",
       },
     ],
   })
@@ -95,7 +95,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_all_permissions_attachment"
 }
 # CodeBuild project
 resource "aws_codebuild_project" "this" {
-  name = var.name
+  name         = var.name
   service_role = aws_iam_role.this.arn
 
   artifacts {
@@ -109,7 +109,7 @@ resource "aws_codebuild_project" "this" {
   }
 
   source {
-    type = "CODEPIPELINE"
+    type      = "CODEPIPELINE"
     buildspec = file(var.buildspec_path)
   }
 

@@ -1,11 +1,11 @@
 
 # STATE_BUCKET=$(aws ssm get-parameters --names terraform_state_bucket | jq -r '.Parameters[0].Value')
 
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2" 
+# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2"
 # terraform apply -var-file=../dev.tfvars
 # terraform destroy -var-file=../dev.tfvars
 
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-qa.tfstate" -backend-config="region=us-west-2" 
+# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-qa.tfstate" -backend-config="region=us-west-2"
 # terraform apply -var-file=../qa.tfvars
 # terraform destroy -var-file=../qa.tfvars
 
@@ -22,13 +22,13 @@ data "aws_availability_zones" "available" {}
 data "aws_caller_identity" "current" {}
 
 locals {
-  name   = basename(path.cwd)
+  name     = basename(path.cwd)
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
 
   tags = {
-    Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/ecs-blueprints"
+    Blueprint   = local.name
+    GithubRepo  = "github.com/aws-ia/ecs-blueprints"
     Environment = var.environment
   }
 }

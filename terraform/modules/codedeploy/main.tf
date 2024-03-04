@@ -75,28 +75,6 @@ resource "aws_codedeploy_deployment_group" "this" {
 }
 
 ################################################################################
-# Parameter Store
-################################################################################
-
-# CodeDeploy Application Parameter
-resource "aws_ssm_parameter" "codedeploy_app" {
-  name  = "/codedeploy/app/${var.name}"
-  type  = "String"
-  value = aws_codedeploy_app.this.name
-
-  tags = var.tags
-}
-
-# CodeDeploy Deployment Group Parameter
-resource "aws_ssm_parameter" "deployment_group" {
-  name  = "/codedeploy/deployment-group/${var.name}"
-  type  = "String"
-  value = aws_codedeploy_deployment_group.this.deployment_group_name
-
-  tags = var.tags
-}
-
-################################################################################
 # IAM
 ################################################################################
 

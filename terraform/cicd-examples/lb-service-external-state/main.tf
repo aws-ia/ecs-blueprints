@@ -1,11 +1,11 @@
 # STATE_BUCKET=$(aws ssm get-parameters --names terraform_state_bucket | jq -r '.Parameters[0].Value')
 
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-dev.tfstate" -backend-config="region=us-west-2" 
+# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-dev.tfstate" -backend-config="region=us-west-2"
 # terraform apply -var-file=../dev.tfvars
-# terraform destroy -var-file=../dev.tfvars 
+# terraform destroy -var-file=../dev.tfvars
 
-# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-qa.tfstate" -backend-config="region=us-west-2" 
-# terraform apply -var-file=../qa.tfvars 
+# terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=lb-service-qa.tfstate" -backend-config="region=us-west-2"
+# terraform apply -var-file=../qa.tfvars
 # terraform destroy -var-file=../qa.tfvars
 
 provider "aws" {
@@ -18,11 +18,11 @@ terraform {
 }
 
 locals {
-  name   = "ecsdemo-frontend"
+  name = "ecsdemo-frontend"
 
   tags = {
-    Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/ecs-blueprints"
+    Blueprint   = local.name
+    GithubRepo  = "github.com/aws-ia/ecs-blueprints"
     Environment = var.environment
   }
 }
@@ -168,7 +168,7 @@ module "ecs_service_definition" {
   # }
 
   # Task Definition
-  create_iam_role        = false
+  create_iam_role           = false
   create_task_exec_iam_role = true
   #task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
   enable_execute_command = true
@@ -193,7 +193,7 @@ module "ecs_service_definition" {
 }
 
 ################################################################################
-# Code Deploy 
+# Code Deploy
 ################################################################################
 
 resource "aws_sns_topic" "deployment_notificaitons" {
@@ -201,22 +201,22 @@ resource "aws_sns_topic" "deployment_notificaitons" {
 }
 
 module "deploy_dev_service" {
-  source = "../../modules/codedeploy"
-  name = "deploy_${var.environment}_${local.name}"
-  ecs_cluster = data.aws_ecs_cluster.core_infra.cluster_name
-  ecs_service = local.name
-  sns_topic_arn = aws_sns_topic.deployment_notificaitons.arn
-  iam_role_name = "deploy_${var.environment}_${local.name}"
+  source          = "../../modules/codedeploy"
+  name            = "deploy_${var.environment}_${local.name}"
+  ecs_cluster     = data.aws_ecs_cluster.core_infra.cluster_name
+  ecs_service     = local.name
+  sns_topic_arn   = aws_sns_topic.deployment_notificaitons.arn
+  iam_role_name   = "deploy_${var.environment}_${local.name}"
   create_iam_role = true
-  service_role = aws_iam_role.codedeploy_service_role.arn
-  alb_listener = module.service_alb.http_tcp_listener_arns[0]
-  tg_blue = "${local.name}-green-tg"
-  tg_green = "${local.name}-blue-tg"
+  service_role    = aws_iam_role.codedeploy_service_role.arn
+  alb_listener    = module.service_alb.http_tcp_listener_arns[0]
+  tg_blue         = "${local.name}-green-tg"
+  tg_green        = "${local.name}-blue-tg"
 }
 
 resource "aws_iam_role" "codedeploy_service_role" {
   name = "codedeploy-service-role"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -250,7 +250,7 @@ data "aws_vpc" "vpc" {
     name   = "tag:Name"
     values = ["core-infra"]
   }
-  
+
   filter {
     name   = "tag:Environment"
     values = [var.environment]

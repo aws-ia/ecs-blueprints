@@ -3,15 +3,20 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "terraform_state_bucket" {
-
-  acl    = "private"  # Set the bucket ACL as per your security requirements
-
-  versioning {
-    enabled = true  # Enable versioning for Terraform state file history
-  }
-
   tags = {
-    Name        = "TerraformStateBucket"
+    Name = "TerraformStateBucket"
+  }
+}
+
+resource "aws_s3_bucket_acl" "terraform_state_bucket" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_versioning" "terraform_state_bucket" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 

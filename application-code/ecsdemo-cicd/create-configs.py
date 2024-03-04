@@ -17,14 +17,14 @@ cluster_name = sys.argv[2]
 #input ecs service name
 service_name = sys.argv[3]
 
-#input app environment 
+#input app environment
 app_environment = sys.argv[4]
 
-#input region 
+#input region
 region = sys.argv[5]
 
 ################################################################################
-# AppSpec 
+# AppSpec
 ################################################################################
 
 # AWS ECS client

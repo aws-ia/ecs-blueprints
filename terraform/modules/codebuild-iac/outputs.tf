@@ -1,4 +1,4 @@
-output "ProjectName" {
+output "project_id" {
   description = "value"
-  value = aws_codebuild_project.this.name
+  value       = aws_codebuild_project.this.id
 }

@@ -16,6 +16,6 @@ phases:
     commands:
       - echo "build command"
       - STATE_BUCKET=$(aws ssm get-parameters --names terraform_state_bucket | jq -r '.Parameters[0].Value')
-      - cd cicd-examples/core-infra-external-state  
-      - terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2" 
+      - cd cicd-examples/core-infra-external-state
+      - terraform init -backend-config="bucket=$STATE_BUCKET" -backend-config="key=core-infra-dev.tfstate" -backend-config="region=us-west-2"
       - terraform apply -var-file=../dev.tfvars -auto-approve
