@@ -2,23 +2,19 @@ provider "aws" {
   region = var.region
 }
 
-data "aws_s3_bucket" "example" {
-  bucket = var.s3_bucket
-}
-
 ################################################################################
 # Parameter Store
 ################################################################################
 
-# CodeDeploy Application Parameter
-data "aws_ssm_parameter" "codedeploy_app" {
-  name = "/codedeploy/app/deploy_development_ecsdemo-frontend"
-}
+# # CodeDeploy Application Parameter
+# data "aws_ssm_parameter" "codedeploy_app" {
+#   name = "/codedeploy/app/deploy_development_ecsdemo-frontend"
+# }
 
-# CodeDeploy Deployment Group Parameter
-data "aws_ssm_parameter" "deployment_group" {
-  name = "/codedeploy/deployment-group/deploy_development_ecsdemo-frontend"
-}
+# # CodeDeploy Deployment Group Parameter
+# data "aws_ssm_parameter" "deployment_group" {
+#   name = "/codedeploy/deployment-group/deploy_development_ecsdemo-frontend"
+# }
 
 ################################################################################
 # ECR and Git Repositories
@@ -178,13 +174,35 @@ resource "random_id" "this" {
   byte_length = 8
 }
 
+module "codepipeline_s3_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 3.15"
+
+  bucket_prefix = "codepipeline-${var.region}-"
+  # acl           = "private"
+
+  # For example only - please re-evaluate for your environment
+  force_destroy = true
+
+  attach_deny_insecure_transport_policy = true
+  attach_require_latest_tls_policy      = true
+
+  server_side_encryption_configuration = {
+    rule = {
+      apply_server_side_encryption_by_default = {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
 module "build_container" {
   source = "../../modules/codebuild"
 
   name           = "dev-lb-service-codebuild"
   service_role   = aws_iam_role.codebuild_role.arn
-  buildspec_path = "../../../application-code/ecsdemo-cicd/buildspec.yml"
-  s3_bucket      = data.aws_s3_bucket.example.id
+  buildspec_path = "./buildspec-cicd.yml"
+  s3_bucket      = module.codepipeline_s3_bucket
 
   environment = {
     image           = "aws/codebuild/standard:5.0"
@@ -198,7 +216,7 @@ module "build_container" {
   }
 
   create_iam_role = true
-  iam_role_name   = "dev-lb-service-build-codebuild-${random_id.this.hex}"
+  iam_role_name   = "dev-codebuild-${random_id.this.hex}"
   ecr_repository  = aws_ecr_repository.example_repo.arn
 }
 
@@ -211,7 +229,7 @@ resource "aws_codepipeline" "example_applicaiton_pipeline" {
   role_arn = aws_iam_role.codepipeline_role.arn
 
   artifact_store {
-    location = data.aws_s3_bucket.example.bucket
+    location = module.codepipeline_s3_bucket.s3_bucket_id
     type     = "S3"
   }
 
@@ -263,8 +281,8 @@ resource "aws_codepipeline" "example_applicaiton_pipeline" {
       input_artifacts = ["BuildArtifact"]
 
       configuration = {
-        ApplicationName                = data.aws_ssm_parameter.codedeploy_app.value
-        DeploymentGroupName            = data.aws_ssm_parameter.deployment_group.value
+        ApplicationName                = "deploy_development_ecsdemo-frontend"
+        DeploymentGroupName            = "deployment-group-deploy_development_ecsdemo-frontend"
         TaskDefinitionTemplateArtifact = "BuildArtifact"
         TaskDefinitionTemplatePath     = "development-task-definition.json"
         AppSpecTemplateArtifact        = "BuildArtifact"

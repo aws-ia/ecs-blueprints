@@ -248,7 +248,7 @@ resource "aws_iam_role_policy_attachment" "codedeploy_policy_attachment" {
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"
-    values = ["core-infra"]
+    values = ["core-infra-external-state"]
   }
 
   filter {
@@ -261,7 +261,7 @@ data "aws_vpc" "vpc" {
 data "aws_subnets" "public" {
   filter {
     name   = "tag:Name"
-    values = ["core-infra-public-*"]
+    values = ["core-infra-external-state-public-*"]
   }
   filter {
     name   = "tag:Environment"
@@ -272,7 +272,7 @@ data "aws_subnets" "public" {
 data "aws_subnets" "private" {
   filter {
     name   = "tag:Name"
-    values = ["core-infra-private-*"]
+    values = ["core-infra-external-state-private-*"]
   }
   tags = {
     Environment = var.environment
@@ -292,7 +292,7 @@ data "aws_ecs_cluster" "core_infra" {
   tags = {
     Environment = var.environment
   }
-  cluster_name = "core-infra"
+  cluster_name = "core-infra-external-state"
 
 }
 

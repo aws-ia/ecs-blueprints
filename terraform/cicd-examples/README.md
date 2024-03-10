@@ -18,6 +18,7 @@ Before deploying this example, ensure you have the following:
 
 - An AWS account with the necessary permissions.
 - AWS CLI configured with the appropriate credentials.
+- JQ installed (https://jqlang.github.io/jq/download/)
 
 ## Deployment Steps
 
@@ -43,7 +44,7 @@ Before deploying this example, ensure you have the following:
 3. Set local environment variable to reference deployed state bucket.
 
     ```
-    STATE_BUCKET=$(aws ssm get-parameters --names terraform_state_bucket | jq -r '.Parameters[0].Value')
+    STATE_BUCKET=$(aws ssm get-parameters --names terraform_state_bucket --region us-west-2 | jq -r '.Parameters[0].Value')
     ```
 
 4. Deploy the CodePipeline which will deploy the required infrastructure.
@@ -57,36 +58,37 @@ Before deploying this example, ensure you have the following:
 
     ```
     #Get IAC code commit repo
-    aws codecommit get-repository --repository-name iac_sample_repo --query 'repositoryMetadata.cloneUrlHttp'
+    YOUR_CODE_COMMIT_IAC_REPO=$(aws codecommit get-repository --repository-name iac_sample_repo --query 'repositoryMetadata.cloneUrlHttp' --region us-west-2 | jq -r .)
 
     #CD to terraform folder
     cd ../../../terraform
 
     git init
-    git remote add origin YOUR_CODE_COMMIT_IAC_REPO
+    git remote add origin $YOUR_CODE_COMMIT_IAC_REPO
+    git add .
     git commit -m "initial commit"
     git push origin main
-
     ```
 6. Deploy the CodePipeline which will build and deploy new containers.
 
     ```bash
-    cd ../lb-service-container-pipeline
+    cd cicd-examples/lb-service-container-pipeline
     terraform init
-    terraform apply -var="s3_bucket=$STATE_BUCKET"
+    terraform apply
     ```
 
 7. Once the Pipeline has fully deployed the environment we can begin to CI/CD new containers.
 
     ```
     # CD to sample app director
-    cd ../application-code/ecsdemo-cicd/
+    cd ../../../application-code/ecsdemo-cicd/
 
     #Get Application code commit repo
-    aws codecommit get-repository --repository-name iac_sample_repo --query 'repositoryMetadata.cloneUrlHttp'
+    YOUR_CODE_COMMIT_APP_REPO=$(aws codecommit get-repository --repository-name ecs_service_repo --query 'repositoryMetadata.cloneUrlHttp' --region us-west-2 | jq -r .)
 
     git init
-    git remote add origin YOUR_CODE_COMMIT_APP_REPO
+    git add .
+    git remote add origin $YOUR_CODE_COMMIT_APP_REPO
     git commit -m "initial application deployment"
     git push origin main
     ```

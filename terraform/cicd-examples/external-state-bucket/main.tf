@@ -8,11 +8,6 @@ resource "aws_s3_bucket" "terraform_state_bucket" {
   }
 }
 
-resource "aws_s3_bucket_acl" "terraform_state_bucket" {
-  bucket = aws_s3_bucket.terraform_state_bucket.id
-  acl    = "private"
-}
-
 resource "aws_s3_bucket_versioning" "terraform_state_bucket" {
   bucket = aws_s3_bucket.terraform_state_bucket.id
   versioning_configuration {

@@ -13,10 +13,11 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $REPO_URL $FOLDER_PATH
+      - docker build -t $REPO_URL .
   post_build:
     commands:
-      - echo Build completed on `date`
+      - echo Building Task Definition  
+      - python3 create-configs.py $REPO_URL:$IMAGE_TAG core-infra-external-state ecsdemo-frontend development us-west-2
       - echo Pushing the Docker image...
       - docker tag $REPO_URL $REPO_URL:$IMAGE_TAG
       - docker push $REPO_URL:$IMAGE_TAG
@@ -24,9 +25,6 @@ phases:
       - mkdir artifacts
       - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPO_URL:$IMAGE_TAG" > artifacts/imagedefinitions.json
       - cat artifacts/imagedefinitions.json
-
 artifacts:
   files:
     - '**/*'
-  base-directory: 'artifacts'
-  discard-paths: yes
