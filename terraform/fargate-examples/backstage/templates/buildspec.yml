@@ -1,12 +1,17 @@
 version: 0.2
 
+env:
+  variables:
+    "DOCKER_BUILDKIT": "1"
+
 phases:
   install:
-    runtime_versions:
-      nodejs: 14
+    runtime-versions:
+      nodejs: 18
     commands:
       - npm install -g yarn
       - yarn install
+      - yarn tsc
   pre_build:
     commands:
       - echo $REPO_URL
@@ -21,7 +26,7 @@ phases:
       - echo "Building from $(pwd)"
       - echo Build started on `date`
       - echo Building the Docker image...
-      - yarn build
+      - yarn build:backend --config ../../app-config.yaml
       - yarn build-image
   post_build:
     commands:
