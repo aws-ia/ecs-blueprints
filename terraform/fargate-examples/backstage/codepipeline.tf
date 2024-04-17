@@ -38,6 +38,10 @@ module "codepipeline_s3_bucket" {
   }
 
   tags = local.tags
+
+  # S3 Bucket Ownership Controls
+  control_object_ownership = true
+  object_ownership         = "BucketOwnerPreferred"
 }
 
 resource "aws_sns_topic" "codestar_notification" {

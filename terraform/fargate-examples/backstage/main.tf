@@ -192,8 +192,9 @@ module "aurora_postgresdb" {
   engine      = "aurora-postgresql"
   engine_mode = "serverless"
 
-  vpc_id  = data.aws_vpc.vpc.id
-  subnets = data.aws_subnets.private.ids
+  vpc_id                 = data.aws_vpc.vpc.id
+  subnets                = data.aws_subnets.private.ids
+  create_db_subnet_group = true
   security_group_rules = {
     private_subnets_ingress = {
       description = "Allow ingress from VPC private subnets"
@@ -210,9 +211,10 @@ module "aurora_postgresdb" {
     max_capacity = 2
   }
 
-  master_username = "postgres"
-  master_password = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
-  port            = 5432
+  manage_master_user_password = false
+  master_username             = "postgres"
+  master_password             = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
+  port                        = 5432
 
   tags = local.tags
 }
