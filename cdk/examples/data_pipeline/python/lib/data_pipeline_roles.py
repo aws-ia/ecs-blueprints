@@ -4,7 +4,8 @@ from lib.data_pipeline_stack_props import DataPipelineStackProps
 
 def add_step_function_role_policies(stepfunctionExecutionRole:iam.Role, data_pipeline_stack_props: DataPipelineStackProps):
     stepfunctionExecutionRole.add_to_principal_policy(iam.PolicyStatement(
-        actions= ['ecs:RunTask'],
+        actions= ['ecs:RunTask',
+        "ecs:TagResource"],
         effect= iam.Effect.ALLOW,
         resources= ['arn:aws:ecs:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':task-definition/*']
     ))
