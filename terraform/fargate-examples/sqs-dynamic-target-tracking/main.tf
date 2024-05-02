@@ -597,7 +597,8 @@ data "aws_iam_policy_document" "lambda_role" {
       "ecs:DescribeTasks",
       "ecs:ListTasks",
       "ecs:StartTask",
-      "ecs:RunTask"
+      "ecs:RunTask",
+      "ecs:TagResource"
     ]
     resources = ["*"]
   }

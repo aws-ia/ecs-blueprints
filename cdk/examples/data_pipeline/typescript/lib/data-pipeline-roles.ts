@@ -2,7 +2,8 @@ import { Effect, ManagedPolicy, Policy, PolicyStatement, Role } from "aws-cdk-li
 
 export function addStepFunctionRolePolicies(account: String, region: String, stepFunctionExecutionRole: Role) {
     stepFunctionExecutionRole.addToPrincipalPolicy(new PolicyStatement({
-        actions:["ecs:RunTask"],
+        actions:["ecs:RunTask",
+        "ecs:TagResource"],
         effect: Effect.ALLOW,
         resources: [`arn:aws:ecs:${region}:${account}:task-definition/*`]
     }))
