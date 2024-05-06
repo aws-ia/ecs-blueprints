@@ -1,6 +1,6 @@
 streamlit
 requests
-jinja2==3.1.3
+jinja2==3.1.4
 matplotlib
 boto3
 opensearch-py
