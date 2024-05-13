@@ -15,7 +15,7 @@ variable "repository_branch" {
 }
 
 variable "github_token_secret_name" {
-  description = "Name of secret manager secret storing github token for auth"
+  description = "Name of the AWS Secrets Manager secret storing the Github token for authentication"
   type        = string
 }
 
