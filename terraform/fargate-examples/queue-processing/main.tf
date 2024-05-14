@@ -108,7 +108,7 @@ module "source_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.15"
 
-  bucket = "${local.name}-source-${local.region}-"
+  bucket_prefix = "${local.name}-src-${local.region}-"
 
   # For example only - please evaluate for your environment
   force_destroy = true
@@ -131,7 +131,7 @@ module "destination_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "~> 3.15"
 
-  bucket_prefix = "${local.name}-destination-${local.region}-"
+  bucket_prefix = "${local.name}-dst-${local.region}-"
 
   # For example only - please evaluate for your environment
   force_destroy = true
