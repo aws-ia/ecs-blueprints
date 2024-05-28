@@ -338,16 +338,9 @@ data "aws_iam_policy_document" "lambda_role" {
   }
 
   statement {
-    sid = "SQSReadWrite"
+    sid = "SQSReadAttributes"
     actions = [
-      "sqs:ChangeMessageVisibility",
-      "sqs:ChangeMessageVisibilityBatch",
-      "sqs:SendMessage",
-      "sqs:DeleteMessage",
-      "sqs:DeleteMessageBatch",
-      "sqs:GetQueueAttributes",
-      "sqs:GetQueueUrl",
-      "sqs:ReceiveMessage"
+      "sqs:GetQueueAttributes"
     ]
     resources = [module.sqs.queue_arn]
   }
