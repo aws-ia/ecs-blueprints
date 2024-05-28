@@ -36,7 +36,8 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image = module.ecr.repository_url
+      image                    = module.ecr.repository_url
+      readonly_root_filesystem = false
     }
   }
 
@@ -338,16 +339,9 @@ data "aws_iam_policy_document" "lambda_role" {
   }
 
   statement {
-    sid = "SQSReadWrite"
+    sid = "SQSReadAttributes"
     actions = [
-      "sqs:ChangeMessageVisibility",
-      "sqs:ChangeMessageVisibilityBatch",
-      "sqs:SendMessage",
-      "sqs:DeleteMessage",
-      "sqs:DeleteMessageBatch",
-      "sqs:GetQueueAttributes",
-      "sqs:GetQueueUrl",
-      "sqs:ReceiveMessage"
+      "sqs:GetQueueAttributes"
     ]
     resources = [module.sqs.queue_arn]
   }
