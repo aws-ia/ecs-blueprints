@@ -27,7 +27,7 @@ terraform apply -auto-approve
 ```bash
 aws s3 cp . s3://ecsdemo-queue-proc-source-xx-xxx-xxx-xx/ecsproc --recursive
 ```
-* Check the SQS queue for the notificatiosn from the S3 bucket file upload, check CloudWatch Container Insights to see the task count increase from the Lambda run_task invocation, and check destination S3 bucket for resizes images.
+* Check the SQS queue for the notifications from the S3 bucket file upload, check CloudWatch Container Insights to see the task count increase from the Lambda run_task invocation, and check destination S3 bucket for resizes images.
 
 ## Blueprint Architecture
 

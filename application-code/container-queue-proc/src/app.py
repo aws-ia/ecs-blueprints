@@ -115,10 +115,11 @@ def resize_image(image_path, resized_path):
 def usage_demo():
     """
     Shows how to:
-    * Read the lines from this Python file and send the lines in
-      batches of 10 as messages to a queue.
-    * Receive the messages in batches until the queue is empty.
-    * Reassemble the lines of the file and verify they match the original file.
+    * Retrieve object metadata from the SQS queue that holds notifications from the source S3 bucket.
+    * Download each image from the source S3 bucket.
+    * Resize each image into a standard 224x224 format.
+    * Upload each resized image to the destination S3 bucket.
+    * Repeat until the SQS queue is empty.
     """
 
     def unpack_message(msg):
