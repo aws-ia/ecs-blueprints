@@ -42,7 +42,7 @@ module "vpc_endpoints" {
       }
     }
     },
-    { for service in toset(["ecr.api", "ecr.dkr", "ecs", "ecs-telemetry", "ecs-agent", "logs", "ssm", "secretsmanager"]) :
+    { for service in toset(["ecr.api", "ecr.dkr", "ecs", "ecs-telemetry", "ecs-agent", "sqs", "logs", "ssm", "secretsmanager"]) :
       replace(service, ".", "_") =>
       {
         service             = service
