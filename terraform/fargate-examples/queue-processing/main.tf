@@ -36,7 +36,8 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image = module.ecr.repository_url
+      image                    = module.ecr.repository_url
+      readonly_root_filesystem = false
     }
   }
 
