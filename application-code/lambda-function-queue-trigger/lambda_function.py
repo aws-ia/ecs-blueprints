@@ -12,7 +12,7 @@ def lambda_handler(event, context):
     pipeline_enabled = None
     TASK_CLUSTER = None
     TASK_CONTAINER = None
-    TASK_DEFINITON = None
+    TASK_DEFINITION = None
     TASK_SUBNET = None
     TASK_SECURITYGROUP = None
     response = ssm.get_parameters(
@@ -22,7 +22,7 @@ def lambda_handler(event, context):
             'PIPELINE_ECS_MAX_TASKS',
             'PIPELINE_ECS_CLUSTER',
             'PIPELINE_ECS_TASK_CONTAINER',
-            'PIPELINE_ECS_TASK_DEFINITON',
+            'PIPELINE_ECS_TASK_DEFINITION',
             'PIPELINE_ECS_TASK_SECURITYGROUP',
             'PIPELINE_ECS_TASK_SUBNET',
             'PIPELINE_S3_DEST_PREFIX'
@@ -42,9 +42,9 @@ def lambda_handler(event, context):
             TASK_CLUSTER = param['Value']
         if param['Name'] == 'PIPELINE_ECS_TASK_CONTAINER':
             TASK_CONTAINER = param['Value']
-        if param['Name'] == 'PIPELINE_ECS_TASK_DEFINITON':
+        if param['Name'] == 'PIPELINE_ECS_TASK_DEFINITION':
             taskdef = param['Value']
-            TASK_DEFINITON = taskdef[:taskdef.rindex(':')]
+            TASK_DEFINITION = taskdef[:taskdef.rindex(':')]
         if param['Name'] == 'PIPELINE_ECS_TASK_SUBNET':
             TASK_SUBNET = param['Value']
         if param['Name'] == 'PIPELINE_ECS_TASK_SECURITYGROUP':
@@ -52,11 +52,11 @@ def lambda_handler(event, context):
         if param['Name'] == 'PIPELINE_S3_DEST_PREFIX':
             S3_DEST_PREFIX = param['Value']
     if (sqs_url and pipeline_enabled and max_tasks and
-        TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITON and TASK_SUBNET and TASK_SECURITYGROUP):
+        TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITION and TASK_SUBNET and TASK_SECURITYGROUP):
         max_tasks = int(max_tasks)
     else:
         raise Exception("Required SSM: PIPELINE_ECS_MAX_TASKS,PIPELINE_UNPROCESSED_SQS_URL,PIPELINE_ENABLED,PIPELINE_ECS_CLUSTER,"
-            "PIPELINE_ECS_TASK_CONTAINER,PIPELINE_ECS_TASK_DEFINITON,PIPELINE_ECS_TASK_SUBNET,PIPELINE_ECS_TASK_SECURITYGROUP,PIPELINE_S3_DEST_PREFIX")
+            "PIPELINE_ECS_TASK_CONTAINER,PIPELINE_ECS_TASK_DEFINITION,PIPELINE_ECS_TASK_SUBNET,PIPELINE_ECS_TASK_SECURITYGROUP,PIPELINE_S3_DEST_PREFIX")
     if (pipeline_enabled != "1"):
         print("ECS Pipeline is Disabled. Not starting tasks via Lambda.")
         return
@@ -89,7 +89,7 @@ def lambda_handler(event, context):
             }
         ],
         cluster=TASK_CLUSTER,
-        taskDefinition=TASK_DEFINITON,
+        taskDefinition=TASK_DEFINITION,
         overrides={
             'containerOverrides': [
             {
