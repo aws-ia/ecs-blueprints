@@ -24,9 +24,11 @@ module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
   version = "~> 5.6"
 
-  name          = local.name
-  desired_count = 3
-  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
+  name        = local.name
+  cluster_arn = data.aws_ecs_cluster.core_infra.arn
+
+  # Use a Standalone Task Definition (w/o Service)
+  desired_count = 0
 
   # Task Definition
   enable_execute_command = true
@@ -245,7 +247,7 @@ resource "aws_ssm_parameter" "ecs_cluster_name" {
 }
 
 resource "aws_ssm_parameter" "ecs_task_definition" {
-  name  = "PIPELINE_ECS_TASK_DEFINITON"
+  name  = "PIPELINE_ECS_TASK_DEFINITION"
   type  = "String"
   value = module.ecs_service.task_definition_arn
 
