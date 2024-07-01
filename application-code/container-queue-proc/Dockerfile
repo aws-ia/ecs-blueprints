@@ -1,11 +1,17 @@
-FROM public.ecr.aws/docker/library/python:alpine3.16
+# See: https://gallery.ecr.aws/docker/library/python
+FROM public.ecr.aws/docker/library/python:3.9.19-alpine3.20
 
-RUN mkdir -p /tmp/ecsproc/
-
-WORKDIR /app
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup
 
 COPY ./src /app
 
-RUN pip install -r requirements.txt
+WORKDIR /app
 
-ENTRYPOINT python app.py
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+USER appuser
+
+RUN mkdir -p /tmp/ecsproc
+
+ENTRYPOINT ["python", "app.py"]
