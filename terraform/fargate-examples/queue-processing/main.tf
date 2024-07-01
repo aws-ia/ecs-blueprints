@@ -247,7 +247,7 @@ resource "aws_ssm_parameter" "ecs_cluster_name" {
 }
 
 resource "aws_ssm_parameter" "ecs_task_definition" {
-  name  = "PIPELINE_ECS_TASK_DEFINITON"
+  name  = "PIPELINE_ECS_TASK_DEFINITION"
   type  = "String"
   value = module.ecs_service.task_definition_arn
 
