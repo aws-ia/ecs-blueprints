@@ -55,13 +55,12 @@ def lambda_handler(event, context):
         if param['Name'] == 'PIPELINE_S3_DEST_PREFIX':
             S3_DEST_PREFIX = param['Value']
     if (sqs_url and pipeline_enabled and max_tasks and
-            TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITION and TASK_SUBNET and TASK_SECURITYGROUP):
+        TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITION and TASK_SUBNET and TASK_SECURITYGROUP):
         max_tasks = int(max_tasks)
     else:
-        raise Exception("Required SSM: PIPELINE_ECS_MAX_TASKS,PIPELINE_UNPROCESSED_SQS_URL,PIPELINE_ENABLED,"
-                        "PIPELINE_ECS_CLUSTER,PIPELINE_ECS_TASK_CONTAINER,PIPELINE_ECS_TASK_DEFINITION,"
-                        "PIPELINE_ECS_TASK_SUBNET,PIPELINE_ECS_TASK_SECURITYGROUP,PIPELINE_S3_DEST_PREFIX")
-    if pipeline_enabled != "1":
+        raise Exception("Required SSM: PIPELINE_ECS_MAX_TASKS,PIPELINE_UNPROCESSED_SQS_URL,PIPELINE_ENABLED,PIPELINE_ECS_CLUSTER,"
+            "PIPELINE_ECS_TASK_CONTAINER,PIPELINE_ECS_TASK_DEFINITION,PIPELINE_ECS_TASK_SUBNET,PIPELINE_ECS_TASK_SECURITYGROUP,PIPELINE_S3_DEST_PREFIX")
+    if (pipeline_enabled != "1"):
         print("ECS Pipeline is Disabled. Not starting tasks via Lambda.")
         return
     sqs_response = sqs.get_queue_attributes(
