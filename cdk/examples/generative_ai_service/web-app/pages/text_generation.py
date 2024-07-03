@@ -61,7 +61,7 @@ with st.spinner("Retrieving configurations..."):
                         ContentType="application/json",
                     )
                     response_body = json.loads(response["Body"].read().decode())
-                    generated_text = response_body["generated_text"]
+                    generated_text = response_body[0]["generated_text"]
                     st.write(generated_text)
 
                 except requests.exceptions.ConnectionError as errc:
