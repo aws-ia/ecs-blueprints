@@ -42,16 +42,27 @@ class GenerativeAITxt2TxtSagemakerStack(Stack):
             containers=[
                 CfnModel.ContainerDefinitionProperty(
                     image=model_info["model_docker_image"],
-                    model_data_url= "s3://"+model_info["model_bucket_name"]+"/"+model_info["model_bucket_key"],
+                    model_data_source=CfnModel.ModelDataSourceProperty(
+                        s3_data_source=CfnModel.S3DataSourceProperty(
+                            compression_type='None',
+                            s3_data_type='S3Prefix',
+                            s3_uri=f's3://{model_info["model_bucket_name"]}/{model_info["model_bucket_key"]}',
+                            model_access_config=CfnModel.ModelAccessConfigProperty(
+                                accept_eula=True,
+                            ),
+                        ),
+                    ),
                     environment={
                         "MODEL_CACHE_ROOT": "/opt/ml/model",
                         "SAGEMAKER_ENV": "1",
-                        "SAGEMAKER_MODEL_SERVER_TIMEOUT": "3600",
+                        "ENDPOINT_SERVER_TIMEOUT": "3600",
                         "SAGEMAKER_MODEL_SERVER_WORKERS": "1",
                         "SAGEMAKER_PROGRAM": "inference.py",
                         "SAGEMAKER_REGION": model_info["region_name"],
-                        "SAGEMAKER_SUBMIT_DIRECTORY": "/opt/ml/model/code/",
-                        "TS_DEFAULT_WORKERS_PER_MODEL": "1"
+                        "HF_MODEL_ID": "/opt/ml/model",
+                        "MAX_INPUT_LENGTH": "1024",
+                        "MAX_TOTAL_TOKENS": "2048",
+                        "SM_NUM_GPUS": "1",
                     }
                 )
             ]
