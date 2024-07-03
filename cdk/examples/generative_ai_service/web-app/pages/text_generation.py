@@ -49,7 +49,7 @@ with st.spinner("Retrieving configurations..."):
                     prompt = f"{context}\n{query}"
                     response = runtime.invoke_endpoint(
                         EndpointName=endpoint_name,
-                        Body=prompt,
+                        Body=json.dumps(prompt).encode('utf-8'),
                         ContentType="application/x-text",
                     )
                     response_body = json.loads(response["Body"].read().decode())
