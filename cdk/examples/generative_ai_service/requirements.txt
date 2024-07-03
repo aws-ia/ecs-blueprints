@@ -1,8 +1,8 @@
-aws-cdk-lib==2.122.0
-python-dotenv==0.21.0
+aws-cdk-lib==2.147.3
+python-dotenv==1.0.1
 streamlit
 boto3
-sagemaker==2.218.0
+sagemaker==2.224.2
 sentence_transformers
 opensearch-py
-torch==2.1.1
+torch==2.3.1
