@@ -22,6 +22,13 @@ runtime = boto3.client("runtime.sagemaker")
 
 conversation = """Customers were very excited about the wireless charging feature, but the launch has not lived up to their expectations. The phones are not reliably charging and that is frustrating since it is such a fundamental aspect of any electronic device."""
 
+parameters = {
+    'max_new_tokens': 50,
+    'top_k': 50,
+    'top_p': 0.95,
+    'do_sample': True,
+}
+
 with st.spinner("Retrieving configurations..."):
     all_configs_loaded = False
 
@@ -47,13 +54,14 @@ with st.spinner("Retrieving configurations..."):
             with st.spinner("Wait for it..."):
                 try:
                     prompt = f"{context}\n{query}"
+                    payload = {'inputs': prompt,'parameters': parameters}
                     response = runtime.invoke_endpoint(
                         EndpointName=endpoint_name,
-                        Body=prompt,
-                        ContentType="application/x-text",
+                        Body=json.dumps(payload).encode('utf-8'),
+                        ContentType="application/json",
                     )
                     response_body = json.loads(response["Body"].read().decode())
-                    generated_text = response_body["generated_text"]
+                    generated_text = response_body[0]["generated_text"]
                     st.write(generated_text)
 
                 except requests.exceptions.ConnectionError as errc:
