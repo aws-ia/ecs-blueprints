@@ -64,7 +64,7 @@ if prompt := st.chat_input():
         msg = f"ERROR: Can't invoke '{model_id}'. Reason: {e}"
         st.session_state.messages.append(
             {
-                "role": "assistant", 
+                "role": "assistant",
                 "content": msg
             }
         )
@@ -77,7 +77,7 @@ if prompt := st.chat_input():
     msg = model_response["content"][0]["text"]
     st.session_state.messages.append(
         {
-            "role": "assistant", 
+            "role": "assistant",
             "content": msg
         }
     )

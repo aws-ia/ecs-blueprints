@@ -45,9 +45,9 @@ def register_bookmark(event):
     try:
         request_body = event.get('requestBody', {})
         properties = request_body.get('content', {}).get('application/json', {}).get('properties', [])
-        
+
         params = {prop['name']: prop['value'] for prop in properties if 'name' in prop and 'value' in prop}
-        
+
         session_code = params.get('sessionCode')
         session_title = params.get('sessionTitle')
         session_description = params.get('sessionDescription')
@@ -55,10 +55,10 @@ def register_bookmark(event):
         print(f"Received sessionCode: {session_code}")
         print(f"Received sessionTitle: {session_title}")
         print(f"Received sessionDescription: {session_description}")
-        
+
         if not session_code:
             return "Session code is required."
-        
+
         table.put_item(
             Item={
                 'sessionCode': session_code,

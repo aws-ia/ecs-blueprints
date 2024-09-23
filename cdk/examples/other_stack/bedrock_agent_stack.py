@@ -1,9 +1,9 @@
 from aws_cdk import Duration, Stack
 from aws_cdk.aws_iam import (
-    ManagedPolicy, 
-    Role, 
-    ServicePrincipal, 
-    PolicyStatement, 
+    ManagedPolicy,
+    Role,
+    ServicePrincipal,
+    PolicyStatement,
     Effect
 )
 from aws_cdk.aws_ssm import StringParameter
@@ -27,8 +27,8 @@ class BedrockAgentStack(Stack):
     ) -> None:
 
         super().__init__(scope, id, **kwargs)
-    
-        # create dynamodb table 
+
+        # create dynamodb table
         self.bookmark_table = dynamodb.Table(
             self,
             "ReinventBookmarkTable",
@@ -38,13 +38,13 @@ class BedrockAgentStack(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
         )
 
-        # create S3 bucket 
+        # create S3 bucket
         self.bucket = s3.Bucket(
             self,
             "RAGBucket"
         )
-        
-        # upload riv 2024 information 
+
+        # upload riv 2024 information
         s3_deployment.BucketDeployment(
             self,
             "ReinventAgendaItem",
@@ -59,7 +59,7 @@ class BedrockAgentStack(Stack):
             embeddings_model= bedrock.BedrockFoundationModel.TITAN_EMBED_TEXT_V2_1024,
             instruction= 'Use this knowledge base to answer questions about re:Invent 2024. It contains information of sessions.'
         )
-        
+
         # create bedrock knowledge base data source
         self.knowledge_base_data_source = bedrock.S3DataSource(self, 'KnowledgeBaseDataSource',
             bucket= self.bucket,
@@ -69,8 +69,8 @@ class BedrockAgentStack(Stack):
             max_tokens=1000,
             overlap_percentage=20
         )
-        
-        # create bedrock agent 
+
+        # create bedrock agent
         self.agent = bedrock.Agent(
             self,
             "BedrockAgent",
@@ -79,10 +79,10 @@ class BedrockAgentStack(Stack):
             foundation_model=bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_HAIKU_V1_0,
             instruction="You are a helpful and friendly agent that answers questions about re:Invent 2024",
         )
-        
-        # integrate knowledge base to bedrock agent 
+
+        # integrate knowledge base to bedrock agent
         self.agent.add_knowledge_base(self.knowledge_base)
-        
+
         self.agent_alias = self.agent.add_alias(alias_name="bedrock-agent-for-reinvent")
 
         # create bedrock agent action group function
@@ -118,9 +118,9 @@ class BedrockAgentStack(Stack):
                 "TABLE_NAME": self.bookmark_table.table_name
             }
         )
-        
-        
-        # create bedrock agent action group 
+
+
+        # create bedrock agent action group
         self.actionGroup = bedrock.AgentActionGroup(self,
             "ReinventBookmarkActionGroup",
             action_group_name="reinvent-bookmark",
@@ -131,19 +131,17 @@ class BedrockAgentStack(Stack):
             action_group_state="ENABLED",
             api_schema=bedrock.ApiSchema.from_asset("assets/action-group.yaml"))
         self.agent.add_action_group(self.actionGroup)
-        
+
         # create parameter store
         self.agent_id_parameter = StringParameter(
-            self, 
-            "BedrockAgentIdParameter", 
-            parameter_name="agent_id", 
+            self,
+            "BedrockAgentIdParameter",
+            parameter_name="agent_id",
             string_value=self.agent.agent_id
         )
         self.agent_alias_id_parameter = StringParameter(
-            self, 
-            "BedrockAgentAliasIdParameter", 
-            parameter_name="agent_alias_id", 
+            self,
+            "BedrockAgentAliasIdParameter",
+            parameter_name="agent_alias_id",
             string_value=self.agent_alias.alias_id
-        )        
-
-
+        )

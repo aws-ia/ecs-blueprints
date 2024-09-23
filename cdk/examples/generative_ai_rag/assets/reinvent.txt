@@ -1,6 +1,6 @@
 re:Invent Logo
 Catalog
- 
+
 
 Want to learn more about the event?
 Explore the AWS re:Invent catalog to discover a wide variety of session types, activities, and more. Or visit our Content Types and Policies page to learn more about how to navigate our catalog and event. New content is added regularly, and all content is subject to change.

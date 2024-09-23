@@ -69,5 +69,3 @@
       "@aws-cdk/aws-stepfunctions-tasks:ecsReduceRunTaskPermissions": true
     }
   }
-  
-  

@@ -51,7 +51,7 @@ if prompt := st.chat_input():
                 msg = chunk['generatedResponsePart']['textResponsePart']['text']
                 st.session_state.messages.append(
                     {
-                        "role": "assistant", 
+                        "role": "assistant",
                         "content": msg
                     }
                 )
@@ -60,8 +60,8 @@ if prompt := st.chat_input():
             msg = "Please give me a better prompt"
             st.session_state.messages.append(
                 {
-                    "role": "assistant", 
+                    "role": "assistant",
                     "content": msg
-                }  
+                }
             )
             st.chat_message("assistant").write(msg)
