@@ -16,15 +16,15 @@ def get_parameter(name):
 
 st.title("💬 Chat")
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "Ask me something about reinvent 2024?"}]
+if "rag_messages" not in st.session_state:
+    st.session_state["rag_messages"] = [{"role": "assistant", "content": "Ask me something about reinvent 2024?"}]
 
-for msg in st.session_state.messages:
+for msg in st.session_state.rag_messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
-    st.session_state.messages.append(
+    st.session_state.rag_messages.append(
         {
             "role": "user",
             "content": prompt
@@ -49,7 +49,7 @@ if prompt := st.chat_input():
             chunks = event.get('chunk').get('attribution').get('citations')
             for chunk in chunks:
                 msg = chunk['generatedResponsePart']['textResponsePart']['text']
-                st.session_state.messages.append(
+                st.session_state.rag_messages.append(
                     {
                         "role": "assistant",
                         "content": msg
@@ -58,7 +58,7 @@ if prompt := st.chat_input():
                 st.chat_message("assistant").write(msg)
     except:
             msg = "Please give me a better prompt"
-            st.session_state.messages.append(
+            st.session_state.rag_messages.append(
                 {
                     "role": "assistant",
                     "content": msg
