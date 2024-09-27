@@ -17,15 +17,15 @@ def get_parameter(name):
 
 st.title("💬 Chat")
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "Ask me something about reinvent 2024?"}]
+if "foundation_messages" not in st.session_state:
+    st.session_state["foundation_messages"] = [{"role": "assistant", "content": "Ask me something about reinvent 2024?"}]
 
-for msg in st.session_state.messages:
+for msg in st.session_state.foundation_messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
-    st.session_state.messages.append(
+    st.session_state.foundation_messages.append(
         {
             "role": "user",
             "content": prompt
@@ -62,7 +62,7 @@ if prompt := st.chat_input():
 
     except (ClientError, Exception) as e:
         msg = f"ERROR: Can't invoke '{model_id}'. Reason: {e}"
-        st.session_state.messages.append(
+        st.session_state.foundation_messages.append(
             {
                 "role": "assistant",
                 "content": msg
@@ -75,7 +75,7 @@ if prompt := st.chat_input():
 
     # Extract and print the response text.
     msg = model_response["content"][0]["text"]
-    st.session_state.messages.append(
+    st.session_state.foundation_messages.append(
         {
             "role": "assistant",
             "content": msg
