@@ -1,4 +1,4 @@
-from aws_cdk import Duration, Stack
+from aws_cdk import Duration, Stack, RemovalPolicy
 from aws_cdk.aws_iam import (
     ManagedPolicy,
     Role,
@@ -36,6 +36,7 @@ class BedrockAgentStack(Stack):
             partition_key=dynamodb.Attribute(name="sessionCode",
                                              type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         # create S3 bucket
