@@ -65,9 +65,7 @@ class BedrockAgentStack(Stack):
             bucket= self.bucket,
             knowledge_base= self.knowledge_base,
             data_source_name= 'ReinventAgendaItem',
-            chunking_strategy= bedrock.ChunkingStrategy.FIXED_SIZE,
-            max_tokens=1000,
-            overlap_percentage=20
+            chunking_strategy= bedrock.ChunkingStrategy.HIERARCHICAL_TITAN
         )
 
         # create bedrock agent
