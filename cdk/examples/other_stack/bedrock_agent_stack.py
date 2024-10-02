@@ -106,7 +106,7 @@ class BedrockAgentStack(Stack):
         self.agent_action_group_function = lambda_python.PythonFunction(
             self,
             "BookmarkLambdaFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
+            runtime=lambda_.Runtime.PYTHON_3_10,
             entry="lambda",
             index="index.py",
             handler="lambda_handler",
