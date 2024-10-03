@@ -1,4 +1,4 @@
-from aws_cdk import Duration, Stack
+from aws_cdk import Duration, Stack, RemovalPolicy
 from aws_cdk.aws_iam import (
     ManagedPolicy,
     Role,
@@ -36,6 +36,7 @@ class BedrockAgentStack(Stack):
             partition_key=dynamodb.Attribute(name="sessionCode",
                                              type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         # create S3 bucket
@@ -65,9 +66,7 @@ class BedrockAgentStack(Stack):
             bucket= self.bucket,
             knowledge_base= self.knowledge_base,
             data_source_name= 'ReinventAgendaItem',
-            chunking_strategy= bedrock.ChunkingStrategy.FIXED_SIZE,
-            max_tokens=1000,
-            overlap_percentage=20
+            chunking_strategy= bedrock.ChunkingStrategy.HIERARCHICAL_TITAN
         )
 
         # create bedrock agent
@@ -108,7 +107,7 @@ class BedrockAgentStack(Stack):
         self.agent_action_group_function = lambda_python.PythonFunction(
             self,
             "BookmarkLambdaFunction",
-            runtime=lambda_.Runtime.PYTHON_3_12,
+            runtime=lambda_.Runtime.PYTHON_3_10,
             entry="lambda",
             index="index.py",
             handler="lambda_handler",
