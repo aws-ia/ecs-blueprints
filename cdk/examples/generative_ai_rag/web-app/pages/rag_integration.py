@@ -14,17 +14,17 @@ def get_parameter(name):
     except:
         return
 
-st.title("💬 Chat")
+st.title("💬 Amazon Bedrock Chat with Knowledge Base")
 
-if "rag_messages" not in st.session_state:
-    st.session_state["rag_messages"] = [{"role": "assistant", "content": "Ask me something about reinvent 2024?"}]
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [{"role": "assistant", "content": "Hello, Builders! Ask me any questions you have about AWS re:Invent sessions."}]
 
-for msg in st.session_state.rag_messages:
+for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
     st.chat_message("user").write(prompt)
-    st.session_state.rag_messages.append(
+    st.session_state.messages.append(
         {
             "role": "user",
             "content": prompt
@@ -37,7 +37,7 @@ if prompt := st.chat_input():
     if not agent_alias_id and agent_id:
         st.info("Something is not wrong with parameter store")
         st.stop()
-    client = boto3.client('bedrock-agent-runtime', region_name='us-east-1')
+    client = boto3.client('bedrock-agent-runtime')
     agent_response = client.invoke_agent(
         inputText=prompt,
         agentId=agent_id,
@@ -46,22 +46,21 @@ if prompt := st.chat_input():
     )
     try:
         for event in agent_response['completion']:
-            chunks = event.get('chunk').get('attribution').get('citations')
-            for chunk in chunks:
-                msg = chunk['generatedResponsePart']['textResponsePart']['text']
-                st.session_state.rag_messages.append(
-                    {
-                        "role": "assistant",
-                        "content": msg
-                    }
-                )
-                st.chat_message("assistant").write(msg)
-    except:
-            msg = "Please give me a better prompt"
-            st.session_state.rag_messages.append(
-                {
-                    "role": "assistant",
-                    "content": msg
-                }
-            )
+            if 'chunk' in event:
+                chunk = event['chunk']
+                if 'bytes' in chunk:
+                    msg = chunk['bytes'].decode('utf-8')
+                    st.session_state.messages.append(
+                        {
+                            "role": "assistant", 
+                            "content": msg
+                        }
+                    )
+                    st.chat_message("assistant").write(msg)
+    except Exception as e:
+            print(f"Error: {e}")
+            st.error("An error occurred while processing the agent's response. Please check the logs for details.")
+            
+            msg = "I encountered an issue while processing the response. Could you please rephrase your prompt or try a different question?"
+            st.session_state.messages.append({"role": "assistant", "content": msg})
             st.chat_message("assistant").write(msg)
