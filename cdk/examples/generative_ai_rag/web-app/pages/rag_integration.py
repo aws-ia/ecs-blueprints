@@ -52,7 +52,7 @@ if prompt := st.chat_input():
                     msg = chunk['bytes'].decode('utf-8')
                     st.session_state.messages.append(
                         {
-                            "role": "assistant", 
+                            "role": "assistant",
                             "content": msg
                         }
                     )
@@ -60,7 +60,7 @@ if prompt := st.chat_input():
     except Exception as e:
             print(f"Error: {e}")
             st.error("An error occurred while processing the agent's response. Please check the logs for details.")
-            
+
             msg = "I encountered an issue while processing the response. Could you please rephrase your prompt or try a different question?"
             st.session_state.messages.append({"role": "assistant", "content": msg})
             st.chat_message("assistant").write(msg)
