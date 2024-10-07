@@ -35,7 +35,7 @@ if prompt := st.chat_input():
     # Use the native inference API to send a text message to Anthropic Claude.
 
     # Create a Bedrock Runtime client in the AWS Region of your choice.
-    client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    client = boto3.client("bedrock-runtime")
 
     # Set the model ID, e.g., Claude 3 Haiku.
     model_id = "anthropic.claude-3-haiku-20240307-v1:0"
