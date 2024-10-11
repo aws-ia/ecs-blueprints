@@ -58,7 +58,10 @@ class BedrockAgentStack(Stack):
             bucket=self.bucket,
             knowledge_base=self.knowledge_base,
             data_source_name='ReinventSessionInformationText',
-            chunking_strategy= bedrock.ChunkingStrategy.FIXED_SIZE,
+            chunking_strategy= bedrock.ChunkingStrategy.fixed_size(
+                max_tokens= 512,
+                overlap_percentage= 20
+            )
         )
 
         # create parameter store
