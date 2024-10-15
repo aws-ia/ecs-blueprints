@@ -96,7 +96,7 @@ class GenAIRagServiceStack(Stack):
         self.task_role.add_to_policy(
             PolicyStatement(
                 effect=Effect.ALLOW,
-                actions=["bedrock:InvokeAgent", "bedrock:InvokeModel"],
+                actions=["bedrock:Retrieve", "bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
                 resources=["*"]
             )
         )
