@@ -5,7 +5,7 @@ import uuid
 from typing import Dict, Any, List, Optional, Generator
 
 # Constants
-MODEL_ID = 'anthropic.claude-3-haiku-20240307-v1:0'
+MODEL_ID = 'anthropic.claude-3-5-sonnet-20240620-v1:0'
 KNOWLEDGE_BASE_PARAM = "knowledge_base_id"
 MODEL_ARN = f"arn:aws:bedrock:us-west-2::foundation-model/{MODEL_ID}"
 INITIAL_MESSAGE = "Hello, Builders! Ask me any questions you have about AWS re:Invent sessions."
