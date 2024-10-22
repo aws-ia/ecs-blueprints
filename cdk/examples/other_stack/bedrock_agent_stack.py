@@ -20,17 +20,6 @@ class BedrockAgentStack(Stack):
 
         super().__init__(scope, id, **kwargs)
 
-        # create dynamodb table
-        self.bookmark_table = dynamodb.Table(
-            self,
-            "ReinventBookmarkTable",
-            table_name="reinvent-bookmark",
-            partition_key=dynamodb.Attribute(name="sessionCode",
-                                             type=dynamodb.AttributeType.STRING),
-            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=RemovalPolicy.DESTROY,
-        )
-
         # create S3 bucket
         self.bucket = s3.Bucket(
             self,
@@ -57,10 +46,11 @@ class BedrockAgentStack(Stack):
         self.knowledge_base_data_source = bedrock.S3DataSource(self, 'KnowledgeBaseDataSource',
             bucket=self.bucket,
             knowledge_base=self.knowledge_base,
-            data_source_name='ReinventSessionInformationText',
-            chunking_strategy= bedrock.ChunkingStrategy.fixed_size(
-                max_tokens= 512,
-                overlap_percentage= 20
+            data_source_name='ReinventSessionInformationText', 
+            chunking_strategy= bedrock.ChunkingStrategy.hierarchical(
+                overlap_tokens=60,
+                max_parent_token_size=1500,
+                max_child_token_size=300
             )
         )
 
