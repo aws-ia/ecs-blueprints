@@ -4,7 +4,7 @@ import boto3
 import json
 from botocore.exceptions import ClientError
 
-st.caption("Using Calude 3 Haiku from Anthropic")
+st.caption("Using Claude 3.5 Sonnet V1 from Anthropic")
 
 @st.cache_data
 def get_parameter(name):
@@ -38,7 +38,7 @@ if prompt := st.chat_input():
     client = boto3.client("bedrock-runtime")
 
     # Set the model ID, e.g., Claude 3 Haiku.
-    model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+    model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
     # Format the request payload using the model's native structure.
     native_request = {
