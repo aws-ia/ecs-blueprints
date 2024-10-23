@@ -7,19 +7,19 @@ from dotenv import dotenv_values
 from lib.gen_ai_rag_stack import GenAIRagServiceStack
 from lib.gen_ai_rag_stack_props import GenAIRagServiceStackProps
 
-from other_stack.bedrock_agent_stack import BedrockAgentStack
+from other_stack.bedrock_stack import BedrockStack
 
 app = App()
 
 env_config = dotenv_values(".env")
 
 deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
-deploy_bedrock = bool(util.strtobool(env_config.pop("deploy_bedrock_agent")))
+deploy_bedrock = bool(util.strtobool(env_config.pop("deploy_bedrock")))
 
 if deploy_bedrock:
-    BedrockAgentStack(
+    BedrockStack(
         app,
-        "BedrockAgentStack",
+        "BedrockStack",
         env=Environment(
             account=env_config["account_number"],
             region=env_config["aws_region"],
