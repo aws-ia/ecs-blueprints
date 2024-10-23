@@ -10,7 +10,7 @@ from cdklabs.generative_ai_cdk_constructs import (
 
 from constructs import Construct
 
-class BedrockAgentStack(Stack):
+class BedrockStack(Stack):
     def __init__(
         self,
         scope: Construct,
@@ -55,7 +55,7 @@ class BedrockAgentStack(Stack):
         )
 
         # create parameter store
-        self.agent_id_parameter = StringParameter(
+        self.kb_id_parameter = StringParameter(
             self,
             "BedrockKnowledgeBaseIdParameter",
             parameter_name="knowledge_base_id",
