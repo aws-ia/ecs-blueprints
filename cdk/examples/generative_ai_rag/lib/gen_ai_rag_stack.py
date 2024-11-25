@@ -80,6 +80,7 @@ class GenAIRagServiceStack(Stack):
             desired_count=self.stack_props.desired_count,
             enable_execute_command=True,
             public_load_balancer=True,
+            load_balancer_name="genai-fargate-rag",
             task_image_options=fargate_task_image,
             enable_ecs_managed_tags=True
         )
