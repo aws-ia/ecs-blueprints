@@ -77,7 +77,7 @@ resource "aws_service_discovery_private_dns_namespace" "this" {
 }
 
 ################################################################################
-# Supporting Resources
+# Supporting Resources - VPC with ipv6-dualstack
 ################################################################################
 
 module "vpc" {
@@ -88,11 +88,18 @@ module "vpc" {
   cidr = local.vpc_cidr
 
   azs             = local.azs
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 4, k)]
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 48)]
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
+  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 4)]
 
   enable_nat_gateway = true
   single_nat_gateway = true
+
+  enable_ipv6                                    = true
+  public_subnet_assign_ipv6_address_on_creation  = true
+  private_subnet_assign_ipv6_address_on_creation = true
+
+  public_subnet_ipv6_prefixes  = [0, 1, 2]
+  private_subnet_ipv6_prefixes = [3, 4, 5]
 
   # Manage so we can name
   manage_default_network_acl    = true
@@ -132,9 +139,9 @@ module "autoscaling" {
 
   vpc_zone_identifier = module.vpc.private_subnets
   health_check_type   = "EC2"
-  min_size            = 3
-  max_size            = 5
-  desired_capacity    = 3
+  min_size            = 1
+  max_size            = 1
+  desired_capacity    = 1
 
   # https://github.com/hashicorp/terraform-provider-aws/issues/12582
   autoscaling_group_tags = {
@@ -156,6 +163,7 @@ module "autoscaling_sg" {
   vpc_id      = module.vpc.vpc_id
 
   ingress_cidr_blocks = [module.vpc.vpc_cidr_block]
+  ingress_ipv6_cidr_blocks  = [module.vpc.vpc_ipv6_cidr_block]
   ingress_rules       = ["http-80-tcp"]
 
   egress_rules = ["all-all"]
