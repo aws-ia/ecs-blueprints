@@ -162,9 +162,9 @@ module "autoscaling_sg" {
   description = "Autoscaling group security group"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_cidr_blocks = [module.vpc.vpc_cidr_block]
-  ingress_ipv6_cidr_blocks  = [module.vpc.vpc_ipv6_cidr_block]
-  ingress_rules       = ["http-80-tcp"]
+  ingress_cidr_blocks      = [module.vpc.vpc_cidr_block]
+  ingress_ipv6_cidr_blocks = [module.vpc.vpc_ipv6_cidr_block]
+  ingress_rules            = ["http-80-tcp"]
 
   egress_rules = ["all-all"]
 

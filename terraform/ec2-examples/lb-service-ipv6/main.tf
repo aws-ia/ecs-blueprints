@@ -131,8 +131,8 @@ module "alb" {
   # For example only
   enable_deletion_protection = false
 
-  vpc_id  = data.aws_vpc.vpc.id
-  subnets = data.aws_subnets.public.ids
+  vpc_id          = data.aws_vpc.vpc.id
+  subnets         = data.aws_subnets.public.ids
   ip_address_type = "dualstack"
   security_group_ingress_rules = {
     all_http_ipv4 = {
@@ -202,8 +202,8 @@ module "alb" {
       }
 
       # There's nothing to attach here in this definition. Instead,
-    # ECS will attach the IPs of the tasks to this target group
-    create_attachment = false
+      # ECS will attach the IPs of the tasks to this target group
+      create_attachment = false
     }
 
     #this is just to show that due current limitations, ECS Targets are not registered on the ipv6 target group.
@@ -230,8 +230,8 @@ module "alb" {
       }
 
       # There's nothing to attach here in this definition. Instead,
-    # ECS will attach the IPs of the tasks to this target group
-    create_attachment = false
+      # ECS will attach the IPs of the tasks to this target group
+      create_attachment = false
     }
 
   }
