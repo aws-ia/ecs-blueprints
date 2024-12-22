@@ -206,6 +206,11 @@ module "alb" {
     create_attachment = false
     }
 
+    #this is just to show that due current limitations, ECS Targets are not registered on the ipv6 target group.
+    #This is documented on https://docs.aws.amazon.com/AmazonECS/latest/developerguide/alb.html#alb-considerations
+    #Consider the following when using Application Load Balancers with Amazon ECS:
+    #Target group must have the IP address type set to IPv4.
+
     ecs-task-ipv6 = {
       backend_protocol = "HTTP"
       backend_port     = local.container_port
