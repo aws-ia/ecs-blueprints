@@ -1,14 +1,13 @@
 provider "aws" {
   region = local.region
 }
-data "aws_caller_identity" "current" {}
 locals {
-  name                    = "ecs-demo-vllm-inferentia"    # Defaul name of the project
-  region                  = "us-west-2"                   # Default region
-  instance_type           = "inf2.8xlarge"                # Default instance size - if you change this - you will need to modify the cpu/memory details in the task definition
-  vllm_container_image    = "<ECR IMAGE URI>"             # ECR Image URI you created when building and pushing your image
-  hugging_face_api_key    = "<YOUR HUGGIN FACE API KEY>"  # Your Hugging Face API Key
-  user_data = <<-EOT
+  name                 = "ecs-demo-vllm-inferentia"   # Defaul name of the project
+  region               = "us-west-2"                  # Default region
+  instance_type        = "inf2.8xlarge"               # Default instance size - if you change this - you will need to modify the cpu/memory details in the task definition
+  vllm_container_image = "<ECR IMAGE URI>"            # ECR Image URI you created when building and pushing your image
+  hugging_face_api_key = "<YOUR HUGGIN FACE API KEY>" # Your Hugging Face API Key
+  user_data            = <<-EOT
     #!/bin/bash
     cat <<'EOF' >> /etc/ecs/ecs.config
     ECS_CLUSTER=${local.name}
@@ -33,8 +32,8 @@ locals {
 ################################################################################
 
 module "alb_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  source      = "terraform-aws-modules/security-group/aws"
+  version     = "~> 4.0"
   name        = "${local.name}-alb"
   description = "Security group for ALB"
   vpc_id      = data.aws_vpc.core_infra.id
@@ -55,15 +54,15 @@ module "alb_sg" {
 # ECS Task / Autoscaling Security Group
 ################################################################################
 module "autoscaling_sg" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 4.0"
+  source      = "terraform-aws-modules/security-group/aws"
+  version     = "~> 4.0"
   name        = "${local.name}-ecs-tasks"
   description = "Autoscaling group security group"
   vpc_id      = data.aws_vpc.core_infra.id
   ingress_with_source_security_group_id = [
     {
-      from_port = 8000
-      to_port   = 8000
+      from_port                = 8000
+      to_port                  = 8000
       protocol                 = "tcp"
       description              = "Allow traffic from ALB"
       source_security_group_id = module.alb_sg.security_group_id
@@ -78,8 +77,8 @@ module "autoscaling_sg" {
 ################################################################################
 # Cluster Config
 module "ecs_cluster" {
-  source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.0"
+  source       = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version      = "~> 5.0"
   cluster_name = local.name
   # Capacity provider - autoscaling group
   default_capacity_provider_use_fargate = false
@@ -103,17 +102,17 @@ module "ecs_cluster" {
 
 # Austocaling Policy
 module "autoscaling" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.5"
-  name = "${local.name}-asg"
-  image_id      = jsondecode(data.aws_ssm_parameter.ecs_neuron_optimized_ami.value)["image_id"]
-  instance_type = local.instance_type
+  source                          = "terraform-aws-modules/autoscaling/aws"
+  version                         = "~> 6.5"
+  name                            = "${local.name}-asg"
+  image_id                        = jsondecode(data.aws_ssm_parameter.ecs_neuron_optimized_ami.value)["image_id"]
+  instance_type                   = local.instance_type
   security_groups                 = [module.autoscaling_sg.security_group_id]
   user_data                       = base64encode(local.user_data)
   ignore_desired_capacity_changes = true
-  create_iam_instance_profile = true
-  iam_role_name               = local.name
-  iam_role_description        = "ECS role for ${local.name}"
+  create_iam_instance_profile     = true
+  iam_role_name                   = local.name
+  iam_role_description            = "ECS role for ${local.name}"
   iam_role_policies = {
     AmazonEC2ContainerServiceforEC2Role = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
     AmazonSSMManagedInstanceCore        = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -129,9 +128,9 @@ module "autoscaling" {
   # Configure block device mapping
   block_device_mappings = [
     {
-      device_name = "/dev/xvda"       # Root volume device name
+      device_name = "/dev/xvda" # Root volume device name
       ebs = {
-        volume_size           = 100  # 100GB storage
+        volume_size           = 100   # 100GB storage
         volume_type           = "gp3" # General Purpose SSD (gp3 is recommended over gp2)
         delete_on_termination = true
         encrypted             = true
@@ -151,9 +150,9 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
   requires_compatibilities = ["EC2"]
   container_definitions = jsonencode([
     {
-      name  = "neuronx-vllm"
-      image = local.vllm_container_image
-      cpu   = 32768
+      name   = "neuronx-vllm"
+      image  = local.vllm_container_image
+      cpu    = 32768
       memory = 65536
       portMappings = [
         {

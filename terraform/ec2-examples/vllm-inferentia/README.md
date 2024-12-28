@@ -58,7 +58,7 @@ ssh -i your-key.pem ec2-user@<ec2-public-ip>
 ```bash
 export ECR_REPO_NAME=vllm-neuron
 export AWS_REGION=us-west-2
-export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text) 
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ```
 
 #### 3. Create an ECR Repository
