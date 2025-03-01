@@ -2,16 +2,18 @@ provider "aws" {
   region = local.region
 }
 
-locals {
-  name   = "ecsdemo-frontend"
-  region = "us-west-2"
+module "container_registry" { source = "../container-registry" }
 
-  container_port = 3000 # Container port is specific to this app example
-  container_name = "ecsdemo-frontend"
+locals {
+  name   = "portal-api"
+  region = "eu-west-2"
+
+  container_port = 80 # Container port is specific to this app example
+  container_name = "portal-api"
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/ecs-blueprints"
+    GithubRepo = "github.com/berrymat/ecs-blueprints"
   }
 }
 
@@ -32,7 +34,7 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image                    = "public.ecr.aws/aws-containers/ecsdemo-frontend"
+      image                    = module.container_registry.ecr_repository_url
       readonly_root_filesystem = false
 
       port_mappings = [
@@ -44,7 +46,7 @@ module "ecs_service" {
       environment = [
         {
           name  = "NODEJS_URL",
-          value = "http://ecsdemo-backend.default.core-infra.local:${local.container_port}"
+          value = "http://portal-api-backend.default.core-infra.local:${local.container_port}"
         }
       ]
     }
