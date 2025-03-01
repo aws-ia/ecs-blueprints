@@ -2,8 +2,24 @@ provider "aws" {
   region = local.region
 }
 
-module "container_registry" { source = "../container-registry" }
+data "terraform_remote_state" "container_registry" {
+  backend = "s3"
 
+  config = {
+    bucket = "cleanlink-portal-api-terraform-state-eu-west-2"
+    key = "container-registry/terraform.tfstate" # Updated Key
+    region = "eu-west-2"
+  }
+}
+
+data "aws_ecs_cluster" "core_infra" {
+  cluster_name = "core-infra"
+}
+
+data "aws_service_discovery_dns_namespace" "this" {
+  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
+  type = "DNS_PRIVATE"
+}
 locals {
   name   = "portal-api"
   region = "eu-west-2"
@@ -26,7 +42,7 @@ module "ecs_service" {
   version = "~> 5.6"
 
   name          = local.name
-  desired_count = 3
+  desired_count = 1
   cluster_arn   = data.aws_ecs_cluster.core_infra.arn
 
   # Task Definition
@@ -34,7 +50,7 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image                    = module.container_registry.ecr_repository_url
+      image                    = data.terraform_remote_state.container_registry.outputs.ecr_repository_url
       readonly_root_filesystem = false
 
       port_mappings = [
@@ -45,10 +61,11 @@ module "ecs_service" {
       ]
       environment = [
         {
-          name  = "NODEJS_URL",
-          value = "http://portal-api-backend.default.core-infra.local:${local.container_port}"
+          name  = "ASPNETCORE_ENVIRONMENT",
+          value = "Development"
         }
       ]
+
     }
   }
 
@@ -155,7 +172,7 @@ module "alb" {
         healthy_threshold   = 5
         interval            = 30
         matcher             = "200-299"
-        path                = "/"
+        path                = "/api/health"
         port                = "traffic-port"
         protocol            = "HTTP"
         timeout             = 5
@@ -199,13 +216,4 @@ data "aws_subnets" "private" {
 data "aws_subnet" "private_cidr" {
   for_each = toset(data.aws_subnets.private.ids)
   id       = each.value
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = "core-infra"
-}
-
-data "aws_service_discovery_dns_namespace" "this" {
-  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
 }
