@@ -9,14 +9,23 @@ data "aws_vpc" "default" {
   default = true
 }
 
+data "aws_route_table" "default" {
+  vpc_id = data.aws_vpc.default.id
+
+  filter {
+    name   = "association.main"
+    values = ["true"]
+  }
+}
+
 locals {
   name   = basename(path.cwd)
-  region = "us-west-2"
+  region = "eu-west-2"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
-  
-  default_vpc_id = data.aws_vpc.default.id
+
+  default_vpc_id         = data.aws_vpc.default.id
   default_vpc_cidr_block = data.aws_vpc.default.cidr_block
 
   tags = {
@@ -85,8 +94,6 @@ module "ecs_cluster" {
     FARGATE_SPOT = {}
   }
 
-  cluster_security_group_ids = [aws_security_group.fargate_containers.id]
-
   tags = local.tags
 }
 
@@ -136,21 +143,21 @@ module "vpc" {
 ################################################################################
 # Create Peering Connection
 resource "aws_vpc_peering_connection" "default_to_new" {
-  peer_vpc_id      = local.default_vpc_id
-  vpc_id           = module.vpc.vpc_id
-  auto_accept      = true
+  peer_vpc_id = local.default_vpc_id
+  vpc_id      = module.vpc.vpc_id
+  auto_accept = true
 }
 
 # Update the Route table in the default VPC
 resource "aws_route" "default_to_new" {
-  route_table_id         = data.aws_vpc.default.default_route_table_id
-  destination_cidr_block = local.vpc_cidr
+  route_table_id            = data.aws_route_table.default.id
+  destination_cidr_block    = local.vpc_cidr
   vpc_peering_connection_id = aws_vpc_peering_connection.default_to_new.id
 }
 
 # Update the route table in the new VPC
 resource "aws_route" "new_to_default" {
-  route_table_id = module.vpc.default_route_table_id
-  destination_cidr_block = local.default_vpc_cidr_block
+  route_table_id            = module.vpc.default_route_table_id
+  destination_cidr_block    = local.default_vpc_cidr_block
   vpc_peering_connection_id = aws_vpc_peering_connection.default_to_new.id
 }
