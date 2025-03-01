@@ -4,17 +4,66 @@ provider "aws" {
 
 data "aws_availability_zones" "available" {}
 
+# Data Source to get the default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
 locals {
   name   = basename(path.cwd)
   region = "us-west-2"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
+  
+  default_vpc_id = data.aws_vpc.default.id
+  default_vpc_cidr_block = data.aws_vpc.default.cidr_block
 
   tags = {
     Blueprint  = local.name
-    GithubRepo = "github.com/aws-ia/ecs-blueprints"
+    GithubRepo = "github.com/berrymat/ecs-blueprints"
   }
+}
+
+################################################################################
+# Container Security Group
+################################################################################
+resource "aws_security_group" "fargate_containers" {
+  name        = "${local.name}-fargate-containers"
+  description = "Security group for Fargate containers"
+  vpc_id      = module.vpc.vpc_id
+
+  tags = local.tags
+}
+
+resource "aws_security_group_rule" "fargate_containers_ingress_sql" {
+  type              = "ingress"
+  from_port         = 1433
+  to_port           = 1433
+  protocol          = "tcp"
+  cidr_blocks       = [local.default_vpc_cidr_block] # Default VPC
+  security_group_id = aws_security_group.fargate_containers.id
+}
+
+resource "aws_security_group_rule" "fargate_containers_ingress_mysql" {
+  type              = "ingress"
+  from_port         = 3306
+  to_port           = 3306
+  protocol          = "tcp"
+  cidr_blocks       = [local.default_vpc_cidr_block] # Default VPC
+  security_group_id = aws_security_group.fargate_containers.id
+}
+
+#Add other ingress rules here
+
+# Add egress rule to allow all outbound
+resource "aws_security_group_rule" "fargate_containers_egress" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1" # all
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.fargate_containers.id
 }
 
 ################################################################################
@@ -35,6 +84,8 @@ module "ecs_cluster" {
     FARGATE      = {}
     FARGATE_SPOT = {}
   }
+
+  cluster_security_group_ids = [aws_security_group.fargate_containers.id]
 
   tags = local.tags
 }
@@ -78,4 +129,28 @@ module "vpc" {
   default_security_group_tags   = { Name = "${local.name}-default" }
 
   tags = local.tags
+}
+
+################################################################################
+# VPC Peering
+################################################################################
+# Create Peering Connection
+resource "aws_vpc_peering_connection" "default_to_new" {
+  peer_vpc_id      = local.default_vpc_id
+  vpc_id           = module.vpc.vpc_id
+  auto_accept      = true
+}
+
+# Update the Route table in the default VPC
+resource "aws_route" "default_to_new" {
+  route_table_id         = data.aws_vpc.default.default_route_table_id
+  destination_cidr_block = local.vpc_cidr
+  vpc_peering_connection_id = aws_vpc_peering_connection.default_to_new.id
+}
+
+# Update the route table in the new VPC
+resource "aws_route" "new_to_default" {
+  route_table_id = module.vpc.default_route_table_id
+  destination_cidr_block = local.default_vpc_cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.default_to_new.id
 }

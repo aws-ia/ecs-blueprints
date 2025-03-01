@@ -1,0 +1,5 @@
+✅ I have been using AWS for a while, but there are obviously some concepts I still don't understand. How do CIDR blocks work?  How do I make sure two groups don't overlap?
+✅ I am new to Terraform and I am using this prebuilt template.  It splits core-infra from lb-service, for example. Where should I put the security group changes?
++ I want to store Terraform state in S3. How do I do that?
++ Is is best practice to change the local section in this file or do it another way?
+
