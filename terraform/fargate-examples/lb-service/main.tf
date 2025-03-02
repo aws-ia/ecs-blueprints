@@ -2,24 +2,6 @@ provider "aws" {
   region = local.region
 }
 
-data "terraform_remote_state" "container_registry" {
-  backend = "s3"
-
-  config = {
-    bucket = "cleanlink-portal-api-terraform-state-eu-west-2"
-    key = "container-registry/terraform.tfstate" # Updated Key
-    region = "eu-west-2"
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = "core-infra"
-}
-
-data "aws_service_discovery_dns_namespace" "this" {
-  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
-}
 locals {
   name   = "portal-api"
   region = "eu-west-2"
@@ -43,14 +25,14 @@ module "ecs_service" {
 
   name          = local.name
   desired_count = 1
-  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
+  cluster_arn   = var.cluster_arn
 
   # Task Definition
   enable_execute_command = true
 
   container_definitions = {
     (local.container_name) = {
-      image                    = data.terraform_remote_state.container_registry.outputs.ecr_repository_url
+      image                    = var.ecr_repository_url
       readonly_root_filesystem = false
 
       port_mappings = [
@@ -81,7 +63,7 @@ module "ecs_service" {
     }
   }
 
-  subnet_ids = data.aws_subnets.private.ids
+  subnet_ids = var.private_subnets
   security_group_rules = {
     ingress_alb_service = {
       type                     = "ingress"
@@ -107,7 +89,7 @@ resource "aws_service_discovery_service" "this" {
   name = local.name
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.this.id
+    namespace_id = var.service_discovery_namespace_id
 
     dns_records {
       ttl  = 10
@@ -131,8 +113,8 @@ module "alb" {
   # For example only
   enable_deletion_protection = false
 
-  vpc_id  = data.aws_vpc.vpc.id
-  subnets = data.aws_subnets.public.ids
+  vpc_id  = var.vpc_id
+  subnets = var.public_subnets
   security_group_ingress_rules = {
     all_http = {
       from_port   = 80
@@ -142,13 +124,13 @@ module "alb" {
       cidr_ipv4   = "0.0.0.0/0"
     }
   }
-  security_group_egress_rules = { for subnet in data.aws_subnet.private_cidr :
+
+  security_group_egress_rules = { for subnet in var.private_subnet_objects :
     (subnet.availability_zone) => {
       ip_protocol = "-1"
       cidr_ipv4   = subnet.cidr_block
     }
   }
-
 
   listeners = {
     http = {
@@ -186,34 +168,4 @@ module "alb" {
   }
 
   tags = local.tags
-}
-
-################################################################################
-# Supporting Resources
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra"]
-  }
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-public-*"]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-private-*"]
-  }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
 }
