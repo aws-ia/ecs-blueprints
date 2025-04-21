@@ -8,7 +8,7 @@ By default, this blueprint uses a set of three g5.12xlarge (with 4 GPUs) instanc
 
 ## Components
 
-* Service discovery: The head node is registered to a private DNS using local zones via cloud map. This allows worker tasks to discover the head task and join the cluster on start up.
+* Service discovery: The head node is registered to a private DNS using local zones via cloud map. This allows worker tasks to discover the head task and join the cluster on start-up.
 * 2 autoscaling groups: One for the head instance and another one for the worker instances
 * ECS service definition:
     * Head service: runs singleton processes responsible for cluster management along with training jobs
@@ -33,9 +33,11 @@ terraform init
 terraform apply
 ```
 
+It can take several minutes until the instances are created and connected to SSM
+
 ## Example: training the databricks/dolly-v2-7b model with the tiny_shakespeare dataset dataset
 
-Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or [Cloud 9](https://aws.amazon.com/cloud9/) provide a better user experience to run training jobs in python than using the bash shell
+Once the instances are running, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or [Cloud 9](https://aws.amazon.com/cloud9/) provide a better user experience to run training jobs in python than using the bash shell.
 
 1. Connect to the head instance
 
@@ -110,6 +112,8 @@ Epoch 0: : 129it [43:14, 20.11s/it, v_num=0, train_loss=0.162]
 Training finished iteration 1 at 2025-01-10 19:56:58. Total running time: 51min 37s
 
 ```
+
+It can take approximately an hour for the scrip to finish. The terraform plan deploys a custom dashboard in CloudWatch  named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster. Once the training finishes, it should show GPUs utilized near 100% and memory between 10 and 20 GB used.
 
 ## Clean up
 
