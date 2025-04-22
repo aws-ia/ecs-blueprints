@@ -20,7 +20,7 @@ EOF
 echo "ip_resolve=4" >> /etc/yum.conf
 
 yum install amazon-cloudwatch-agent -y
-cat << 'EOF' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json 
+cat << 'EOF' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
     "agent": {
         "metrics_collection_interval": 1,
@@ -58,7 +58,7 @@ EOF
 systemctl enable --now amazon-cloudwatch-agent.service
 
 cat << 'EOF' > Dockerfile
-FROM docker.io/rayproject/ray:2.38.0-py310-gpu                                                                                                                                                                                                   
+FROM docker.io/rayproject/ray:2.38.0-py310-gpu
 RUN pip install datasets evaluate "transformers==4.29.2" "torch>=1.12.0" "lightning==2.0.2"
 EOF
 
@@ -74,7 +74,7 @@ EOF
 echo "ip_resolve=4" >> /etc/yum.conf
 
 yum install amazon-cloudwatch-agent -y
-cat << 'EOF' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json 
+cat << 'EOF' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
     "agent": {
         "metrics_collection_interval": 1,
@@ -112,7 +112,7 @@ EOF
 systemctl enable --now amazon-cloudwatch-agent.service
 
 cat << 'EOF' > Dockerfile
-FROM docker.io/rayproject/ray:2.38.0-py310-gpu                                                                                                                                                                                                   
+FROM docker.io/rayproject/ray:2.38.0-py310-gpu
 RUN pip install datasets evaluate "transformers==4.29.2" "torch>=1.12.0" "lightning==2.0.2"
 EOF
 
@@ -580,9 +580,6 @@ resource "aws_iam_role" "task_execution_role" {
 ################################################################################
 
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
-data "aws_ssm_parameter" "ecs_optimized_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
-}
 
 data "aws_ssm_parameter" "ecs_gpu_optimized_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended"
@@ -612,7 +609,7 @@ resource "null_resource" "wait_for_instance" {
     module.autoscaling_head
   ]
   triggers = {
-    always_run = "${timestamp()}"
+    always_run = timestamp()
   }
   provisioner "local-exec" {
     command = "${path.module}/check_instance_state.sh ecs-demo-distributed-ml-training"
@@ -634,7 +631,7 @@ data "aws_instances" "tagged_instances" {
   }
 }
 
-resource "aws_cloudwatch_dashboard" "distributed-ml-training-fsdp-dashboard" {
+resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
   dashboard_name = "distributed-ml-training-fsdp"
 
   dashboard_body = jsonencode({

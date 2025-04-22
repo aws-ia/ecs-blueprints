@@ -90,7 +90,7 @@ Example output:
 
 ```
 (RayTrainWorker pid=364, ip=10.0.0.218) Setting up process group for: env:// [rank=0, world_size=12]
-(TorchTrainer pid=287, ip=10.0.0.218) Started distributed worker processes: 
+(TorchTrainer pid=287, ip=10.0.0.218) Started distributed worker processes:
 (TorchTrainer pid=287, ip=10.0.0.218) - (node_id=47a3d7c20ebb914a34340d9a4cdd08d8b8f35051eb7d1821431e0d97, ip=10.0.0.218, pid=364) world_rank=0, local_rank=0, node_rank=0
 (…)
 Epoch 0: : 1it [00:26, 26.64s/it, v_num=0, train_loss=13.00]
@@ -116,6 +116,13 @@ Training finished iteration 1 at 2025-01-10 19:56:58. Total running time: 51min 
 It can take approximately an hour for the scrip to finish. The terraform plan deploys a custom dashboard in CloudWatch  named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster. Once the training finishes, it should show GPUs utilized near 100% and memory between 10 and 20 GB used.
 
 ## Clean up
+
+1. Delete services
+
+```shell
+aws ecs delete-service --cluster ecs-demo-distributed-ml-training --service distributed_ml_training_head_service --force --region us-west-2
+aws ecs delete-service --cluster ecs-demo-distributed-ml-training --service distributed_ml_training_worker_service --force --region us-west-2
+```
 
 1. Destroy this blueprint
 

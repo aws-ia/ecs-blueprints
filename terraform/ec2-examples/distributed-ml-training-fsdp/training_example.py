@@ -60,8 +60,8 @@ class DollyV2Model(pl.LightningModule):
     #
     def forward(self, batch):
         outputs = self.model(
-            batch["input_ids"], 
-            attention_mask=batch["attention_mask"], 
+            batch["input_ids"],
+            attention_mask=batch["attention_mask"],
             labels=batch["labels"]
         )
         return outputs.loss
@@ -75,10 +75,10 @@ class DollyV2Model(pl.LightningModule):
         if self.global_rank == 0:
             print(self.trainer.model)
         return torch.optim.AdamW(self.trainer.model.parameters(), lr=self.lr, eps=self.eps)
-    
+
 
 import functools
-import lightning.pytorch as pl 
+import lightning.pytorch as pl
 
 from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from torch.distributed.fsdp import ShardingStrategy, BackwardPrefetch
@@ -129,9 +129,9 @@ def train_func(config):
     train_dataloader = train_ds.iter_torch_batches(batch_size=batch_size_per_worker)
     # Lightning Trainer
     trainer = pl.Trainer(
-        max_epochs=1, 
+        max_epochs=1,
         devices="auto",
-        accelerator="auto", 
+        accelerator="auto",
         precision="16-mixed",
         strategy=strategy,
         plugins=[RayLightningEnvironment()],
@@ -143,7 +143,7 @@ def train_func(config):
     #
     trainer.fit(model, train_dataloaders=train_dataloader)
 
-storage_path=f"s3://{args.bucket_name}/" 
+storage_path=f"s3://{args.bucket_name}/"
 
 
 from ray.train.torch import TorchTrainer
