@@ -37,9 +37,11 @@ It can take several minutes until the instances are created and connected to SSM
 
 ## Example: training the databricks/dolly-v2-7b model with the tiny_shakespeare dataset dataset
 
-Once the instances are running, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or [Cloud 9](https://aws.amazon.com/cloud9/) provide a better user experience to run training jobs in python than using the bash shell.
+Once the instances are running, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker Studio](https://aws.amazon.com/sagemaker/) provides a better user experience to run training jobs in python than using the bash shell.
 
 1. Connect to the head instance
+
+For simplicity, we connect to the instance and then to the container using docker exec, but [ECS exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) can be used to access the containers directly without the need to login into the EC2 instance.
 
 ```bash
 HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
@@ -51,7 +53,7 @@ aws ssm start-session --target $HEAD_INSTANCE_ID --region us-west-2
 
 2. Connect to the container
 
-Due to the size of the container images, it might take several minutes until the containers reach a running state. The following command will fail if the container is not running.
+Due to the size of the container images, it might take several minutes until the containers reach a running state. The following command will fail if the container is not running. 
 
 ```
 CONTAINER_ID=$(sudo docker ps -qf "name=.*-rayhead-.*")
@@ -113,7 +115,10 @@ Training finished iteration 1 at 2025-01-10 19:56:58. Total running time: 51min 
 
 ```
 
-It can take approximately an hour for the scrip to finish. The terraform plan deploys a custom dashboard in CloudWatch  named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster. Once the training finishes, it should show GPUs utilized near 100% and memory between 10 and 20 GB used.
+The script fine-tunes the databricks/dolly-v2-7b model with the tiny_shakespeare dataset, and it can take approximately an hour to finish. Once it is done, the fine tuned model will be available in the S3 bucket specified as a parameter, which can be deployed for inference as needed.
+
+The terraform plan deploys a custom dashboard in CloudWatch  named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster. Once the training finishes, it should show GPUs utilized near 100% and memory between 10 and 20 GB used.
+
 
 ## Clean up
 
