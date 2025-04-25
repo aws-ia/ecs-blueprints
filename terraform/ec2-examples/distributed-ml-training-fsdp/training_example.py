@@ -2,18 +2,25 @@
 
 import ray
 import argparse
+import lightning.pytorch as pl
+from ray.train.torch import TorchTrainer
+from ray.train import RunConfig, ScalingConfig, CheckpointConfig
+from ray.train.lightning import RayLightningEnvironment, RayTrainReportCallback, prepare_trainer, RayFSDPStrategy
+import functools
+from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
+from torch.distributed.fsdp import ShardingStrategy, BackwardPrefetch
+from transformers.models.gpt_neox.modeling_gpt_neox import GPTNeoXLayer
+import pandas as pd
+from datasets import load_dataset
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
 parser = argparse.ArgumentParser()
 parser.add_argument("bucket_name", help="Shared storage bucket name.", type=str)
 args = parser.parse_args()
 
 ray.init()
 MODEL_NAME = "databricks/dolly-v2-7b"
-
-import ray
-import pandas as pd
-from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 
 def split_text(batch: pd.DataFrame) -> pd.DataFrame:
     text = list(batch["text"])
@@ -24,7 +31,6 @@ def split_text(batch: pd.DataFrame) -> pd.DataFrame:
         if x.strip() and not x.strip()[-1] == ":"
     ]
     return pd.DataFrame(split_text, columns=["text"])
-
 
 def tokenize(batch: pd.DataFrame) -> dict:
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, padding_side="left")
@@ -41,14 +47,8 @@ def tokenize(batch: pd.DataFrame) -> dict:
 
 hf_dataset = load_dataset("tiny_shakespeare",trust_remote_code=True)
 train_ds = ray.data.from_huggingface(hf_dataset["train"])
-# First split the dataset into multiple sentences.
 train_ds = train_ds.map_batches(split_text, batch_format="pandas")
-# Then tokenize the dataset.
 train_ds = train_ds.map_batches(tokenize, batch_format="pandas")
-
-
-#torch.set_float32_matmul_precision('medium') # https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
-import lightning.pytorch as pl
 
 class DollyV2Model(pl.LightningModule):
     def __init__(self, lr=2e-5, eps=1e-8):
@@ -76,19 +76,6 @@ class DollyV2Model(pl.LightningModule):
             print(self.trainer.model)
         return torch.optim.AdamW(self.trainer.model.parameters(), lr=self.lr, eps=self.eps)
 
-
-import functools
-import lightning.pytorch as pl
-
-from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
-from torch.distributed.fsdp import ShardingStrategy, BackwardPrefetch
-from transformers.models.gpt_neox.modeling_gpt_neox import GPTNeoXLayer
-
-from ray.train.lightning import RayFSDPStrategy
-
-
-# Define the model sharding policy:
-# Wrap every GPTNeoXLayer as its own FSDP instance
 auto_wrap_policy = functools.partial(
     transformer_auto_wrap_policy,
     transformer_layer_cls = {GPTNeoXLayer}
@@ -104,15 +91,8 @@ fsdp_strategy = RayFSDPStrategy(
 )
 
 num_workers = 12
-#batch_size_per_worker = 10
 batch_size_per_worker = 14
 
-#import os
-# Set manual rank to make sure this machine always get rank 0
-#os.environ['RANK']='0'
-
-from ray.train import Checkpoint
-from ray.train.lightning import RayLightningEnvironment, RayTrainReportCallback, prepare_trainer
 
 # Training function for each worker
 def train_func(config):
@@ -122,12 +102,12 @@ def train_func(config):
     eps = config["eps"]
     strategy = config["strategy"]
     batch_size_per_worker = config["batch_size_per_worker"]
-    # Model
+
     model = DollyV2Model(lr=lr, eps=eps)
-    # Ray Data Ingestion
+
     train_ds = ray.train.get_dataset_shard("train")
     train_dataloader = train_ds.iter_torch_batches(batch_size=batch_size_per_worker)
-    # Lightning Trainer
+
     trainer = pl.Trainer(
         max_epochs=1,
         devices="auto",
@@ -138,40 +118,36 @@ def train_func(config):
         callbacks=[RayTrainReportCallback()],
         enable_checkpointing=False,
     )
-    #
+
     trainer = prepare_trainer(trainer)
-    #
+
     trainer.fit(model, train_dataloaders=train_dataloader)
 
 storage_path=f"s3://{args.bucket_name}/"
 
 
-from ray.train.torch import TorchTrainer
-from ray.train import RunConfig, ScalingConfig, CheckpointConfig
-
-# Save Ray Train checkpoints according to the performance on validation set
 run_config = RunConfig(
     name="finetune_dolly-v2-7b",
     storage_path=storage_path,
     checkpoint_config=CheckpointConfig(num_to_keep=1),
 )
 
-# Scale the FSDP training workload across 16 GPUs
-# The memory parameter is required to make sure Ray select an instance type with enough memory as rank0, since it will put the model back together once it is fine tuned.
+# Scale the FSDP training workload across 12 GPUs
+# The memory parameter is required to make sure Ray select an instance type with enough memory as rank0,
+# to put the model back together once training is finished.
 scaling_config = ScalingConfig(
     num_workers=num_workers, use_gpu=True, trainer_resources={"memory": 133751111680}
 )
 
-# Configuration to pass into train_func
+# Configuration
 train_config = {
     "lr": 2e-5,
     "eps": 1e-8,
     "strategy": fsdp_strategy,
-    "batch_size_per_worker": 14 # 168 with 12 workers
-    #"batch_size_per_worker": 10 # 160 with 16 workers
+    "batch_size_per_worker": 14
 }
 
-# Define a TorchTrainer and launch you training workload
+# Trainer
 ray_trainer = TorchTrainer(
     train_func,
     train_loop_config=train_config,

@@ -337,10 +337,8 @@ module "ecs_service_head" {
   desired_count      = 1
   cluster_arn        = module.ecs_cluster.arn
   enable_autoscaling = false
-  #memory             = 127555
-  memory = 184320
-  cpu    = 10240
-  # Task Definition
+  memory             = 184320
+  cpu                = 10240
 
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
@@ -359,6 +357,7 @@ module "ecs_service_head" {
   }
   tasks_iam_role_statements = [
     {
+      effect  = "Allow",
       actions = ["s3:*"]
       resources = [
         "arn:aws:s3:::${aws_s3_bucket.results.bucket}",
@@ -367,7 +366,7 @@ module "ecs_service_head" {
     }
   ]
   create_task_exec_iam_role          = false
-  enable_execute_command             = false
+  enable_execute_command             = true
   deployment_minimum_healthy_percent = 0
   container_definitions = {
 
@@ -380,7 +379,8 @@ module "ecs_service_head" {
       memory_reservation       = 184320
       command                  = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --head --dashboard-host=0.0.0.0 --metrics-export-port=8080 --num-cpus=10 --num-gpus=4 --memory=193273528320 --block"]
       linux_parameters = {
-        sharedMemorySize = 20480
+        sharedMemorySize   = 20480
+        initProcessEnabled = true
       }
       resource_requirements = [{
         type  = "GPU"

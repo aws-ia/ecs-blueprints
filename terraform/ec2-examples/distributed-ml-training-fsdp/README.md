@@ -39,28 +39,15 @@ It can take several minutes until the instances are created and connected to SSM
 
 Once the instances are running, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker Studio](https://aws.amazon.com/sagemaker/) provides a better user experience to run training jobs in python than using the bash shell.
 
-1. Connect to the head instance
-
-For simplicity, we connect to the instance and then to the container using docker exec, but [ECS exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) can be used to access the containers directly without the need to login into the EC2 instance.
-
-```bash
-HEAD_INSTANCE_ID=$(aws ec2 describe-instances \
-  --filters 'Name=tag:Name,Values=ecs-demo-distributed-ml-training-head' 'Name=instance-state-name,Values=running' \
-  --query 'Reservations[*].Instances[0].InstanceId' --output text --region us-west-2
-)
-aws ssm start-session --target $HEAD_INSTANCE_ID --region us-west-2
-```
-
-2. Connect to the container
-
-Due to the size of the container images, it might take several minutes until the containers reach a running state. The following command will fail if the container is not running. 
+1. Connect to the head task
 
 ```
-CONTAINER_ID=$(sudo docker ps -qf "name=.*-rayhead-.*")
-sudo docker exec -it $CONTAINER_ID bash
+TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-distributed-ml-training --service-name distributed_ml_training_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
+
+aws ecs execute-command --region us-west-2 --cluster ecs-demo-distributed-ml-training --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive
 ```
 
-3. Inside the container shell, check the cluster status. 3 nodes should be listed as healthy with 2.0 GPUs available - If you do not see 2.0 GPUs, the workers have not started yet.
+2. Inside the container shell, check the cluster status. 3 nodes should be listed as healthy with 2.0 GPUs available - If you do not see 2.0 GPUs, the workers have not started yet.
 
 ```bash
 ray status
@@ -80,7 +67,7 @@ Active:
 
 ```
 
-4. Run the [training script example](./training_example.py) - It uses fully sharded data parallel to split the data between GPUs. You can look at the comments inside the python script to learn more about each step. A bucket is created as part of the terraform plan (Bucket name is printed as output). Make sure to add the name of that bucket (starts with "dt-results-") as argument of the training_example.py script
+3. Run the [training script example](./training_example.py) - It uses fully sharded data parallel to split the data between GPUs. You can look at the comments inside the python script to learn more about each step. A bucket is created as part of the terraform plan (Bucket name is printed as output). Make sure to add the name of that bucket (starts with "dt-results-") as argument of the training_example.py script
 
 ```bash
 cd /tmp
@@ -115,18 +102,25 @@ Training finished iteration 1 at 2025-01-10 19:56:58. Total running time: 51min 
 
 ```
 
-The script fine-tunes the databricks/dolly-v2-7b model with the tiny_shakespeare dataset, and it can take approximately an hour to finish. Once it is done, the fine tuned model will be available in the S3 bucket specified as a parameter, which can be deployed for inference as needed.
+The script fine-tunes the databricks/dolly-v2-7b model with the tiny_shakespeare dataset, and it can take approximately an hour to finish. Once it is done, the fine-tuned model will be available in the S3 bucket specified as a parameter, which can be deployed for inference as needed. Although the resulting model will have more knowledge about Shakespeare's plays, this script can be used to increase the accuracy of a model for specific domains/industries tasks when used with the relevant datasets.
 
-The terraform plan deploys a custom dashboard in CloudWatch  named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster. Once the training finishes, it should show GPUs utilized near 100% and memory between 10 and 20 GB used.
+### GPU monitoring during training
 
+Terraform deploys a custom dashboard in CloudWatch named "distributed-ml-training-fsdp" with memory and utilization of the GPUs in the cluster, exported from the EC2 instances using the cloudwatch agent. It should show GPUs utilized near 100% and memory between 10 and 20 GB used during the fine-tuning process.
 
 ## Clean up
 
-1. Delete services
+1. Stop ECS tasks
 
 ```shell
-aws ecs delete-service --cluster ecs-demo-distributed-ml-training --service distributed_ml_training_head_service --force --region us-west-2
-aws ecs delete-service --cluster ecs-demo-distributed-ml-training --service distributed_ml_training_worker_service --force --region us-west-2
+aws ecs update-service --service distributed_ml_training_worker_service \
+--desired-count 0 --cluster ecs-demo-distributed-ml-training \
+--region us-west-2 --no-paginate
+
+aws ecs update-service --service distributed_ml_training_head_service \
+--desired-count 0 --cluster ecs-demo-distributed-ml-training \
+--region us-west-2 --no-paginate
+
 ```
 
 1. Destroy this blueprint
