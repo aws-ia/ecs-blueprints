@@ -267,9 +267,9 @@ module "autoscaling_workers" {
 
   vpc_zone_identifier = data.aws_subnets.private.ids
   health_check_type   = "EC2"
-  min_size            = 2
-  max_size            = 2
-  desired_capacity    = 2
+  min_size            = 1
+  max_size            = 1
+  desired_capacity    = 1
 
   # https://github.com/hashicorp/terraform-provider-aws/issues/12582
   autoscaling_group_tags = {
@@ -434,7 +434,7 @@ module "ecs_service_workers" {
   version                            = "~> 5.0"
   deployment_minimum_healthy_percent = 0
   name                               = "distributed_ml_training_worker_service"
-  desired_count                      = 2
+  desired_count                      = 1
   cluster_arn                        = module.ecs_cluster.arn
   enable_autoscaling                 = false
   memory                             = 184320
@@ -646,7 +646,7 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
           "metrics" : [
             [
               "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
+              "nvidia_smi_memory_used",
               "InstanceId",
               data.aws_instances.tagged_instances.ids[0],
               "name",
@@ -656,12 +656,12 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
               "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
+              "nvidia_smi_memory_used",
               "InstanceId",
               data.aws_instances.tagged_instances.ids[0],
               "name",
@@ -671,12 +671,12 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
               "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
+              "nvidia_smi_memory_used",
               "InstanceId",
               data.aws_instances.tagged_instances.ids[0],
               "name",
@@ -686,12 +686,12 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
               "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
+              "nvidia_smi_memory_used",
               "InstanceId",
               data.aws_instances.tagged_instances.ids[0],
               "name",
@@ -701,109 +701,16 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ]
           ],
           "view" : "timeSeries",
           "stacked" : false,
-          "region" : "us-west-2",
-          "title" : "${data.aws_instances.tagged_instances.ids[0]} - GPU memory utilization (GB)",
+          "region" : local.region,
+          "title" : "${data.aws_instances.tagged_instances.ids[0]} - GPU memory utilization (MiB)",
           "period" : 60,
           "stat" : "Average"
-          "start" : "-PT60M",
-          "end" : "P0D"
-        }
-      },
-      {
-        "height" : 7,
-        "width" : 12,
-        "y" : 7,
-        "x" : 0,
-        "type" : "metric",
-        "properties" : {
-          "metrics" : [
-            [
-              "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
-              "InstanceId",
-              data.aws_instances.tagged_instances.ids[0],
-              "name",
-              "NVIDIA A10G",
-              "index",
-              "3",
-              "arch",
-              "Ampere",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "2",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "0",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "1",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              data.aws_instances.tagged_instances.ids[2],
-              ".",
-              ".",
-              ".",
-              "0",
-              ".",
-              "."
-            ],
-            [
-              "...",
-              "2",
-              ".",
-              "."
-            ],
-            [
-              "...",
-              "3",
-              ".",
-              "."
-            ],
-            [
-              "...",
-              "1",
-              ".",
-              "."
-            ]
-          ],
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : "us-west-2",
-          "title" : "${data.aws_instances.tagged_instances.ids[2]} - GPU memory utilization (GB)",
-          "period" : 60,
-          "stat" : "Average",
           "start" : "-PT60M",
           "end" : "P0D"
         }
@@ -818,9 +725,9 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
           "metrics" : [
             [
               "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_memory",
+              "nvidia_smi_memory_used",
               "InstanceId",
-              data.aws_instances.tagged_instances.ids[0],
+              data.aws_instances.tagged_instances.ids[1],
               "name",
               "NVIDIA A10G",
               "index",
@@ -828,129 +735,59 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2",
-                "visible" : false
+                "region" : local.region
               }
             ],
             [
-              "...",
-              "2",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "0",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "1",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              data.aws_instances.tagged_instances.ids[2],
-              ".",
-              ".",
-              ".",
-              "0",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "2",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "3",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
-              "1",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2",
-                "visible" : false
-              }
-            ],
-            [
-              "...",
+              "EcsBlueprints/DistributedTrainingFSDP",
+              "nvidia_smi_memory_used",
+              "InstanceId",
               data.aws_instances.tagged_instances.ids[1],
-              ".",
-              ".",
-              ".",
-              ".",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2"
-              }
-            ],
-            [
-              "...",
-              "3",
-              ".",
-              ".",
-              {
-                "region" : "us-west-2"
-              }
-            ],
-            [
-              "...",
+              "name",
+              "NVIDIA A10G",
+              "index",
               "2",
-              ".",
-              ".",
+              "arch",
+              "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
-              "...",
+              "EcsBlueprints/DistributedTrainingFSDP",
+              "nvidia_smi_memory_used",
+              "InstanceId",
+              data.aws_instances.tagged_instances.ids[1],
+              "name",
+              "NVIDIA A10G",
+              "index",
               "0",
-              ".",
-              ".",
+              "arch",
+              "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
+              }
+            ],
+            [
+              "EcsBlueprints/DistributedTrainingFSDP",
+              "nvidia_smi_memory_used",
+              "InstanceId",
+              data.aws_instances.tagged_instances.ids[1],
+              "name",
+              "NVIDIA A10G",
+              "index",
+              "1",
+              "arch",
+              "Ampere",
+              {
+                "region" : local.region
               }
             ]
           ],
           "view" : "timeSeries",
           "stacked" : false,
-          "region" : "us-west-2",
-          "title" : "${data.aws_instances.tagged_instances.ids[1]} - GPU memory utilization (GB)",
+          "region" : local.region,
+          "title" : "${data.aws_instances.tagged_instances.ids[1]} - GPU memory utilization (MiB)",
           "period" : 60,
           "stat" : "Average",
           "start" : "-PT60M",
@@ -977,7 +814,7 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               "arch",
               "Ampere",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
@@ -986,7 +823,7 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               ".",
               ".",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
@@ -995,7 +832,7 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               ".",
               ".",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ],
             [
@@ -1004,63 +841,14 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
               ".",
               ".",
               {
-                "region" : "us-west-2"
+                "region" : local.region
               }
             ]
           ],
           "view" : "timeSeries",
           "stacked" : false,
-          "region" : "us-west-2",
+          "region" : local.region,
           "title" : "${data.aws_instances.tagged_instances.ids[0]} - GPU utilization percentage",
-          "period" : 60,
-          "stat" : "Average",
-          "start" : "-PT60M",
-          "end" : "P0D"
-        }
-      },
-      {
-        "height" : 7,
-        "width" : 12,
-        "y" : 7,
-        "x" : 12,
-        "type" : "metric",
-        "properties" : {
-          "metrics" : [
-            [
-              "EcsBlueprints/DistributedTrainingFSDP",
-              "nvidia_smi_utilization_gpu",
-              "InstanceId",
-              data.aws_instances.tagged_instances.ids[2],
-              "name",
-              "NVIDIA A10G",
-              "index",
-              "0",
-              "arch",
-              "Ampere"
-            ],
-            [
-              "...",
-              "2",
-              ".",
-              "."
-            ],
-            [
-              "...",
-              "1",
-              ".",
-              "."
-            ],
-            [
-              "...",
-              "3",
-              ".",
-              "."
-            ]
-          ],
-          "view" : "timeSeries",
-          "stacked" : false,
-          "region" : "us-west-2",
-          "title" : "${data.aws_instances.tagged_instances.ids[2]} - GPU utilization percentage",
           "period" : 60,
           "stat" : "Average",
           "start" : "-PT60M",
@@ -1108,7 +896,7 @@ resource "aws_cloudwatch_dashboard" "distributed_ml_training_fsdp_dashboard" {
           ],
           "view" : "timeSeries",
           "stacked" : false,
-          "region" : "us-west-2",
+          "region" : local.region,
           "title" : "${data.aws_instances.tagged_instances.ids[1]} - GPU utilization percentage",
           "period" : 60,
           "stat" : "Average",

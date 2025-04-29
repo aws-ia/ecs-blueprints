@@ -4,7 +4,7 @@ This solution blueprint creates the infrastructure to run distributed training j
 
 ![Distributed ML architecture](../../../docs/distributed-ml-training-architecture.png)
 
-By default, this blueprint uses a set of three g5.12xlarge (with 4 GPUs) instances to showcase a multi-node, fully sharded data parallel distributed training. You can modify this blueprint to use larger instances from the local variable **instance_type_workers** and **instance_type_head** if you need more GPUs. - if you change the instance type, you need to also modify the worker task and service definition memory, CPU and GPUs and the container command parameters. The [training script example](./training_example.py) assumes 2 machines with a single GPU each, but can be changed via the **num_workers** variable.
+By default, this blueprint uses a set of two g5.12xlarge (with 4 GPUs) instances to showcase a multi-node, fully sharded data parallel distributed training. You can modify this blueprint to use larger instances from the local variable **instance_type_workers** and **instance_type_head** if you need more GPUs. - if you change the instance type, you need to also modify the worker task and service definition memory, CPU and GPUs and the container command parameters. The [training script example](./training_example.py) assumes 2 machines with a four GPUs each, but can be changed via the **num_workers** variable.
 
 ## Components
 
@@ -41,7 +41,7 @@ Once the instances are running, you can connect to the EC2 instance running the 
 
 1. Connect to the head task
 
-```
+```bash
 TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-distributed-ml-training --service-name distributed_ml_training_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
 
 aws ecs execute-command --region us-west-2 --cluster ecs-demo-distributed-ml-training --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive

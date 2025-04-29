@@ -11,8 +11,8 @@ do
   instances=($(echo "$instances" | tr -s '[:space:]'))
   length=${#instances[@]}
   echo "Running instances: $length"
-  if [ $length -lt 3 ]; then
-    echo "Less than 3 instances are running. Waiting for instances to be in running state..."
+  if [ $length -lt 2 ]; then
+    echo "Less than 2 instances are running. Waiting for instances to be in running state..."
     sleep 60
   else
     break

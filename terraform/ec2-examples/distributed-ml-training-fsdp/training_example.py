@@ -90,7 +90,7 @@ fsdp_strategy = RayFSDPStrategy(
     activation_checkpointing=[GPTNeoXLayer],
 )
 
-num_workers = 12
+num_workers = 8
 batch_size_per_worker = 14
 
 
