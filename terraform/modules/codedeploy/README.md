@@ -1,6 +1,6 @@
 # AWS CodeDeploy
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
@@ -57,4 +57,4 @@ No modules.
 | <a name="output_codedeploy_role_name"></a> [codedeploy\_role\_name](#output\_codedeploy\_role\_name) | The name of the IAM role |
 | <a name="output_deployment_group_arn"></a> [deployment\_group\_arn](#output\_deployment\_group\_arn) | The deployment group ARN for CodeDeploy |
 | <a name="output_deployment_group_name"></a> [deployment\_group\_name](#output\_deployment\_group\_name) | The deployment group name for CodeDeploy |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->
