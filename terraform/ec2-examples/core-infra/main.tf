@@ -112,7 +112,7 @@ data "aws_ssm_parameter" "ecs_optimized_ami" {
 
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 7.2"
+  version = "~> 8.3.1"
 
   name = local.name
 
