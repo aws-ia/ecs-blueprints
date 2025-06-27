@@ -227,7 +227,8 @@ resource "aws_cloudwatch_log_group" "this" {
 ################################################################################
 
 module "lambda_function_message_producer" {
-  source = "terraform-aws-modules/lambda/aws"
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "7.21.1"
 
   function_name      = "${local.name}-message-producer"
   description        = "This function can be used to send test messages to the processing queue and trigger ASG scaling events."
@@ -257,7 +258,8 @@ module "lambda_function_message_producer" {
 }
 
 module "lambda_function_target_bpi_update" {
-  source = "terraform-aws-modules/lambda/aws"
+  source  = "terraform-aws-modules/lambda/aws"
+  version = "7.21.1"
 
   function_name      = "${local.name}-target_bpi_update"
   description        = "This function regularly updates the target BPI of the ECS Service Target Tracking Policy"

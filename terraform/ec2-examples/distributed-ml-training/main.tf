@@ -97,7 +97,7 @@ resource "aws_placement_group" "workers" {
 
 module "autoscaling_head" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.5"
+  version = "~> 8.3.1"
 
   name = "${local.name}-head"
 
@@ -137,7 +137,7 @@ module "autoscaling_head" {
 
 module "autoscaling_workers" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.5"
+  version = "~> 8.3.1"
 
   name = "${local.name}-workers"
 

@@ -17,13 +17,13 @@ VPC Endpoints optimize the network path by avoiding traffic to internet gateways
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | = 5.100.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | = 5.100.0 |
 
 ## Modules
 
@@ -35,9 +35,9 @@ VPC Endpoints optimize the network path by avoiding traffic to internet gateways
 
 | Name | Type |
 |------|------|
-| [aws_route_table.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route_table) | data source |
-| [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets) | data source |
-| [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
+| [aws_route_table.private](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/route_table) | data source |
+| [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/subnets) | data source |
+| [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/vpc) | data source |
 
 ## Inputs
 
