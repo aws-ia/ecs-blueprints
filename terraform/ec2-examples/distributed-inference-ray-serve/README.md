@@ -7,8 +7,8 @@ This solution blueprint creates the infrastructure to run distributed inference 
 * Service discovery: The head node is registered to a private DNS using local zones via cloud map. This allows worker tasks to discover the head task and join the cluster on start up.
 * 2 autoscaling groups: One for the head instance and another one for the worker instances
 * ECS service definition:
-  * Head service: runs singleton processes responsible for cluster management along with training jobs
-  * Worker service: runs training jobs
+  * Head service: runs singleton processes responsible for cluster management along with training and inference jobs
+  * Worker service: runs training and inference jobs
 
 ## Deployment
 
@@ -35,9 +35,9 @@ The tasks can take several minutes to deploy, and the following steps will fail 
 3. Connect to the head container.
 
 ```bash
-TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-distributed-ml-training --service-name distributed_ml_training_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
+TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-distributed-ml-inference --service-name distributed_ml_inference_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
 
-aws ecs execute-command --region us-west-2 --cluster ecs-demo-distributed-ml-training --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive
+aws ecs execute-command --region us-west-2 --cluster ecs-demo-distributed-ml-inference --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive
 ```
 
 5. Check the cluster status. 3 nodes should be listed as healthy with a total of 12.0 GPUs available - If you do not see 12.0 GPUs, the workers have not started yet.
@@ -75,15 +75,14 @@ Total Demands:
 
 ```
 
-## Example 1: Fractional GPU using T5 small for translation
+## Example 1: Fractional GPU using T5 small for translation from english to french
 
-1. Download fractional inference scripts.
+1. Download fractional inference scripts. 
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/translator_t5_small.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/fractional_gpu.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/test_translator.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/delete_translator.py
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/translator_t5_small.py
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/fractional_gpu.yaml
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_translator.py
 ```
 
 2. Use ray serve to deploy 28 instances of the t5 model using 0.5 GPUs per each one. This loads 2 model instances per physical NVIDIA A10 chip
@@ -92,7 +91,7 @@ wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec
 serve deploy fractional_gpu.yaml
 ```
 
-3. Verify deployment
+3. Verify deployment. It can take several minutes for the deployment to reach HEALTHY state
 
 ```bash
 serve status
@@ -170,7 +169,7 @@ Example output
 
 ```
 
-Note that two copies of the model are deployed in each GPU index. Additional copies are deployed in the other machines that are part of the cluster. You can verify the deployment of the model in other nodes using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform
+Note that two copies of the model are deployed in each GPU index. Additional copies are deployed in the other machines that are part of the cluster. You can verify the deployment of the model in other nodes using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. It can take several minutes for metrics to be reflected in cloudwatch
 
 5. Test the model
 
@@ -199,8 +198,9 @@ Tensor parallelism is a technique that allows for a model to be deployed in mult
 1. Download Tensor parallelism inference files
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/deploy_llama.yaml
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama.py
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/deploy_llama.yaml
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
 ```
 
 2. Deploy with ray serve
@@ -255,7 +255,7 @@ Example output
 AWS ECS (Elastic Container Service) is a container orchestration service offered by Amazon Web Services (AWS). It allows users to run, stop, and manage containers on a cluster of EC2 instances. ECS provides a managed way to deploy and manage containerized applications, making it easier to scale and manage containerized workloads.
 ```
 
-4. Verify the deployment of the model in one of the instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform.
+4. Verify the deployment of the model in one of the instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. Tensor parallelism deploys the model accross multiple GPUs in a single node, it is expected for a single machine to show increased GPU memory. It can take a couple of minutes for the metrics to be shown in the dashboard.
 
 5. Before moving to the next section, delete the model from ray serve
 
@@ -263,16 +263,16 @@ AWS ECS (Elastic Container Service) is a container orchestration service offered
 serve shutdown -y
 ```
 
-## Example 3: Pipeline parallelism deployment with Llama 3.1 80B
+## Example 3: Llama 3.1 80B deployment using pipeline and tensor parallelism 
 
-Pipeline parallelism implements distributed inference accross different nodes or instances, each one with one or more GPUs.
+While tensor parallelism allows a model to deploy into multiple GPUs in the same machine, pipeline parallelism implements distributed inference accross different nodes or instances. Using these techniques, you can implement distributed inference with multi-GPU and multi-node environments
 
 1. Download pipeline parallelism inference files:
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.py
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.yaml
+wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
 ```
 
 2. Deploy with ray serve
@@ -328,7 +328,7 @@ AWS ECS (Amazon Elastic Container Service) is a container orchestration service 
 (...)
 ```
 
-4. Verify the deployment of the model in the three instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. Each time the test_llama_pp.py is executed, the GPU utilization increases as well
+4. Verify the deployment of the model in the three instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. Because we are now loading the model accross all three nodes and all their GPUs, memory utilization increases in all instances.
 
 5. Before moving to the next section, delete the model from ray serve
 
@@ -341,12 +341,12 @@ serve shutdown -y
 1. Stop ECS tasks and wait for the status to be propagated via ECS. 
 
 ```shell
-aws ecs update-service --service distributed_ml_training_worker_service \
---desired-count 0 --cluster ecs-demo-distributed-ml-training \
+aws ecs update-service --service distributed_ml_inference_worker_service \
+--desired-count 0 --cluster ecs-demo-distributed-ml-inference \
 --region us-west-2 --query 'service.serviceName'
 
-aws ecs update-service --service distributed_ml_training_head_service \
---desired-count 0 --cluster ecs-demo-distributed-ml-training \
+aws ecs update-service --service distributed_ml_inference_head_service \
+--desired-count 0 --cluster ecs-demo-distributed-ml-inference \
 --region us-west-2 --query 'service.serviceName'
 
 sleep 30s 
