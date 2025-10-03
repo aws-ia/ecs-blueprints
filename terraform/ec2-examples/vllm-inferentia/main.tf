@@ -2,11 +2,10 @@ provider "aws" {
   region = local.region
 }
 locals {
-  name                 = "ecs-demo-vllm-inferentia"   # Defaul name of the project
-  region               = "us-west-2"                  # Default region
-  instance_type        = "inf2.8xlarge"               # Default instance size - if you change this - you will need to modify the cpu/memory details in the task definition
-  vllm_container_image = "<ECR IMAGE URI>"            # ECR Image URI you created when building and pushing your image
-  hugging_face_api_key = "<YOUR HUGGIN FACE API KEY>" # Your Hugging Face API Key
+  name                 = "ecs-demo-vllm-inferentia" # Defaul name of the project
+  region               = "us-west-2"                # Default region
+  instance_type        = "inf2.8xlarge"             # Default instance size - if you change this - you will need to modify the cpu/memory details in the task definition
+  vllm_container_image = "public.ecr.aws/neuron/pytorch-inference-vllm-neuronx:0.9.1-neuronx-py311-sdk2.26.0-ubuntu22.04"
   user_data            = <<-EOT
     #!/bin/bash
     cat <<'EOF' >> /etc/ecs/ecs.config
@@ -163,30 +162,22 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
       ]
       environment = [
         {
-          name  = "HF_TOKEN"
-          value = local.hugging_face_api_key
-        },
-        {
-          name  = "FI_EFA_FORK_SAFE"
-          value = "1"
-        },
-        {
-          name  = "VLLM_TARGET_DEVICE"
-          value = "neuron"
-        },
-        {
-          name  = "NEURON_CC_FLAGS"
-          value = "--target=inf2"
+          name  = "VLLM_NEURON_FRAMEWORK"
+          value = "neuronx-distributed-inference"
         }
       ]
       command = [
-        "--model",
-        "meta-llama/Llama-3.2-1B",
-        "--device", "neuron",
+        "python",
+        "-m",
+        "vllm.entrypoints.openai.api_server",
+        "--model", "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        "--max-num-seqs", "4",
+        "--max-model-len", "128",
         "--tensor-parallel-size", "2",
-        "--block-size", "8",
-        "--max-model-len", "4096",
-        "--max-num-seqs", "32",
+        "--port", "8000",
+        "--device", "neuron",
+        "--override-neuron-config", "{\"enable_bucketing\":false}",
+
       ]
       linuxParameters = {
         devices = [
@@ -197,7 +188,7 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
           }
         ]
         capabilities = {
-          add = ["IPC_LOCK"]
+          add = ["IPC_LOCK", "SYS_ADMIN"]
         }
       }
       logConfiguration = {
