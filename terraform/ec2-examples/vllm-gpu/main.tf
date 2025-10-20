@@ -17,7 +17,7 @@ cat <<'EOF' >> /etc/ecs/ecs.config
 ECS_CLUSTER=${local.name}
 EOF
 echo "ip_resolve=4" >> /etc/yum.conf
-
+mkdir -p /opt/model_cache/huggingface
 yum install amazon-cloudwatch-agent -y
 cat << 'EOF' > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 {
@@ -104,7 +104,7 @@ module "autoscaling_vllm" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "~> 6.5"
 
-  name          = "${local.name}"
+  name          = local.name
   image_id      = jsondecode(data.aws_ssm_parameter.ecs_gpu_optimized_ami.value)["image_id"]
   instance_type = local.instance_type
 
@@ -229,13 +229,19 @@ module "ecs_service_vllm" {
       linux_parameters = {
         sharedMemorySize = 20480
       }
+      environment = [
+        {
+          name  = "HF_HUB_CACHE"
+          value = "/.cache/huggingface/hub"
+        }
+      ]
       resource_requirements = [{
         type  = "GPU"
         value = 4
       }]
       mount_points = [{
         sourceVolume  = "cache_huggingface"
-        containerPath = "/.cache/huggingface"
+        containerPath = "/.cache/huggingface/hub"
         readOnly      = false
       }]
       port_mappings = [
@@ -248,11 +254,7 @@ module "ecs_service_vllm" {
   }
   volume = {
     "cache_huggingface" = {
-      dockerVolumeConfiguration = {
-        scope         = "shared",
-        driver        = "local",
-        autoprovision = true
-      }
+      host_path = "/opt/model_cache/huggingface"
     }
   }
 
@@ -482,11 +484,6 @@ data "aws_vpc" "core_infra" {
   }
 }
 
-data "aws_service_discovery_dns_namespace" "core_infra" {
-  name = "default.core-infra.local"
-  type = "DNS_PRIVATE"
-}
-
 resource "null_resource" "wait_for_instance" {
   depends_on = [
     module.autoscaling_vllm
@@ -513,7 +510,3 @@ data "aws_instances" "tagged_instances" {
     values = ["running"]
   }
 }
-
-
-
-

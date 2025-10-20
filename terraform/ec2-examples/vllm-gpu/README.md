@@ -1,11 +1,11 @@
 # ECS inference using vLLM
 
-This solution blueprint creates the infrastructure to run models with tensor parallelism in multiple GPUs within a single node with vLLM
+This solution blueprint creates the infrastructure to run models in multiple GPUs using tensor parallelism within a single task with vLLM
 
 ## Components
 
-* ECS service definition:
-  * vllm service: runs an instance of unsloth/Meta-Llama-3.1-8B-Instruct in 4 GPUs within a g5.12xlarge instance
+* ECS service:
+  * vllm service: runs an inference task of unsloth/Meta-Llama-3.1-8B-Instruct in 4 GPUs within a g5.12xlarge instance
 
 ## Deployment
 
@@ -114,16 +114,18 @@ Example output
 
 7. You can check the GPU utilzation as you make requests using the [vllm-inference cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/vllm-inference) that was created with terraform
 
+8. Logs are sent to cloudwatch by default. These can be accessed via the task view, and selecting the Logs tab.
+
 ## Clean up
 
-1. Stop ECS tasks and wait for the status to be propagated with ECS. 
+1. Stop ECS tasks and wait for the status to be propagated with ECS.
 
 ```shell
 aws ecs update-service --service vllm_inference_service \
---desired-count 0 --cluster ecs-demo-distributed-ml-inference \
+--desired-count 0 --cluster ecs-demo-vllm-gpu \
 --region us-west-2 --query 'service.serviceName'
 
-sleep 30s 
+sleep 30s
 ```
 
 1. Destroy this blueprint
