@@ -79,6 +79,10 @@ module "ecs_cluster" {
   source       = "terraform-aws-modules/ecs/aws//modules/cluster"
   version      = "~> 5.0"
   cluster_name = local.name
+  cluster_settings = [{
+    name  = "containerInsights",
+    value = "enhanced"
+  }]
   # Capacity provider - autoscaling group
   default_capacity_provider_use_fargate = false
   autoscaling_capacity_providers = {
@@ -164,6 +168,10 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
         {
           name  = "VLLM_NEURON_FRAMEWORK"
           value = "neuronx-distributed-inference"
+        },
+        {
+          name  = "NEURON_COMPILE_CACHE_URL"
+          value = "/neuron-compile-cache"
         }
       ]
       command = [
@@ -175,9 +183,14 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
         "--max-model-len", "128",
         "--tensor-parallel-size", "2",
         "--port", "8000",
-        "--device", "neuron",
-        "--override-neuron-config", "{\"enable_bucketing\":false}",
-
+        "--device", "neuron"
+      ]
+      mountPoints = [
+        {
+          sourceVolume  = "neuron-compile-cache-volume"
+          containerPath = "/neuron-compile-cache"
+          readOnly      = false
+        }
       ]
       linuxParameters = {
         devices = [
@@ -202,6 +215,10 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
       essential = true
     }
   ])
+  volume {
+    name      = "neuron-compile-cache-volume"
+    host_path = "/opt/cache/neuron-compile"
+  }
   tags = {
     app = "neuronx-vllm"
   }

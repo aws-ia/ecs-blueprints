@@ -1,14 +1,11 @@
-# ECS machine learning distributed training
+# ECS Inference using vLLM with inf2
 
-This solution blueprint creates the infrastructure needed to run GenAI inference using [vLLM](https://docs.vllm.ai/en/latest/index.html) with [AWS Neuron](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/) and Inferentia 2 instances.  This solution is based on similar examples for running inference using vLLM on [EKS](https://aws.amazon.com/blogs/machine-learning/deploy-meta-llama-3-1-8b-on-aws-inferentia-using-amazon-eks-and-vllm/) and [EC2](https://aws.amazon.com/blogs/machine-learning/serving-llms-using-vllm-and-amazon-ec2-instances-with-aws-ai-chips/) using Inferentia-based instances.
+This solution blueprint creates the infrastructure to run models in multiple nueron cores using tensor parallelism within a single task with vLLM. By default, it uses one inf2.8xlarge instance.
 
-By default, this blueprint deploys inf2.8xlarge instances optimized for GenAI inference workloads. The setup is tailored for running vLLM with pre-compiled Neuron-compatible models. You can modify the instance type and resource allocation by changing the variables in the Terraform configuration.
 
 ## Components
 
-*	ECS Cluster:
-    *	Uses an autoscaling group to provision inf2 instances for the ECS cluster.
-    *	Allows dynamic scaling of GenAI workloads.
+*	ECS Cluster
 *	ECS Service Definition:
     *	vLLM Service: Configured to serve requests for GenAI inference using vLLM.
 *	Application Load Balancer:
@@ -43,10 +40,13 @@ Once the cluster and services are deployed, you can use the load balancer DNS na
 
 Send a POST request to the vLLM OpenAI-compatible endpoint:
 ```bash
-curl -X POST http://<ALB_DNS_NAME>:8000/v1/completions \
+
+ALB_DNS_NAME=$(terraform output -raw load_balancer_dns_name)
+
+curl -X POST http://$ALB_DNS_NAME:8000/v1/completions \
 -H "Content-Type: application/json" \
 -d '{
-  "model": "meta-llama/Llama-3.2-1B",
+  "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
   "prompt": "Write a short poem about technology",
   "max_tokens": 100,
   "temperature": 0.7
@@ -59,7 +59,7 @@ Example Response:
   "id": "cmpl-6ze...",
   "object": "text_completion",
   "created": 1680307267,
-  "model": "meta-llama/Llama-3.2-1B",
+  "model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
   "choices": [
     {
       "text": "\n\nTechnology, a wondrous art,\nA force that shapes the world's heart.\nIn circuits small and data vast,\nIt links the future to the past.",
@@ -104,23 +104,29 @@ Congratulations on successfully deploying your vLLM inference solution on ECS wi
 
 ## Clean up
 
-1. Destroy this blueprint
+1. Stop ECS tasks and wait for the status to be propagated with ECS.
+
+```shell
+aws ecs update-service --service neuronx-vllm-service \
+--desired-count 0 --cluster ecs-demo-vllm-inferentia \
+--region us-west-2 --query 'service.serviceName'
+
+sleep 30s
+```
+
+2. Destroy this blueprint
 
 ```shell
 terraform destroy
 ```
 
-1. Destroy core-infra resources
+3. Destroy core-infra resources
 
 ```shell
 cd ../core-infra
 terraform destroy
 
 ```
-
-## Troubleshooting
-
-
 
 ## Support
 
