@@ -77,7 +77,7 @@ Total Demands:
 
 ## Example 1: Fractional GPU using T5 small for translation from english to french
 
-1. Download fractional inference scripts. 
+1. Download fractional inference scripts.
 
 ```bash
 wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/translator_t5_small.py
@@ -263,7 +263,7 @@ AWS ECS (Elastic Container Service) is a container orchestration service offered
 serve shutdown -y
 ```
 
-## Example 3: Llama 3.1 80B deployment using pipeline and tensor parallelism 
+## Example 3: Llama 3.1 80B deployment using pipeline and tensor parallelism
 
 While tensor parallelism allows a model to deploy into multiple GPUs in the same machine, pipeline parallelism implements distributed inference accross different nodes, such as EC2 instances or ECS tasks. Using these techniques, you can implement distributed inference with multi-GPU and multi-node environments
 
@@ -338,7 +338,7 @@ serve shutdown -y
 
 ## Clean up
 
-1. Stop ECS tasks and wait for the status to be propagated via ECS. 
+1. Stop ECS tasks and wait for the status to be propagated via ECS.
 
 ```shell
 aws ecs update-service --service distributed_ml_inference_worker_service \
@@ -349,7 +349,7 @@ aws ecs update-service --service distributed_ml_inference_head_service \
 --desired-count 0 --cluster ecs-demo-distributed-ml-inference \
 --region us-west-2 --query 'service.serviceName'
 
-sleep 30s 
+sleep 30s
 ```
 
 1. Destroy this blueprint
