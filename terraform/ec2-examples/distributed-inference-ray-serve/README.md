@@ -1,12 +1,12 @@
-# ECS distributed inference using Ray serve
+# ECS distributed inference using Ray Serve
 
-This solution blueprint creates the infrastructure to run distributed inference jobs using a [Ray cluster](https://docs.ray.io/en/latest/cluster/getting-started.html) with Ray serve
+This solution blueprint creates the infrastructure to run distributed inference jobs using a [Ray cluster](https://docs.ray.io/en/latest/cluster/getting-started.html) with Ray Serve
 
 ## Components
 
 * Service discovery: The head node is registered to a private DNS using local zones via cloud map. This allows worker tasks to discover the head task and join the cluster on start up.
-* 2 autoscaling groups: One for the head instance and another one for the worker instances
-* ECS service definition:
+* 2 EC2 capacity providers: One for the head instance and another one for the worker instances
+* ECS services:
   * Head service: runs singleton processes responsible for cluster management along with training and inference jobs
   * Worker service: runs training and inference jobs
 
@@ -28,7 +28,7 @@ terraform init
 terraform apply
 ```
 
-Once the cluster is deployed and tasks running, you can connect to the head task via ECS connect. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) provide a better user experience to interact with ray clusters in development environments.
+Once the cluster is deployed and tasks running, you can connect to the head task via ECS connect. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or an automated deployment pipeline provide a better user experience to interact with ray clusters in development and production environments.
 
 The tasks can take several minutes to deploy, and the following steps will fail if they are not running
 
@@ -80,9 +80,9 @@ Total Demands:
 1. Download fractional inference scripts. 
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/translator_t5_small.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/fractional_gpu.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_translator.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/translator_t5_small.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/fractional_gpu.yaml
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/test_translator.py
 ```
 
 2. Use ray serve to deploy 28 instances of the t5 model using 0.5 GPUs per each one. This loads 2 model instances per physical NVIDIA A10 chip
@@ -193,14 +193,14 @@ serve shutdown -y
 
 ## Example 2: Tensor parallelism deployment with Llama 3.1 7B
 
-Tensor parallelism is a technique that allows for a model to be deployed in multiple GPUs within the same instance, and it is meant to be used when the model can't fit in the memory within a single GPU. In this step, you will deploy a Llama 3.1 7B accross the 4 GPUs available in a g5.12xlarge instance
+Tensor parallelism is a technique that allows for a model to be deployed in multiple GPUs within the same VM instance or ECS task, and it is meant to be used when the model can't fit in the memory within a single GPU. In this step, you will deploy a Llama 3.1 7B accross the 4 GPUs available in a g5.12xlarge instance
 
 1. Download Tensor parallelism inference files
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/deploy_llama.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/deploy_llama.yaml
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
 ```
 
 2. Deploy with ray serve
@@ -255,7 +255,7 @@ Example output
 AWS ECS (Elastic Container Service) is a container orchestration service offered by Amazon Web Services (AWS). It allows users to run, stop, and manage containers on a cluster of EC2 instances. ECS provides a managed way to deploy and manage containerized applications, making it easier to scale and manage containerized workloads.
 ```
 
-4. Verify the deployment of the model in one of the instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. Tensor parallelism deploys the model accross multiple GPUs in a single node, it is expected for a single machine to show increased GPU memory. It can take a couple of minutes for the metrics to be shown in the dashboard.
+4. Verify the deployment of the model in one of the instances using the GPU memory utilization metric available at the [distributed-inference-ray-serve cloudwatch dashboard](https://us-west-2.console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards/dashboard/distributed-inference-ray-serve) that was created with terraform. Tensor parallelism deploys the model accross multiple GPUs in a single node, it is expected for a single EC2 instance to show increased GPU memory in this example. It can take a couple of minutes for the metrics to appear.
 
 5. Before moving to the next section, delete the model from ray serve
 
@@ -265,14 +265,14 @@ serve shutdown -y
 
 ## Example 3: Llama 3.1 80B deployment using pipeline and tensor parallelism 
 
-While tensor parallelism allows a model to deploy into multiple GPUs in the same machine, pipeline parallelism implements distributed inference accross different nodes or instances. Using these techniques, you can implement distributed inference with multi-GPU and multi-node environments
+While tensor parallelism allows a model to deploy into multiple GPUs in the same machine, pipeline parallelism implements distributed inference accross different nodes, such as EC2 instances or ECS tasks. Using these techniques, you can implement distributed inference with multi-GPU and multi-node environments
 
 1. Download pipeline parallelism inference files:
 
 ```bash
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.py
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.yaml
-wget https://raw.githubusercontent.com/sfloresk/ecs-blueprints/distributed-inference-ec2-examples/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/serve_llama_pp.py
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/deploy_llama_pp.yaml
+wget https://raw.githubusercontent.com/aws-ia/ecs-blueprints/main/terraform/ec2-examples/distributed-inference-ray-serve/test_llama.py
 ```
 
 2. Deploy with ray serve
