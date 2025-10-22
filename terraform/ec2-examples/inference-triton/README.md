@@ -1,6 +1,6 @@
 # Triton inference server in Amazon ECS
 
-This solution blueprint runs a triton server with vLLM backend on top ECS using a g5.12xlarge instance
+This solution blueprint runs a triton server with a vLLM backend on top ECS using a g5.12xlarge instance
 
 ## Deployment of TinyLlama/TinyLlama-1.1B-Chat-v1.0
 
@@ -22,10 +22,7 @@ terraform apply
 
 ## Example: Running TinyLlama/TinyLlama-1.1B-Chat-v1.0
 
-Once the cluster and services are deployed, you can use the load balancer DNS name (output during the deployment) to send requests to the vLLM service.
-
-
-Send a POST request to the server via the ALB endpoint
+Once the cluster and services are deployed, you can use the load balancer DNS name (output during the deployment) to send requests to the vLLM service. It can take several minutes for the triton task to start, if the following command returns 5xx errors, the task might not have started yet.
 
 ```bash
 ALB_NAME=$(terraform output -raw load_balancer_dns_name)
@@ -46,7 +43,7 @@ Example Response:
 ```shell
 aws ecs update-service --service triton-service \
 --desired-count 0 --cluster ecs-demo-triton-inference \
---region us-west-2 --no-paginate
+--region us-west-2 --query 'service.serviceName'
 
 sleep 30s
 ```

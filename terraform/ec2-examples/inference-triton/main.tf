@@ -243,8 +243,8 @@ resource "aws_ecs_task_definition" "triton" {
       environment = [
 
       ]
-      command = ["/bin/bash", "-lc", "--",
-      "tritonserver --model-repository=./model-repository"]
+      command = ["tritonserver",
+      "--model-repository=/opt/tritonserver/model_repository"]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
