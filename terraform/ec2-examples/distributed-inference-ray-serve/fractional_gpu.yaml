@@ -1,0 +1,23 @@
+proxy_location: EveryNode
+
+http_options:
+  host: 0.0.0.0
+  port: 8000
+
+logging_config:
+  encoding: TEXT
+  log_level: INFO
+  logs_dir: null
+  enable_access_log: true
+
+applications:
+  - name: translator
+    route_prefix: /
+    import_path: translator_t5_small:translator_app
+    runtime_env: {}
+    deployments:
+      - name: Translator
+        num_replicas: 24
+        ray_actor_options:
+          num_cpus: 0.0
+          num_gpus: 0.5
