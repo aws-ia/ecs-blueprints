@@ -1,0 +1,84 @@
+proxy_location: EveryNode
+
+http_options:
+  host: 0.0.0.0
+
+  port: 8000
+
+grpc_options:
+  port: 9000
+
+  grpc_servicer_functions: []
+
+logging_config:
+  encoding: TEXT
+
+  log_level: INFO
+
+  logs_dir: null
+
+  enable_access_log: true
+
+  additional_log_standard_attrs: []
+
+applications:
+  - name: app1
+
+    route_prefix: /
+
+    import_path: serve_llama:app
+
+    runtime_env: {}
+
+    deployments:
+      - name: LLMServer:my-llama-3_1-8b
+        max_ongoing_requests: 1000000000
+        autoscaling_config:
+          min_replicas: 1
+          initial_replicas: null
+          max_replicas: 4
+          target_ongoing_requests: 2
+          metrics_interval_s: 10.0
+          look_back_period_s: 30.0
+          smoothing_factor: 1.0
+          upscale_smoothing_factor: null
+          downscale_smoothing_factor: null
+          upscaling_factor: null
+          downscaling_factor: null
+          downscale_delay_s: 600.0
+          upscale_delay_s: 30.0
+        health_check_period_s: 10.0
+        health_check_timeout_s: 10.0
+        ray_actor_options:
+          runtime_env:
+            worker_process_setup_hook: ray.llm._internal.serve._worker_process_setup_hook
+          num_cpus: 1.0
+        placement_group_bundles:
+          - CPU: 1.0
+            GPU: 0.0
+          - GPU: 1.0
+            accelerator_type:A10G: 0.001
+          - GPU: 1.0
+            accelerator_type:A10G: 0.001
+          - GPU: 1.0
+            accelerator_type:A10G: 0.001
+          - GPU: 1.0
+            accelerator_type:A10G: 0.001
+        placement_group_strategy: STRICT_PACK
+
+      - name: LLMRouter
+        max_ongoing_requests: 1000000000
+        autoscaling_config:
+          min_replicas: 2
+          initial_replicas: 2
+          max_replicas: 8
+          target_ongoing_requests: 1000000000.0
+          metrics_interval_s: 10.0
+          look_back_period_s: 30.0
+          smoothing_factor: 1.0
+          upscale_smoothing_factor: null
+          downscale_smoothing_factor: null
+          upscaling_factor: null
+          downscaling_factor: null
+          downscale_delay_s: 600.0
+          upscale_delay_s: 30.0
