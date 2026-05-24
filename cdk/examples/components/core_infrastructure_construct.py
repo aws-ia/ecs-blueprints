@@ -1,5 +1,3 @@
-from distutils import util
-
 from aws_cdk import PhysicalName, StackProps, RemovalPolicy
 from aws_cdk.aws_ec2 import IpAddresses, Vpc, InstanceType
 from aws_cdk.aws_autoscaling import AutoScalingGroup
@@ -14,6 +12,7 @@ from aws_cdk.aws_ecs import (
 from aws_cdk.aws_iam import ManagedPolicy, Role, ServicePrincipal
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
+from components.config import strtobool
 from constructs import Construct
 
 
@@ -34,9 +33,9 @@ class CoreInfrastructureProps(StackProps):
         self.aws_region = aws_region
         self.vpc_cidr = vpc_cidr
         self.namespaces = namespaces.split(",")
-        self.enable_nat_gw = bool(util.strtobool(enable_nat_gw))
+        self.enable_nat_gw = bool(strtobool(enable_nat_gw))
         self.az_count = int(az_count)
-        self.create_ec2_instance = bool(util.strtobool(create_ec2_instance))
+        self.create_ec2_instance = bool(strtobool(create_ec2_instance))
 
 class CoreInfrastructureConstruct(Construct):
     def __init__(
