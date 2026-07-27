@@ -1,0 +1,52 @@
+name: Deploy test
+
+# Proves representative examples deploy, serve traffic, and destroy cleanly in a
+# real sandbox account. This backs the repository's "clone and apply once"
+# promise; static validate/synth checks cannot catch runtime failures.
+#
+# Requires repository configuration before it can run:
+#   - An AWS IAM role for GitHub OIDC in a DEDICATED SANDBOX account
+#     (see docs/authentication.md), stored as the DEPLOY_TEST_ROLE_ARN secret.
+#   - The `deploy-test` environment created in repo settings (for approval gating).
+# Until those exist, the workflow only runs when triggered manually.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 1" # weekly, Monday 08:00 UTC
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy-test:
+    if: ${{ vars.DEPLOY_TEST_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: deploy-test
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - root: terraform/patterns/lb-service
+            url_output: application_url
+          - root: terraform/patterns/express-mode
+            url_output: quick_start_url
+          - root: terraform/patterns/backend-service
+            url_output: ""
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@a159d7bb5354cf786f855f2f5d1d8d768d9a08d1 # v4.3.0
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_TEST_ROLE_ARN }}
+          aws-region: us-west-2
+      - run: bash scripts/ci/deploy-test.sh "${{ matrix.root }}" "${{ matrix.url_output }}"

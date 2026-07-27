@@ -1,98 +1,47 @@
-name: pre-commit
+name: Pre-commit
 
 on:
   pull_request:
+  push:
     branches:
       - main
 
+permissions:
+  contents: read
+
 env:
-  TERRAFORM_DOCS_VERSION: v0.16.0
-  TFLINT_VERSION: v0.45.0
+  TERRAFORM_DOCS_VERSION: v0.20.0
+  TERRAFORM_DOCS_SHA256: 34ae01772412bb11474e6718ea62113e38ff5964ee570a98c69fafe3a6dff286
+  TFLINT_VERSION: v0.59.1
+  TFLINT_SHA256: 6108d84282292f11d793dc8038ce08fbc629dcd25324d6f13c63d8100b52e01f
 
 jobs:
-  collectInputs:
-    name: Collect workflow inputs
+  pre-commit:
     runs-on: ubuntu-latest
-    outputs:
-      directories: ${{ steps.dirs.outputs.directories }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Get root directories
-        id: dirs
-        uses: clowdhaus/terraform-composite-actions/directories@v1.8.3
-
-  preCommitMinVersions:
-    name: Min TF pre-commit
-    needs: collectInputs
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        directory: ${{ fromJson(needs.collectInputs.outputs.directories) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: dorny/paths-filter@v2
-        id: changes
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          # We only need to check Terraform files for the current directory
-          # because the `preCommitMaxVersion` job will run the full,
-          # exhaustive checks (always)
-          filters: |
-            src:
-              - '${{ matrix.directory }}/*.tf'
-
-      - name: Terraform min/max versions
-        uses: clowdhaus/terraform-min-max@v1.2.5
-        if: steps.changes.outputs.src == 'true'
-        id: minMax
+          python-version: "3.12"
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
-          directory: ${{ matrix.directory }}
+          terraform_version: 1.15.8
+          terraform_wrapper: false
+      - name: Install Terraform helper tools
+        run: |
+          terraform_docs_archive="${RUNNER_TEMP}/terraform-docs.tar.gz"
+          tflint_archive="${RUNNER_TEMP}/tflint.zip"
 
-      - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
-        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
-        # Run only validate pre-commit check on min version supported
-        if: ${{ matrix.directory !=  '.' && steps.changes.outputs.src == 'true' }}
-        with:
-          terraform-version: ${{ steps.minMax.outputs.minVersion }}
-          tflint-version: ${{ env.TFLINT_VERSION }}
-          args: 'terraform_validate --color=always --show-diff-on-failure --files ${{ matrix.directory }}/*'
+          curl -fsSLo "${terraform_docs_archive}" \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          echo "${TERRAFORM_DOCS_SHA256}  ${terraform_docs_archive}" | sha256sum --check
+          tar -xzf "${terraform_docs_archive}" -C "${RUNNER_TEMP}" terraform-docs
+          sudo install -m 0755 "${RUNNER_TEMP}/terraform-docs" /usr/local/bin/terraform-docs
 
-      - name: Pre-commit Terraform ${{ steps.minMax.outputs.minVersion }}
-        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
-        # Run only validate pre-commit check on min version supported
-        if: ${{ matrix.directory ==  '.' && steps.changes.outputs.src == 'true' }}
-        with:
-          terraform-version: ${{ steps.minMax.outputs.minVersion }}
-          tflint-version: ${{ env.TFLINT_VERSION }}
-          args: 'terraform_validate --color=always --show-diff-on-failure --files $(ls *.tf)'
-
-  preCommitMaxVersion:
-    name: Max TF pre-commit
-    runs-on: ubuntu-latest
-    needs: collectInputs
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            src:
-              - '**/*.tf'
-
-      - name: Terraform min/max versions
-        id: minMax
-        uses: clowdhaus/terraform-min-max@v1.2.5
-        if: steps.changes.outputs.src == 'true'
-
-      - name: Pre-commit Terraform ${{ steps.minMax.outputs.maxVersion }}
-        uses: clowdhaus/terraform-composite-actions/pre-commit@v1.8.3
-        if: steps.changes.outputs.src == 'true'
-        with:
-          terraform-version: ${{ steps.minMax.outputs.maxVersion }}
-          terraform-docs-version: ${{ env.TERRAFORM_DOCS_VERSION }}
-          tflint-version: ${{ env.TFLINT_VERSION }}
+          curl -fsSLo "${tflint_archive}" \
+            "https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}/tflint_linux_amd64.zip"
+          echo "${TFLINT_SHA256}  ${tflint_archive}" | sha256sum --check
+          unzip -q "${tflint_archive}" -d "${RUNNER_TEMP}/tflint"
+          sudo install -m 0755 "${RUNNER_TEMP}/tflint/tflint" /usr/local/bin/tflint
+      - run: python -m pip install pre-commit==4.2.0
+      - run: pre-commit run --all-files --show-diff-on-failure
