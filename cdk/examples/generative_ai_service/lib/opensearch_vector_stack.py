@@ -1,9 +1,10 @@
 from aws_cdk import CfnOutput, Stack
 from aws_cdk.aws_opensearchserverless import (
     CfnSecurityPolicy,
-    CfnAccessPolicy,
-    CfnCollection
+    CfnCollection,
+    CfnVpcEndpoint,
 )
+from aws_cdk.aws_ec2 import Peer, Port, SecurityGroup, SubnetType, Vpc
 from constructs import Construct
 from aws_cdk.aws_ssm import StringParameter
 
@@ -12,14 +13,37 @@ class OpenSearchVectorEngineStack(Stack):
         self,
         scope: Construct,
         id: str,
+        vpc: Vpc,
         **kwargs
     ) -> None:
 
         super().__init__(scope, id, **kwargs)
 
         # opensearch variables
-        collection_name = "movie"
-        ecs_role_arn="arn:aws:iam::"+self.account+":role/GenAIServiceTaskRole"
+        self.collection_name = "movie"
+        collection_name = self.collection_name
+
+        endpoint_security_group = SecurityGroup(
+            self,
+            "OpenSearchServerlessEndpointSecurityGroup",
+            vpc=vpc,
+            allow_all_outbound=True,
+        )
+        endpoint_security_group.add_ingress_rule(
+            Peer.ipv4(vpc.vpc_cidr_block),
+            Port.tcp(443),
+            "Allow HTTPS from the VPC",
+        )
+        self.vpc_endpoint = CfnVpcEndpoint(
+            self,
+            "OpenSearchServerlessVpcEndpoint",
+            name=f"{collection_name}-endpoint",
+            security_group_ids=[endpoint_security_group.security_group_id],
+            subnet_ids=vpc.select_subnets(
+                subnet_type=SubnetType.PRIVATE_WITH_EGRESS
+            ).subnet_ids,
+            vpc_id=vpc.vpc_id,
+        )
 
         # network access
         self.network_policy = CfnSecurityPolicy(
@@ -27,7 +51,22 @@ class OpenSearchVectorEngineStack(Stack):
             f'sample-vectordb-nw-{collection_name}',
             name=f'sample-vectordb-nw-{collection_name}',
             type='network',
-            policy="""[{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/"""+ collection_name + """\"]}, {\"ResourceType\":\"dashboard\",\"Resource\":[\"collection/"""+ collection_name + """\"]}],\"AllowFromPublic\":true}]"""
+            policy=self.to_json_string([
+                {
+                    "Rules": [
+                        {
+                            "ResourceType": "collection",
+                            "Resource": [f"collection/{collection_name}"],
+                        },
+                        {
+                            "ResourceType": "dashboard",
+                            "Resource": [f"collection/{collection_name}"],
+                        },
+                    ],
+                    "AllowFromPublic": False,
+                    "SourceVPCEs": [self.vpc_endpoint.attr_id],
+                }
+            ]),
         )
 
         # encryption
@@ -37,15 +76,6 @@ class OpenSearchVectorEngineStack(Stack):
             name=f'sample-vectordb-encryption-{collection_name}',
             type='encryption',
             policy="""{\"Rules\":[{\"ResourceType\":\"collection\",\"Resource\":[\"collection/"""+ collection_name +"""\"]}],\"AWSOwnedKey\":true}"""
-        )
-
-        # data access
-        self.data_access_policy = CfnAccessPolicy(
-            self,
-            f'sample-vectordb-data-{collection_name}',
-            name=f'sample-vectordb-data-{collection_name}',
-            type='data',
-            policy="""[{\"Rules\":[{\"ResourceType\":\"index\",\"Resource\":[\"index/"""+ collection_name +"""/*\"], \"Permission\": [\"aoss:*\"]}, {\"ResourceType\":\"collection\",\"Resource\":[\"collection/"""+ collection_name +"""\"], \"Permission\": [\"aoss:*\"]}], \"Principal\": [\"""" + ecs_role_arn + """\"]}]"""
         )
 
         # opensearch serverless for vector search
@@ -60,7 +90,6 @@ class OpenSearchVectorEngineStack(Stack):
 
         self.cfn_collection.add_dependency(self.encryption_policy)
         self.cfn_collection.add_dependency(self.network_policy)
-        self.cfn_collection.add_dependency(self.data_access_policy)
 
         CfnOutput(
             self,

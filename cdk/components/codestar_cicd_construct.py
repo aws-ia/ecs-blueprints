@@ -1,4 +1,4 @@
-from aws_cdk import RemovalPolicy, SecretValue, StackProps
+from aws_cdk import ArnFormat, RemovalPolicy, SecretValue, Stack, StackProps
 from aws_cdk.aws_codebuild import (
     BuildEnvironment,
     BuildEnvironmentVariable,
@@ -16,8 +16,7 @@ from aws_cdk.aws_codepipeline_actions import (
 )
 from aws_cdk.aws_ecr import Repository
 from aws_cdk.aws_iam import (
-    AnyPrincipal,
-    Effect,
+    ArnPrincipal,
     PolicyStatement,
     Role,
     ServicePrincipal,
@@ -73,6 +72,7 @@ class CodeStarCICDConstruct(Construct):
         self._create_codebuild_project()
         self._create_artifacts()
         self._create_ecs_code_pipeline_role()
+        self._create_ecs_deploy_action_role()
         self._create_codepipeline_pipeline()
 
     def _create_codebuild_role(self):
@@ -81,25 +81,6 @@ class CodeStarCICDConstruct(Construct):
             "codeBuildServiceRole",
             assumed_by=ServicePrincipal("codebuild.amazonaws.com"),
         )
-
-        inline_policy = PolicyStatement(
-            effect=Effect.ALLOW,
-            actions=[
-                "ecr:GetAuthorizationToken",
-                "ecr:BatchCheckLayerAvailability",
-                "ecr:InitiateLayerUpload",
-                "ecr:UploadLayerPart",
-                "ecr:CompleteLayerUpload",
-                "ecr:PutImage",
-                "s3:Get*",
-                "s3:List*",
-                "s3:PutObject",
-                "secretsmanager:GetSecretValue",
-            ],
-            resources=["*"],
-        )
-
-        self.codebuild_role.add_to_policy(inline_policy)
 
     def _create_ecr_repository(self):
         self.ecr_repository = Repository(
@@ -128,7 +109,7 @@ class CodeStarCICDConstruct(Construct):
                 value=self.cicd_props.folder_path
             ),
             "ECS_EXEC_ROLE_ARN": BuildEnvironmentVariable(
-                value=self.codebuild_role.role_arn
+                value=self.cicd_props.ecs_task_execution_role.role_arn
             ),
         }
 
@@ -168,30 +149,10 @@ class CodeStarCICDConstruct(Construct):
             "ArtifactsBucket",
             encryption=BucketEncryption.S3_MANAGED,
             block_public_access=BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True
         )
-
-        deny_unencrypted_object_uploads = PolicyStatement(
-            effect=Effect.DENY,
-            actions=["s3:PutObject"],
-            principals=[AnyPrincipal()],
-            resources=[self.artifacts_bucket.bucket_arn + "/*"],
-            conditions={
-                "StringNotEquals": {"s3:x-amz-server-side-encryption": "aws:kms"}
-            },
-        )
-
-        deny_insecure_connections = PolicyStatement(
-            effect=Effect.DENY,
-            actions=["s3:*"],
-            principals=[AnyPrincipal()],
-            resources=[self.artifacts_bucket.bucket_arn + "/*"],
-            conditions={"Bool": {"aws:SecureTransport": "false"}},
-        )
-
-        self.artifacts_bucket.add_to_resource_policy(deny_unencrypted_object_uploads)
-        self.artifacts_bucket.add_to_resource_policy(deny_insecure_connections)
 
     def _create_ecs_code_pipeline_role(self):
         self.code_pipeline_role = Role(
@@ -200,29 +161,74 @@ class CodeStarCICDConstruct(Construct):
             assumed_by=ServicePrincipal("codepipeline.amazonaws.com"),
         )
 
-        inline_policy = PolicyStatement(
-            effect=Effect.ALLOW,
-            actions=[
-                "iam:PassRole",
-                "sts:AssumeRole",
-                "codecommit:Get*",
-                "codecommit:List*",
-                "codecommit:GitPull",
-                "codecommit:UploadArchive",
-                "codecommit:CancelUploadArchive",
-                "codebuild:BatchGetBuilds",
-                "codebuild:StartBuild",
-                "codedeploy:CreateDeployment",
-                "codedeploy:Get*",
-                "codedeploy:RegisterApplicationRevision",
-                "s3:Get*",
-                "s3:List*",
-                "s3:PutObject",
-            ],
-            resources=["*"],
+    def _create_ecs_deploy_action_role(self):
+        deploy_action_role = Role(
+            self,
+            "EcsDeployActionRole",
+            assumed_by=ArnPrincipal(self.code_pipeline_role.role_arn),
+        )
+        task_definition_arn = Stack.of(self).format_arn(
+            service="ecs",
+            resource="task-definition",
+            resource_name=(
+                f"{self.cicd_props.fargate_service.task_definition.family}:*"
+            ),
+            arn_format=ArnFormat.SLASH_RESOURCE_NAME,
+        )
+        deploy_action_role.add_to_policy(
+            PolicyStatement(
+                actions=[
+                    "ecs:DescribeServices",
+                    "ecs:UpdateService",
+                ],
+                resources=[self.cicd_props.fargate_service.service_arn],
+            )
+        )
+        deploy_action_role.add_to_policy(
+            PolicyStatement(
+                actions=["ecs:TagResource"],
+                resources=[task_definition_arn],
+            )
+        )
+        # Task definition actions do not support resource-level permissions.
+        deploy_action_role.add_to_policy(
+            PolicyStatement(
+                actions=[
+                    "ecs:DescribeTaskDefinition",
+                    "ecs:RegisterTaskDefinition",
+                ],
+                resources=["*"],
+            )
+        )
+        deploy_action_role.add_to_policy(
+            PolicyStatement(
+                actions=["iam:PassRole"],
+                resources=[
+                    self.cicd_props.ecs_task_execution_role.role_arn,
+                    self.cicd_props.fargate_service.task_definition.task_role.role_arn,
+                ],
+                conditions={
+                    "StringEquals": {
+                        "iam:PassedToService": "ecs-tasks.amazonaws.com"
+                    }
+                },
+            )
+        )
+        self.artifacts_bucket.grant_read(deploy_action_role)
+
+        self.ecs_deploy_action_role = Role.from_role_arn(
+            self,
+            "ImmutableEcsDeployActionRole",
+            deploy_action_role.role_arn,
+            mutable=False,
         )
 
-        self.code_pipeline_role.add_to_policy(inline_policy)
+        self.code_pipeline_role.add_to_policy(
+            PolicyStatement(
+                actions=["sts:AssumeRole"],
+                resources=[deploy_action_role.role_arn],
+            )
+        )
 
     def _create_codepipeline_pipeline(self):
         self.pipeline = Pipeline(
@@ -263,6 +269,7 @@ class CodeStarCICDConstruct(Construct):
                         EcsDeployAction(
                             action_name="Deploy",
                             service=self.cicd_props.fargate_service,
+                            role=self.ecs_deploy_action_role,
                             image_file=self.build_artifact.at_path(
                                 "imagedefinitions.json"
                             ),

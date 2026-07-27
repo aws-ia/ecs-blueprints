@@ -1,4 +1,4 @@
-from distutils import util
+from components.config import find_namespace, parse_bool
 
 from aws_cdk import App, Environment
 from components.core_infrastructure_construct import CoreInfrastructureProps
@@ -7,17 +7,18 @@ from dotenv import dotenv_values
 from lib.gen_ai_rag_stack import GenAIRagServiceStack
 from lib.gen_ai_rag_stack_props import GenAIRagServiceStackProps
 
-from other_stack.bedrock_stack import BedrockStack
+from lib.bedrock_stack import BedrockStack
 
 app = App()
 
 env_config = dotenv_values(".env")
 
-deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
-deploy_bedrock = bool(util.strtobool(env_config.pop("deploy_bedrock")))
+deploy_core = parse_bool(env_config["deploy_core_stack"])
+deploy_bedrock = parse_bool(env_config.pop("deploy_bedrock"))
+bedrock_stack = None
 
 if deploy_bedrock:
-    BedrockStack(
+    bedrock_stack = BedrockStack(
         app,
         "BedrockStack",
         env=Environment(
@@ -27,6 +28,10 @@ if deploy_bedrock:
     )
 
 gen_ai_rag_stack_props = GenAIRagServiceStackProps(**env_config)
+if bedrock_stack:
+    gen_ai_rag_stack_props.knowledge_base_id = (
+        bedrock_stack.knowledge_base.knowledge_base_id
+    )
 
 if deploy_core:
     core_config = {
@@ -47,11 +52,10 @@ if deploy_core:
     )
     gen_ai_rag_stack_props.vpc = core_stack.vpc
     gen_ai_rag_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
-    namespaces = [
-        ns
-        for ns in core_stack.private_dns_namespaces
-        if ns.namespace_name == gen_ai_rag_stack_props.namespace_name
-    ][0]
+    gen_ai_rag_stack_props.sd_namespace = find_namespace(
+        core_stack.private_dns_namespaces,
+        gen_ai_rag_stack_props.namespace_name,
+    )
 
     gen_ai_rag_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
 

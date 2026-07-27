@@ -26,3 +26,12 @@ class DataPipelineStackProps(StackProps):
         self.task_memory = int(task_memory)
         self.az_count = int(az_count)
         self.vpc_name = vpc_name
+        self._vpc = None
+
+    @property
+    def vpc(self):
+        return self._vpc
+
+    @vpc.setter
+    def vpc(self, value: Vpc) -> None:
+        self._vpc = value

@@ -1,5 +1,6 @@
-aws-cdk-lib==2.147.3
-python-dotenv==1.0.1
+aws-cdk-lib==2.262.1
+constructs>=10.4.2,<11.0.0
+python-dotenv==1.1.1
 streamlit
 boto3
 sagemaker==2.237.3

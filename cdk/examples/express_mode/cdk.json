@@ -1,0 +1,10 @@
+{
+  "app": "PYTHONPATH=../:../../ python3 app.py",
+  "context": {
+    "@aws-cdk/core:stackRelativeExports": true,
+    "@aws-cdk/core:target-partitions": [
+      "aws",
+      "aws-cn"
+    ]
+  }
+}

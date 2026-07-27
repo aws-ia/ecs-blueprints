@@ -1,5 +1,7 @@
+from pathlib import Path
+
 from aws_cdk import PhysicalName, Stack
-from aws_cdk.aws_ec2 import Vpc
+from aws_cdk.aws_ec2 import Peer, Port, Vpc
 from aws_cdk.aws_ecs import Cluster, ContainerImage, LogDriver
 from aws_cdk.aws_ecr_assets import Platform
 from aws_cdk.aws_ecs_patterns import (
@@ -15,6 +17,9 @@ from aws_cdk.aws_iam import (
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from generative_ai_rag.lib.gen_ai_rag_stack_props import GenAIRagServiceStackProps
+
+WEB_APP_PATH = str(Path(__file__).resolve().parents[1] / "web-app")
+
 
 class GenAIRagServiceStack(Stack):
     def __init__(
@@ -47,7 +52,6 @@ class GenAIRagServiceStack(Stack):
         self.task_role = Role(
             self,
             'GenAIServiceTaskRole',
-            role_name='GenAIServiceTaskRole',
             assumed_by=ServicePrincipal('ecs-tasks.amazonaws.com'),
             description='ECS Task role for Gen AI service'
         )
@@ -58,7 +62,10 @@ class GenAIRagServiceStack(Stack):
             # build container image from local folder
             # image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             # load pre-built image from public repository
-            image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            image=ContainerImage.from_asset(
+                WEB_APP_PATH,
+                platform=Platform.LINUX_AMD64,
+            ),
             environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
@@ -79,26 +86,50 @@ class GenAIRagServiceStack(Stack):
             memory_limit_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
             enable_execute_command=True,
-            public_load_balancer=True,
+            public_load_balancer=False,
+            open_listener=False,
             load_balancer_name="genai-fargate-rag",
             task_image_options=fargate_task_image,
             enable_ecs_managed_tags=True
+        )
+        self.fargate_service.load_balancer.connections.allow_from(
+            Peer.ipv4(self.vpc.vpc_cidr_block),
+            Port.tcp(80),
+            "Allow HTTP access from the VPC",
         )
 
         # Add ECS Task IAM Role
         self.task_role.add_to_policy(
             PolicyStatement(
                 effect=Effect.ALLOW,
-                actions = ["ssm:GetParameter"],
-                resources = ["arn:aws:ssm:*"]
+                actions=["ssm:GetParameter"],
+                resources=[
+                    f"arn:{self.partition}:ssm:{self.region}:{self.account}:parameter/knowledge_base_id"
+                ],
             )
         )
 
         self.task_role.add_to_policy(
             PolicyStatement(
                 effect=Effect.ALLOW,
-                actions=["bedrock:Retrieve", "bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-                resources=["*"]
+                actions=[
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                ],
+                resources=[
+                    f"arn:{self.partition}:bedrock:{self.region}::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"
+                ],
+            )
+        )
+        self.task_role.add_to_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=["bedrock:Retrieve"],
+                resources=[
+                    f"arn:{self.partition}:bedrock:{self.region}:"
+                    f"{self.account}:knowledge-base/"
+                    f"{self.stack_props.knowledge_base_id}"
+                ],
             )
         )
 
@@ -167,4 +198,8 @@ class GenAIRagServiceStack(Stack):
         ):
             raise ValueError(
                 "Environment values needs to be set for account_number, aws_region"
+            )
+        if not self.stack_props.knowledge_base_id:
+            raise ValueError(
+                "knowledge_base_id is required when deploy_bedrock is false"
             )

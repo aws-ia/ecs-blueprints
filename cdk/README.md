@@ -12,33 +12,13 @@ We fully expect you to get started by copying the modules and examples but we do
 
 ---
 
-- You can use [AWS Cloud9](https://aws.amazon.com/cloud9/) which has all the prerequisites preinstalled and skip to Getting Started
-- Mac and AWS Cloud9 Linux machines. We have not tested with Windows machines
-- [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)(tested with version 2.70.+)
-- [Git](https://github.com/git-guides/install-git)(tested version 2.37.0)
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
-- AWS test account with administrator role access
-- Configure the AWS credentials on your machine `~/.aws/credentials`. You need to use the following format:
-
-```bash
-[AWS_PROFILE_NAME]
-aws_access_key_id = Replace_with_the_correct_access_Key
-aws_secret_access_key = Replace_with_the_correct_secret_Key
-```
-
-- Export the AWS profile name
-
-```bash
-export AWS_PROFILE=your_profile_name
-```
-
-- You can also set the default region and output format in `~/.aws/config`. Something like:
-
-```bash
-[default]
-output = json
-region = us-west-2
-```
+- macOS, Linux, or Windows with WSL2
+- Python 3.12 and Node.js 22
+- [AWS CDK Toolkit](https://docs.aws.amazon.com/cdk/v2/guide/cli.html) v2
+- [Git](https://github.com/git-guides/install-git)
+- [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- A dedicated AWS sandbox account using
+  [short-lived credentials](../docs/authentication.md)
 
 ## Quick Start
 
@@ -51,25 +31,52 @@ region = us-west-2
 aws secretsmanager create-secret --name ecs-github-token --secret-string <your-github-access-token>
 ```
 
-- Clone your forked repository to your laptop/Cloud9 VM
+- Clone your forked repository to your workstation
 
 ```bash
 git clone https://github.com/<your-repo>/ecs-blueprints.git
 ```
 
-- Start with `core_infra` to create cluster, VPC, and require IAM
+- Start with a self-contained example that creates and destroys its VPC, cluster, and
+  workload as one stack:
 
 ```bash
-cd ecs-blueprints/cdk/examples/core_infra/
+cd ecs-blueprints/cdk/examples/lb_service/
 ```
 
-- Next you can try other example blueprints.
+- [`lb_service`](./examples/lb_service) creates a public frontend and private companion
+  backend. A TypeScript version is available in
+  [`lb_service/typescript`](./examples/lb_service/typescript).
+- [`backend_service`](./examples/backend_service) creates a private service with Cloud Map.
+- [`express_mode`](./examples/express_mode) compares image-based and custom-task-definition
+  Express Mode.
+
+The [`core_infra`](./examples/core_infra) app remains as an intentional shared-cluster
+topology reference. It is not a prerequisite for the self-contained examples.
 
 ## Repository overview
 
-This repository has 2 main folders
+This folder is organized so that everything under [examples](./examples) is a
+starting point you can deploy as-is:
 
-- [examples](./examples) (aka solution blueprints): This folder contains solution blueprints that are meant to address end-to-end requirements for specific scenarios. The [lb_service](./examples/lb_service), for example, creates load balanced service along with CI/CD pipeline with rolling deployment. All required services such as CodeBuild, CodePipeline and required resources such as load balancer, target group, security group are setup in the lb-service blueprint. If you are going to contribute new blueprints, put them in the *examples* folder.
+- [examples](./examples) (aka solution blueprints): Each subfolder is a startable
+  CDK app — `cd` into it, create a `.env` from `sample.env`, and `cdk synth`/`cdk deploy`.
+  These are end-to-end, self-contained scenarios built from stock AWS CDK constructs.
+  Each new example should own its networking, cluster, and workload unless it explicitly
+  demonstrates the shared cluster topology (see [core_infra](./examples/core_infra)).
+- Examples that also ship in TypeScript keep the TypeScript app in a `typescript/`
+  subfolder with its own `package.json`, tests, and README, alongside the Python app
+  (see [lb_service/typescript](./examples/lb_service/typescript) and
+  [data_pipeline/typescript](./examples/data_pipeline/typescript)). The TypeScript apps
+  use `npm ci && npx cdk deploy` and read the account/Region from the CLI environment
+  instead of a `.env` file.
+- [components](./components): Shared constructs and helpers reused across examples
+  (for example, the core infrastructure construct and CI/CD construct). These are not
+  deployable apps; examples import them as the `components` package.
+- Each example's `lib/` folder holds the stacks private to that example. Supporting
+  stacks live with the example that uses them (for example, the Bedrock stack under
+  `generative_ai_rag/lib/` and the SageMaker/OpenSearch stacks under
+  `generative_ai_service/lib/`).
 - [application-code](../application-code): These are just sample applications used in the examples. Currently, these applications are basic but we encourage contributing more real world applications that can help uncover specific aspects of containerized applications. For example, an application that can be used to test autoscaling, or an application that has long running sessions and would work better with blue/green deployments.
 
 ## Support & Feedback

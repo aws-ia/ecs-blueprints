@@ -1,8 +1,8 @@
 import streamlit as st
-import requests
 import json
 import time
 import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 
 st.set_page_config(
     page_title="text generation",
@@ -30,15 +30,25 @@ parameters = {
 }
 
 with st.spinner("Retrieving configurations..."):
-    all_configs_loaded = False
+    sm_endpoint = None
+    max_attempts = 3
 
-    while not all_configs_loaded:
+    for attempt in range(max_attempts):
         try:
-            # Retrive SageMaker Endpoint name from Parameter Store
+            # Retrieve SageMaker Endpoint name from Parameter Store
             sm_endpoint = get_parameter("txt2txt_sm_endpoint")
-            all_configs_loaded = True
-        except:
-            time.sleep(5)
+            break
+        except (BotoCoreError, ClientError):
+            if attempt < max_attempts - 1:
+                time.sleep(2)
+
+    if sm_endpoint is None:
+        st.error(
+            "Could not retrieve the SSM parameter 'txt2txt_sm_endpoint' after "
+            f"{max_attempts} attempts. Ensure the SageMaker JumpStart stack is "
+            "deployed and the parameter exists in this region."
+        )
+        st.stop()
 
     endpoint_name = st.sidebar.text_input("SageMaker Endpoint Name:",sm_endpoint)
 
@@ -64,16 +74,10 @@ with st.spinner("Retrieving configurations..."):
                     generated_text = response_body[0]["generated_text"]
                     st.write(generated_text)
 
-                except requests.exceptions.ConnectionError as errc:
-                    st.error("Error Connecting:",errc)
+                except ClientError as err:
+                    st.error(f"Error invoking SageMaker endpoint: {err}")
 
-                except requests.exceptions.HTTPError as errh:
-                    st.error("Http Error:",errh)
-
-                except requests.exceptions.Timeout as errt:
-                    st.error("Timeout Error:",errt)
-
-                except requests.exceptions.RequestException as err:
-                    st.error("OOps: Something Else",err)
+                except BotoCoreError as err:
+                    st.error(f"AWS SDK error: {err}")
 
             st.success("Done!")

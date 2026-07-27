@@ -1,8 +1,8 @@
 from aws_cdk import Stack
 from aws_cdk.aws_iam import (
+    PolicyStatement,
     Role,
-    ServicePrincipal,
-    ManagedPolicy
+    ServicePrincipal
 )
 from aws_cdk.aws_sagemaker import CfnModel, CfnEndpointConfig, CfnEndpoint
 from aws_cdk.aws_ssm import StringParameter
@@ -22,21 +22,91 @@ class GenerativeAITxt2TxtSagemakerStack(Stack):
         # model name
         model_info["model_name"]="HuggingfaceText2TextFlan"
 
+        model_bucket_arn = (
+            f"arn:{self.partition}:s3:::{model_info['model_bucket_name']}"
+        )
+        model_key_prefix = model_info["model_bucket_key"].lstrip("/")
+        image_registry, image_path = model_info["model_docker_image"].split("/", 1)
+        image_account = image_registry.split(".", 1)[0]
+        image_repository = image_path.split("@", 1)[0].rsplit(":", 1)[0]
+        image_repository_arn = (
+            f"arn:{self.partition}:ecr:{model_info['region_name']}:"
+            f"{image_account}:repository/{image_repository}"
+        )
+
         # SageMaker Model IAM Role
         self.sagemaker_role = Role(
             self,
             "GenAISageMakerPolicy",
             assumed_by=ServicePrincipal("sagemaker.amazonaws.com"),
-            managed_policies=[
-                ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess"),
-                ManagedPolicy.from_aws_managed_policy_name("AmazonSageMakerFullAccess")
-            ]
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=["s3:GetObject"],
+                resources=[f"{model_bucket_arn}/{model_key_prefix}*"],
+            )
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=["s3:GetBucketLocation"],
+                resources=[model_bucket_arn],
+            )
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=["s3:ListBucket"],
+                resources=[model_bucket_arn],
+                conditions={
+                    "StringLike": {"s3:prefix": [f"{model_key_prefix}*"]}
+                },
+            )
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=["ecr:GetAuthorizationToken"],
+                resources=["*"],
+            )
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=[
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer",
+                ],
+                resources=[image_repository_arn],
+            )
+        )
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:DescribeLogStreams",
+                    "logs:PutLogEvents",
+                ],
+                resources=[
+                    f"arn:{self.partition}:logs:{self.region}:{self.account}:"
+                    "log-group:/aws/sagemaker/Endpoints/*"
+                ],
+            )
+        )
+        # PutMetricData supports only condition-based scoping, not resource ARNs.
+        self.sagemaker_role.add_to_policy(
+            PolicyStatement(
+                actions=["cloudwatch:PutMetricData"],
+                resources=["*"],
+                conditions={
+                    "StringEquals": {"cloudwatch:namespace": "/aws/sagemaker/Endpoints"}
+                },
+            )
         )
 
         # SageMaker model
         self.sagemaker_model = CfnModel(
             self,
             model_info["model_name"]+"Model",
+            enable_network_isolation=True,
             execution_role_arn=self.sagemaker_role.role_arn,
             model_name = model_info["model_name"]+"-Model",
             containers=[

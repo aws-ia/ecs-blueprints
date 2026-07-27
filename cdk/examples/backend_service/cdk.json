@@ -1,5 +1,5 @@
 {
-  "app": "PYTHONPATH=../ python3 app.py",
+  "app": "PYTHONPATH=../:../../ python3 app.py",
   "watch": {
     "include": [
       "**"

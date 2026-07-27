@@ -84,6 +84,12 @@ def full_load(index_name, client):
             i += 1
             j += 1
 
+    # Flush any remaining documents that did not fill a complete batch
+    if actions:
+        client.bulk(body=actions)
+        print(f"final bulk request sent with size: {i}")
+        print(f"total document count: {j}")
+
 
 def main(argv):
     opensearch_endpoint = os.environ.get('AOSS_VECTORSEARCH_ENDPOINT')

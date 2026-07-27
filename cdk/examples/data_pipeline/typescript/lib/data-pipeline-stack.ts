@@ -9,12 +9,6 @@ import * as events from 'aws-cdk-lib/aws-events'
 import * as targets from 'aws-cdk-lib/aws-events-targets'
 import { Construct } from 'constructs';
 import {
-  addStepFunctionRolePolicies,
-  addEcsTaskExecutionRolePolicies,
-  addEcsTaskRolePolicies,
-  addLambdaExecutionRolePolicies
-} from './data-pipeline-roles';
-import {
   createDataPipelineStateMachine
 } from './data-pipeline-workflow';
 
@@ -48,30 +42,13 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
       description: 'Role assumed by task to perform its function'
     });
-    const stepFunctionExecutionRole = new iam.Role(this, 'DataPipelineStepFunctionExecutionRole', {
-      assumedBy: new iam.ServicePrincipal('states.amazonaws.com'),
-      description: 'Stepfunction execution role'
-    });
-    stepFunctionExecutionRole.addToPrincipalPolicy(new iam.PolicyStatement({
-      actions: ["iam:PassRole"],
-      effect: iam.Effect.ALLOW,
-      resources: [ecsTaskExecutionRole.roleArn, ecsTaskRole.roleArn],
-      conditions: {StringLike: {
-        "iam:PassedToService": "ecs-tasks.amazonaws.com"
-      }}
-    }))
     const lambdaExecutionRole = new iam.Role(this, "DataPipelineLambdaExecutionRole", {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       description: 'Lambda execution role',
       managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaVPCAccessExecutionRole"),
         iam.ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole")
       ]
     })
-    addStepFunctionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, stepFunctionExecutionRole);
-    addEcsTaskExecutionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, ecsTaskExecutionRole);
-    addEcsTaskRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, ecsTaskRole);
-    addLambdaExecutionRolePolicies(cdk.Stack.of(this).account, cdk.Stack.of(this).region, lambdaExecutionRole);
 
     // Create the ECS Cluster
     const vpc = new ec2.Vpc(this, 'DataPipelineVpc', {
@@ -89,6 +66,18 @@ export class DataPipelineBlueprintStack extends cdk.Stack {
       repositoryName: 'process-data',
       repositoryArn: `arn:aws:ecr:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:repository/process-data`
     });
+
+    ecrRepository.grantPull(ecsTaskExecutionRole);
+    bucket.grantRead(lambdaExecutionRole);
+    bucket.grantRead(ecsTaskRole);
+    ecsTaskRole.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: [
+        "states:SendTaskFailure",
+        "states:SendTaskHeartbeat",
+        "states:SendTaskSuccess"
+      ],
+      resources: ["*"]
+    }));
 
     // Create the fargate task definition
     const fargateTaskDefinition = new ecs.FargateTaskDefinition(this, 'DataPipelineTaskDefinition', {

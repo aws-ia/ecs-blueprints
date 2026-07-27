@@ -19,25 +19,23 @@ def create_data_pipeline_statemachine(
               tasks.EventBridgePutEventsEntry(detail= sfn.TaskInput.from_json_path_at('$'), detail_type= 'Data Processing Status', source= 'data.pipeline.workflow')]
       )
 
+      broadcast_error_status = tasks.EventBridgePutEvents(stack, 'Broadcast error status',
+        entries= [
+              tasks.EventBridgePutEventsEntry(detail= sfn.TaskInput.from_json_path_at('$'), detail_type= 'Data Processing Error', source= 'data.pipeline.workflow')]
+      )
+
       broadcast_status = sfn.Map(stack, 'Broadcast completion status',
         items_path= '$.results',
         max_concurrency= 0,
         result_path= '$.results'
-      ).iterator(broadcast_task)
-
-      # broadcast_error_status = tasks.EventBridgePutEvents(stack, 'Broadcast error status',
-      #   entries= [
-      #         tasks.EventBridgePutEventsEntry(detail= sfn.TaskInput.from_json_path_at('$'), detail_type= 'Data Processing Error', source= 'data.pipeline.workflow')]
-      # )
-
-      # broadcast_error_status.next(broadcast_status)
+      ).item_processor(broadcast_task)
 
       ######### Configurations for the ECS Task to be run ##########
       container_override = tasks.ContainerOverride(
         container_definition=container_definition,
         environment= [
               tasks.TaskEnvironmentVariable(name= 'TASK_TOKEN',value= sfn.JsonPath.task_token),
-              tasks.TaskEnvironmentVariable(name= 'FOLDERNAME',value= '$.foldername'),
+              tasks.TaskEnvironmentVariable(name= 'FOLDERNAME',value= sfn.JsonPath.string_at('$.foldername')),
               tasks.TaskEnvironmentVariable(name= 'FILES',value= sfn.JsonPath.json_to_string(sfn.JsonPath.object_at('$.files'))),
               tasks.TaskEnvironmentVariable(name= 'S3_BUCKET',value= bucket)]
       )
@@ -60,28 +58,28 @@ def create_data_pipeline_statemachine(
         result_path= "$.results"
       )
       # Send a custom exception from task and catch it here to perform retries or notify end customers of data errors
-      process_data_in_parallel.add_catch(broadcast_status,
+      process_data_in_parallel.add_catch(broadcast_error_status,
         errors= ["DataProcessingException","CustomException"],
         result_path= "$"
       )
       # Send a language exception from task and catch it here to notify developers if required.
-      process_data_in_parallel.add_catch(broadcast_status,
+      process_data_in_parallel.add_catch(broadcast_error_status,
         errors= ["LanguageException"],
         result_path= "$"
       )
       # Sometimes tasks can take longer than expected (they timeout!) and need to be investigated to determine success or failure.
       # Send notifications to developers to investigate result and retry separately if required.
-      process_data_in_parallel.add_catch(broadcast_status,
+      process_data_in_parallel.add_catch(broadcast_error_status,
         errors= ["States.Timeout"],
         result_path= "$"
       )
       # Fallback exception for any stepfunction error code.
-      process_data_in_parallel.add_catch(broadcast_status,
+      process_data_in_parallel.add_catch(broadcast_error_status,
         errors= ["States.ALL"],
         result_path= "$"
       )
       # Add iterator (task state to run in map) and the next state once all task executions return.
-      process_data_in_parallel.iterator(process_data_task).next(broadcast_status);
+      process_data_in_parallel.item_processor(process_data_task).next(broadcast_status);
 
       ########### Fail state when lambda unable to prepare data ############
       fail_state = sfn.Fail(stack, "No",
@@ -112,6 +110,6 @@ def create_data_pipeline_statemachine(
       definition = prepare_data.next(process_readiness_check)
 
       return sfn.StateMachine(stack, "DataPipelineStateMachine",
-        definition= definition,
+        definition_body= sfn.DefinitionBody.from_chainable(definition),
         timeout= cdk.Duration.minutes(30)
       )
