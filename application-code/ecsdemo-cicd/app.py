@@ -20,9 +20,14 @@ _namespace = os.environ.get('Namespace', '')
 _target = os.environ.get('TargetServiceName', '')
 
 def log_to_backend():
+    # A short timeout and a broad catch keep a backend outage from tying up the
+    # small pool of synchronous gunicorn workers serving the homepage.
     if len(_target) > 0 and len(_namespace) > 0:
         url = 'http://{}.{}/logging'.format(_target, _namespace)
-        response = requests.get(url, timeout=60)
+        try:
+            requests.get(url, timeout=2)
+        except requests.RequestException:
+            logger.warning('Backend logging call to %s failed', url, exc_info=True)
 
 @app.route('/')
 def hello():
@@ -47,4 +52,4 @@ def hello():
 
 if __name__ == '__main__':
     logger.info('--------start main---------')
-    app.run(debug=True, host='0.0.0.0', port=_port)
+    app.run(debug=False, host='0.0.0.0', port=_port)

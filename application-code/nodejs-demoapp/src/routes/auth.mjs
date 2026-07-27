@@ -9,11 +9,23 @@
 import express from 'express'
 const router = express.Router()
 import axios from 'axios'
-import msal from '@azure/msal-node'
 
 // For reasons we need to do this here as well
 import { config as dotenvConfig } from 'dotenv'
 dotenvConfig()
+
+// Lazy, optional import of @azure/msal-node. The package is NOT listed in
+// package.json (this route is currently disabled in server.mjs); a static
+// `import msal from '@azure/msal-node'` would crash the whole app at startup
+// if the route were re-enabled without installing the dependency. With the
+// dynamic import below, the app starts fine and only the auth routes are
+// inert, with a clear log message explaining what to install.
+let msal
+try {
+  msal = (await import('@azure/msal-node')).default
+} catch (err) {
+  console.log('### ⚠️ @azure/msal-node is not installed - auth routes are disabled. Run `npm install @azure/msal-node` to enable authentication.')
+}
 
 const AUTH_SCOPES = ['user.read']
 const AUTH_ENDPOINT = 'https://login.microsoftonline.com/common'
@@ -21,7 +33,7 @@ const AUTH_CALLBACK_PATH = 'signin'
 
 let msalApp
 // Create MSAL application object
-if (process.env.AAD_APP_ID && process.env.AAD_APP_SECRET) {
+if (msal && process.env.AAD_APP_ID && process.env.AAD_APP_SECRET) {
   msalApp = new msal.ConfidentialClientApplication({
     auth: {
       clientId: process.env.AAD_APP_ID,
@@ -46,6 +58,14 @@ if (process.env.AAD_APP_ID && process.env.AAD_APP_SECRET) {
 // ==============================
 
 router.get('/login', async (req, res) => {
+  if (!msalApp) {
+    res.render('error', {
+      title: 'Authentication not available',
+      message: 'Authentication is not configured: install @azure/msal-node and set AAD_APP_ID / AAD_APP_SECRET',
+      error: {},
+    })
+    return
+  }
   const host = req.get('host')
   const redirectUri = `${host.indexOf('localhost') == 0 ? 'http' : 'https'}://${host}/${AUTH_CALLBACK_PATH}`
   console.log(`### 🔐 MSAL login request started, sign in redirect URL is: ${redirectUri}`)

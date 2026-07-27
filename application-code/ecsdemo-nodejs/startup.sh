@@ -67,13 +67,17 @@ if [[ "${orchestrator}" == 'kubernetes' ]]; then
     fi
 fi
 
+# IMDSv2: acquire a session token first; instances with IMDSv1 disabled
+# reject unauthenticated metadata requests
+IMDS_TOKEN=$(curl -m2 -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
+
 if [[ ${orchestrator} == 'unknown' ]]; then
-  zone=$(curl -m2 -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.availabilityZone' | grep -o .$)
+  zone=$(curl -m2 -s -H "X-aws-ec2-metadata-token: ${IMDS_TOKEN}" http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.availabilityZone' | grep -o .$)
 fi
 
 # Am I on ec2 instances?
 if [[ ${zone} == "unknown" ]]; then
-  zone=$(curl -m2 -s http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.availabilityZone' | grep -o .$)
+  zone=$(curl -m2 -s -H "X-aws-ec2-metadata-token: ${IMDS_TOKEN}" http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.availabilityZone' | grep -o .$)
 fi
 
 # Still no luck? Perhaps we're running fargate!

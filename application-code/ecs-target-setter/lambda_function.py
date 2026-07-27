@@ -20,8 +20,8 @@ config=Config(
 
 # Define session and resources
 session=boto3.Session()
-cloudwatch=session.client('cloudwatch', config=config, region_name='us-west-2')
-appautoscaling=boto3.client('application-autoscaling', config=config, region_name='us-west-2')
+cloudwatch=session.client('cloudwatch', config=config)
+appautoscaling=session.client('application-autoscaling', config=config)
 
 # Read environment variables
 ecs_sqs_app_scaling_policy_name=os.environ['scaling_policy_name']
@@ -33,6 +33,8 @@ appMetricName = os.environ['app_metric_name']
 bpiMetricName=os.environ['bpi_metric_name']
 metricType=os.environ['metric_type']
 metricNamespace=os.environ['metric_namespace']
+clusterName=os.environ['cluster_name']
+serviceName=os.environ['service_name']
 
 
 def publishMetricValue(metricValue):
@@ -97,7 +99,6 @@ def getMetricValue(metricNamespace, metricName):
         count = len(values)
         msgProcessingDuration =  total / count
         print("count={} total={} msgProcessingDuration={}".format(count, total, msgProcessingDuration))
-        msgProcessingDuration=response.get('MetricDataResults')[0].get('Values')[0]
 
     # Return
     return msgProcessingDuration
@@ -108,10 +109,19 @@ def lambda_handler(event, context):
 
     # Get cloudwatch metric for msg processing duration
     msgProcessingDuration=getMetricValue(metricNamespace, appMetricName)
-    print('Most recent message processing duration is {}'.format(msgProcessingDuration))
+    print('Average message processing duration is {}'.format(msgProcessingDuration))
 
     # Calculate new target BPI (assuming latency of 5mins)
-    newTargetBPI =int(desiredLatency / msgProcessingDuration)
+    if msgProcessingDuration <= 0:
+        logger.warning(
+            'Message processing duration must be positive; using default value %s',
+            defaultMsgProcDuration
+        )
+        msgProcessingDuration = defaultMsgProcDuration
+    if msgProcessingDuration <= 0:
+        raise ValueError('default_msg_proc_duration must be greater than zero')
+
+    newTargetBPI = max(1, int(desiredLatency / msgProcessingDuration))
     print('New Target BPI is {}'.format(newTargetBPI))
 
     # Get aplication auto scaling policy of ECS
@@ -155,11 +165,11 @@ def lambda_handler(event, context):
                             'Dimensions': [
                                 {
                                     'Name': 'ClusterName',
-                                    'Value': 'core-infra'
+                                    'Value': clusterName
                                 },
                                 {
                                     'Name': 'ServiceName',
-                                    'Value': 'ecsdemo-queue-proc3'
+                                    'Value': serviceName
                                 },
                             ],
                             'MetricName': 'RunningTaskCount',
