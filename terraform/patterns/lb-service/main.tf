@@ -1,94 +1,72 @@
 provider "aws" {
-  region = local.region
+  region = var.aws_region
+}
+
+data "aws_availability_zones" "available" {
+  state = "available"
 }
 
 locals {
-  name   = "ecsdemo-frontend"
-  region = "us-west-2"
+  frontend_name = var.name
+  backend_name  = "${var.name}-backend"
+  namespace     = "${var.name}.local"
+  vpc_cidr      = "10.90.0.0/16"
+  azs           = slice(data.aws_availability_zones.available.names, 0, 2)
 
-  container_port = 3000 # Container port is specific to this app example
-  container_name = "ecsdemo-frontend"
+  container_port = 3000
 
   tags = {
-    Blueprint  = local.name
+    Blueprint  = local.frontend_name
     GithubRepo = "github.com/aws-ia/ecs-blueprints"
   }
 }
 
 ################################################################################
-# ECS Blueprint
+# Self-contained infrastructure
 ################################################################################
 
-module "ecs_service" {
-  source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.6.1"
 
-  name          = local.name
-  desired_count = 3
-  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
+  name = local.frontend_name
+  cidr = local.vpc_cidr
 
-  # Task Definition
-  enable_execute_command = true
+  azs             = local.azs
+  private_subnets = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 4, index)]
+  public_subnets  = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 8, index + 48)]
 
-  container_definitions = {
-    (local.container_name) = {
-      image                    = "public.ecr.aws/aws-containers/ecsdemo-frontend"
-      readonly_root_filesystem = false
-
-      port_mappings = [
-        {
-          protocol      = "tcp",
-          containerPort = local.container_port
-        }
-      ]
-      environment = [
-        {
-          name  = "NODEJS_URL",
-          value = "http://ecsdemo-backend.default.core-infra.local:${local.container_port}"
-        }
-      ]
-    }
-  }
-
-  service_registries = {
-    registry_arn = aws_service_discovery_service.this.arn
-  }
-
-  load_balancer = {
-    service = {
-      target_group_arn = module.alb.target_groups["ecs-task"].arn
-      container_name   = local.container_name
-      container_port   = local.container_port
-    }
-  }
-
-  subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
-    ingress_alb_service = {
-      type                     = "ingress"
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      description              = "Service port"
-      source_security_group_id = module.alb.security_group_id
-    }
-    egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
+  enable_nat_gateway = true
+  single_nat_gateway = true
 
   tags = local.tags
 }
 
-resource "aws_service_discovery_service" "this" {
-  name = local.name
+module "ecs_cluster" {
+  source  = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version = "7.5.0"
+
+  name = local.frontend_name
+
+  setting = [{
+    name  = "containerInsights"
+    value = "enhanced"
+  }]
+
+  tags = local.tags
+}
+
+resource "aws_service_discovery_private_dns_namespace" "this" {
+  name = local.namespace
+  vpc  = module.vpc.vpc_id
+  tags = local.tags
+}
+
+resource "aws_service_discovery_service" "frontend" {
+  name = local.frontend_name
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.this.id
+    namespace_id = aws_service_discovery_private_dns_namespace.this.id
 
     dns_records {
       ttl  = 10
@@ -98,24 +76,166 @@ resource "aws_service_discovery_service" "this" {
     routing_policy = "MULTIVALUE"
   }
 
-  health_check_custom_config {
-    failure_threshold = 1
-  }
+  health_check_custom_config {}
 }
+
+resource "aws_service_discovery_service" "backend" {
+  name = "backend"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.this.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {}
+}
+
+################################################################################
+# Public frontend
+################################################################################
+
+module "frontend" {
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "7.5.0"
+
+  name          = local.frontend_name
+  desired_count = 3
+  cluster_arn   = module.ecs_cluster.arn
+
+  enable_execute_command = true
+
+  container_definitions = {
+    (local.frontend_name) = {
+      image                  = "public.ecr.aws/aws-containers/ecsdemo-frontend:776fd50"
+      readonlyRootFilesystem = false
+
+      portMappings = [{
+        name          = local.frontend_name
+        protocol      = "tcp"
+        containerPort = local.container_port
+      }]
+
+      environment = [{
+        name  = "NODEJS_URL"
+        value = "http://backend.${local.namespace}:${local.container_port}"
+      }]
+    }
+  }
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.frontend.arn
+  }
+
+  load_balancer = {
+    service = {
+      target_group_arn = module.alb.target_groups["ecs-task"].arn
+      container_name   = local.frontend_name
+      container_port   = local.container_port
+    }
+  }
+
+  subnet_ids = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
+
+  security_group_ingress_rules = {
+    alb = {
+      from_port                    = local.container_port
+      to_port                      = local.container_port
+      ip_protocol                  = "tcp"
+      description                  = "Application Load Balancer"
+      referenced_security_group_id = module.alb.security_group_id
+    }
+  }
+
+  security_group_egress_rules = {
+    all = {
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+  }
+
+  depends_on = [module.alb]
+
+  tags = local.tags
+}
+
+################################################################################
+# Private companion backend
+################################################################################
+
+module "backend" {
+  source  = "terraform-aws-modules/ecs/aws//modules/service"
+  version = "7.5.0"
+
+  name                   = local.backend_name
+  desired_count          = 2
+  cluster_arn            = module.ecs_cluster.arn
+  enable_autoscaling     = false
+  enable_execute_command = true
+
+  container_definitions = {
+    backend = {
+      image                  = "public.ecr.aws/aws-containers/ecsdemo-nodejs:c3e96da"
+      readonlyRootFilesystem = false
+
+      portMappings = [{
+        name          = "backend"
+        protocol      = "tcp"
+        containerPort = local.container_port
+      }]
+    }
+  }
+
+  service_registries = {
+    registry_arn = aws_service_discovery_service.backend.arn
+  }
+
+  subnet_ids = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
+
+  security_group_ingress_rules = {
+    frontend = {
+      from_port                    = local.container_port
+      to_port                      = local.container_port
+      ip_protocol                  = "tcp"
+      description                  = "Frontend tasks"
+      referenced_security_group_id = module.frontend.security_group_id
+    }
+  }
+
+  security_group_egress_rules = {
+    all = {
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
+    }
+  }
+
+  tags = local.tags
+}
+
+################################################################################
+# Application Load Balancer
+################################################################################
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "~> 9.0"
+  version = "~> 10.0"
 
-  name = local.name
+  name               = local.frontend_name
+  load_balancer_type = "application"
+  vpc_id             = module.vpc.vpc_id
+  subnets            = module.vpc.public_subnets
 
-  # For example only
   enable_deletion_protection = false
 
-  vpc_id  = data.aws_vpc.vpc.id
-  subnets = data.aws_subnets.public.ids
   security_group_ingress_rules = {
-    all_http = {
+    http = {
       from_port   = 80
       to_port     = 80
       ip_protocol = "tcp"
@@ -123,17 +243,17 @@ module "alb" {
       cidr_ipv4   = "0.0.0.0/0"
     }
   }
-  security_group_egress_rules = { for subnet in data.aws_subnet.private_cidr :
-    (subnet.availability_zone) => {
+
+  security_group_egress_rules = {
+    service = {
       ip_protocol = "-1"
-      cidr_ipv4   = subnet.cidr_block
+      cidr_ipv4   = local.vpc_cidr
     }
   }
 
-
   listeners = {
     http = {
-      port     = "80"
+      port     = 80
       protocol = "HTTP"
 
       forward = {
@@ -144,9 +264,9 @@ module "alb" {
 
   target_groups = {
     ecs-task = {
-      backend_protocol = "HTTP"
-      backend_port     = local.container_port
-      target_type      = "ip"
+      protocol    = "HTTP"
+      port        = local.container_port
+      target_type = "ip"
 
       health_check = {
         enabled             = true
@@ -160,50 +280,9 @@ module "alb" {
         unhealthy_threshold = 2
       }
 
-      # There's nothing to attach here in this definition. Instead,
-      # ECS will attach the IPs of the tasks to this target group
       create_attachment = false
     }
   }
 
   tags = local.tags
-}
-
-################################################################################
-# Supporting Resources
-################################################################################
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra"]
-  }
-}
-
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-public-*"]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-private-*"]
-  }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = "core-infra"
-}
-
-data "aws_service_discovery_dns_namespace" "this" {
-  name = "default.${data.aws_ecs_cluster.core_infra.cluster_name}.local"
-  type = "DNS_PRIVATE"
 }

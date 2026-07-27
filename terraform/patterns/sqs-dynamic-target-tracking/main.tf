@@ -1,14 +1,20 @@
 provider "aws" {
-  region = "us-west-2"
+  region = var.aws_region
 }
 
 data "aws_caller_identity" "current" {}
 
-locals {
-  name   = "ecsdemo-queue"
-  region = "us-west-2"
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
-  container_name = "ecsdemo-queue"
+locals {
+  name     = var.name
+  region   = var.aws_region
+  vpc_cidr = "10.30.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 2)
+
+  container_name = var.name
 
   scaling_policy_name       = "ecs_sqs_scaling"
   desired_latency           = 60
@@ -26,22 +32,48 @@ locals {
 }
 
 ################################################################################
-# ECS Blueprint
+# Self-contained infrastructure
 ################################################################################
 
-module "service_task_security_group" {
-  source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.0"
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.6.1"
 
-  name        = "${local.name}-task-sg"
-  description = "Security group for task"
-  vpc_id      = data.aws_vpc.vpc.id
+  name = local.name
+  cidr = local.vpc_cidr
 
-  ingress_cidr_blocks = [data.aws_vpc.vpc.cidr_block]
-  egress_rules        = ["all-all"]
+  azs             = local.azs
+  private_subnets = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 4, index)]
+  public_subnets  = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 8, index + 48)]
+
+  # Queue workers receive no inbound traffic; the NAT gateway provides the
+  # outbound path to ECR, SQS, and CloudWatch. Single NAT keeps cost down for
+  # a demo - use one per AZ for production availability.
+  enable_nat_gateway = true
+  single_nat_gateway = true
 
   tags = local.tags
 }
+
+module "ecs_cluster" {
+  source  = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version = "7.5.0"
+
+  name = local.name
+
+  # Container Insights supplies the ECS/ContainerInsights RunningTaskCount
+  # metric that the backlog-per-task scaling expression divides by.
+  setting = [{
+    name  = "containerInsights"
+    value = "enhanced"
+  }]
+
+  tags = local.tags
+}
+
+################################################################################
+# ECS Blueprint
+################################################################################
 
 module "container_image_ecr" {
   source  = "terraform-aws-modules/ecr/aws"
@@ -51,7 +83,7 @@ module "container_image_ecr" {
 
   repository_force_delete           = true
   create_lifecycle_policy           = false
-  repository_read_access_arns       = [sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]]
+  repository_read_access_arns       = [aws_iam_role.execution.arn]
   repository_read_write_access_arns = [module.codepipeline_ci_cd.codepipeline_role_arn]
 
   tags = local.tags
@@ -64,12 +96,18 @@ resource "aws_ecs_task_definition" "this" {
   cpu                      = 256
   memory                   = 512
   task_role_arn            = aws_iam_role.task.arn
-  execution_role_arn       = sort(data.aws_iam_roles.ecs_core_infra_exec_role.arns)[0]
+  execution_role_arn       = aws_iam_role.execution.arn
   container_definitions = jsonencode([
     {
       name  = local.container_name
       image = module.container_image_ecr.repository_url
       environment = [
+        {
+          # Set explicitly so the app never falls back to a hardcoded or
+          # guessed region (see application-code/ecsdemo-queue-proc/src/app.py)
+          name  = "AWS_REGION",
+          value = local.region
+        },
         {
           name  = "queue_name",
           value = module.processing_queue.queue_name
@@ -108,21 +146,20 @@ resource "aws_ecs_task_definition" "this" {
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  name               = local.name
-  desired_count      = 1
-  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
-  enable_autoscaling = false
+  disable_v7_default_name_description = true
+  name                                = local.name
+  desired_count                       = 1
+  cluster_arn                         = module.ecs_cluster.arn
+  enable_autoscaling                  = false
 
-  subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  subnet_ids = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -138,7 +175,7 @@ module "ecs_service" {
 resource "aws_appautoscaling_target" "ecs_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${data.aws_ecs_cluster.core_infra.cluster_name}/${module.ecs_service.name}"
+  resource_id        = "service/${module.ecs_cluster.name}/${module.ecs_service.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
@@ -189,7 +226,7 @@ resource "aws_appautoscaling_policy" "ecs_sqs_app_scaling_policy" {
 
             dimensions {
               name  = "ClusterName"
-              value = data.aws_ecs_cluster.core_infra.cluster_name
+              value = module.ecs_cluster.name
             }
 
             dimensions {
@@ -233,7 +270,7 @@ module "lambda_function_message_producer" {
   function_name      = "${local.name}-message-producer"
   description        = "This function can be used to send test messages to the processing queue and trigger ASG scaling events."
   handler            = "lambda_function.lambda_handler"
-  runtime            = "python3.9"
+  runtime            = "python3.12"
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
@@ -264,7 +301,7 @@ module "lambda_function_target_bpi_update" {
   function_name      = "${local.name}-target_bpi_update"
   description        = "This function regularly updates the target BPI of the ECS Service Target Tracking Policy"
   handler            = "lambda_function.lambda_handler"
-  runtime            = "python3.9"
+  runtime            = "python3.12"
   publish            = true
   attach_policy_json = true
   policy_json        = data.aws_iam_policy_document.lambda_role.json
@@ -279,6 +316,8 @@ module "lambda_function_target_bpi_update" {
     bpi_metric_name           = local.bpi_metric_name
     default_msg_proc_duration = local.default_msg_proc_duration
     desired_latency           = local.desired_latency
+    cluster_name              = module.ecs_cluster.name
+    service_name              = module.ecs_service.name
   }
 
   allowed_triggers = {
@@ -298,7 +337,7 @@ module "lambda_function_target_bpi_update" {
 ################################################################################
 
 resource "aws_cloudwatch_event_rule" "fargate_scaling" {
-  name                = "ECSAutoscaleTargetBPIUpdate"
+  name                = "${local.name}-target-bpi-update"
   description         = "This rule is used for update ECS Autoscaling Target BPI"
   schedule_expression = "rate(60 minutes)"
 
@@ -313,7 +352,7 @@ resource "aws_cloudwatch_event_target" "ecs_fargate_lambda_function" {
 }
 
 resource "aws_cloudwatch_event_rule" "sqs_message_producer" {
-  name                = "SQSTestMessageProducer"
+  name                = "${local.name}-message-producer"
   description         = "This rule is used for Send Messages to SQS Queue for testing"
   schedule_expression = "rate(1 minute)"
 
@@ -340,6 +379,18 @@ module "processing_queue" {
   name                        = "${local.name}-processing-queue-fifo"
   fifo_queue                  = true
   content_based_deduplication = true
+
+  # Dead-letter queue for poison messages. A FIFO queue's DLQ must itself be
+  # FIFO; the module inherits fifo_queue for the DLQ it creates. After
+  # maxReceiveCount failed receives, SQS redrives the message to the DLQ so
+  # malformed messages are preserved for inspection instead of being retried
+  # forever (which permanently inflated the backlog metric and pinned the
+  # service scaled out).
+  create_dlq = true
+  redrive_policy = {
+    maxReceiveCount = 5
+  }
+  dlq_content_based_deduplication = true
 
   tags = local.tags
 }
@@ -476,7 +527,7 @@ module "codepipeline_ci_cd" {
       version         = "1"
       input_artifacts = ["BuildArtifact_app"]
       configuration = {
-        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ClusterName = module.ecs_cluster.name
         ServiceName = module.ecs_service.name
         FileName    = "imagedefinitions.json"
       }
@@ -487,18 +538,33 @@ module "codepipeline_ci_cd" {
 
   create_iam_role = true
   iam_role_name   = "${local.name}-pipeline-${random_id.this.hex}"
+  pass_role_arns = [
+    aws_iam_role.execution.arn,
+    aws_iam_role.task.arn,
+  ]
 
   tags = local.tags
 }
 
 ################################################################################
-# Task and Lambda Roles
+# Task, Execution, and Lambda Roles
 ################################################################################
 
+resource "aws_iam_role" "execution" {
+  name               = "${local.name}-execution"
+  assume_role_policy = data.aws_iam_policy_document.task.json
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "execution" {
+  role       = aws_iam_role.execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
 resource "aws_iam_role" "task" {
-  name                = "${local.name}-task"
-  assume_role_policy  = data.aws_iam_policy_document.task.json
-  managed_policy_arns = ["arn:aws:iam::aws:policy/CloudWatchFullAccess"]
+  name               = "${local.name}-task"
+  assume_role_policy = data.aws_iam_policy_document.task.json
 
   tags = local.tags
 }
@@ -520,12 +586,6 @@ resource "aws_iam_role_policy" "task" {
 }
 
 data "aws_iam_policy_document" "task_role" {
-
-  statement {
-    sid       = "IAMPassRole"
-    actions   = ["iam:PassRole"]
-    resources = ["*"]
-  }
   statement {
     sid = "SQSReadWrite"
     actions = [
@@ -540,16 +600,17 @@ data "aws_iam_policy_document" "task_role" {
     ]
     resources = [module.processing_queue.queue_arn]
   }
+
   statement {
-    sid = "SSMRead"
-    actions = [
-      "ssm:GetParameters",
-      "ssm:DescribeParameters"
-    ]
-    resources = [
-      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter",
-      "arn:aws:ssm:${local.region}:${data.aws_caller_identity.current.account_id}:parameter/*",
-    ]
+    sid       = "PublishProcessingMetrics"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "cloudwatch:namespace"
+      values   = [local.metric_namespace]
+    }
   }
 }
 
@@ -572,9 +633,18 @@ data "aws_iam_policy_document" "lambda_role" {
     resources = ["*"]
   }
   statement {
-    sid       = "IAMPassRole"
-    actions   = ["iam:PassRole"]
-    resources = ["*"]
+    sid     = "IAMPassRole"
+    actions = ["iam:PassRole"]
+    resources = [
+      aws_iam_role.execution.arn,
+      aws_iam_role.task.arn,
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
   }
   statement {
     sid = "SQSReadWrite"
@@ -631,26 +701,4 @@ data "aws_secretsmanager_secret" "github_token" {
 
 data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
-}
-
-data "aws_vpc" "vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra"]
-  }
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-private-*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = "core-infra"
-}
-
-data "aws_iam_roles" "ecs_core_infra_exec_role" {
-  name_regex = "core-infra-*"
 }

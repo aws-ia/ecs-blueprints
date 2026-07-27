@@ -4,10 +4,20 @@ This folder contains the Terraform code to deploy the core infratructure for an 
   * VPC
     * 3 public subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of public subnets as AZs.
     * 3 private subnets, 1 per AZ. If a region has less than 3 AZs it will create same number of private subnets as AZs.
-    * 1 NAT Gateway
+    * 1 NAT Gateway. **Note:** `single_nat_gateway = true` in `main.tf` is a
+      cost-saving choice that is not highly available — if the AZ hosting the NAT
+      gateway fails, private subnets in every AZ lose outbound internet access. For
+      production, set `single_nat_gateway = false` (and `one_nat_gateway_per_az = true`)
+      so each AZ gets its own NAT gateway.
     * 1 Internet Gateway
     * Associated Route Tables
 * 1 ECS Cluster with AWS CloudWatch Container Insights enabled.
+  * The cluster's default capacity provider strategy splits tasks evenly between
+    `FARGATE` (base 1) and `FARGATE_SPOT`. Every service deployed to this cluster
+    without an explicit `capacity_provider_strategy` inherits this split, so tasks can
+    be interrupted with a two-minute warning when Spot capacity is reclaimed. Remove
+    `FARGATE_SPOT` from `default_capacity_provider_strategy` in `main.tf` for
+    workloads that cannot tolerate interruption.
 * Task execution IAM role
 * CloudWatch log groups
 * CloudMap service discovery namespace `default`
@@ -44,28 +54,28 @@ terraform destroy
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | = 5.100.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.7 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.56 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | = 5.100.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.56 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_ecs_cluster"></a> [ecs\_cluster](#module\_ecs\_cluster) | terraform-aws-modules/ecs/aws//modules/cluster | ~> 5.6 |
+| <a name="module_ecs_cluster"></a> [ecs\_cluster](#module\_ecs\_cluster) | terraform-aws-modules/ecs/aws//modules/cluster | 7.5.0 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | ~> 5.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [aws_service_discovery_private_dns_namespace.this](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/resources/service_discovery_private_dns_namespace) | resource |
-| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/availability_zones) | data source |
+| [aws_service_discovery_private_dns_namespace.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/service_discovery_private_dns_namespace) | resource |
+| [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 
 ## Inputs
 
@@ -84,3 +94,15 @@ No inputs.
 | <a name="output_service_discovery_namespaces"></a> [service\_discovery\_namespaces](#output\_service\_discovery\_namespaces) | Service discovery namespaces already available |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | The ID of the VPC |
 <!-- END_TF_DOCS -->
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.

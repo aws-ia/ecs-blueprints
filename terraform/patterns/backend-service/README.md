@@ -1,30 +1,51 @@
 # ECS backend service with service discovery
 
-This solution blueprint creates a backend service that **does not** sit behind a load balancer. The backend service has a service discovery name registered with AWS Cloud Map. Other services running in this cluster can access the backend service using the service discovery name. Below are steps for deploying this service:
+This self-contained example creates its own VPC, ECS cluster, private Cloud Map namespace,
+and Fargate backend service. It no longer requires a separate `core-infra` deployment or
+discovers resources by fixed names and tags.
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it.
-* Now you can deploy this blueprint
+## Existing state
+
+This self-contained topology intentionally changes the cluster and VPC used by releases
+that predate the v7 migration. Deploy it with a new backend key or workspace, validate the
+replacement, move callers to its new private endpoint, and then retire the old service.
+Do not apply it to an existing shared-infrastructure state as a routine in-place upgrade.
+See the [v7 migration guide](../../../docs/terraform-v7-migration.md) for state backup and
+plan review requirements.
+
 ```shell
 terraform init
 terraform plan
-terraform apply -auto-approve
+terraform apply
 ```
-* To test the backend service access using service discovery, deploy the [lb-service](../lb-service/README.md) along with providing the name of this backend service.
 
-<p align="center">
-  <img src="../../../docs/backend-service.png"/>
-</p>
+The service is available only inside its VPC at the
+`service_discovery_endpoint` output. Its security group allows port 3000 from the VPC CIDR
+and does not expose the service to the internet. Set `name` to deploy another isolated copy
+in the same account and Region.
 
-The solution has following key components:
+Use ECS Exec from a task in the VPC or launch a controlled test client to request the
+private endpoint. The [load-balanced service example](../lb-service/README.md) includes its
+own companion backend and can be deployed independently.
 
-* Service discovery using AWS Cloud Map: The backend service can be given a service discovery name such as `backend.default.cluster-name.local`. The `backend` is service name, and `default` is the namespace alongwith further qualifier of `cluster-name.local`. Other services can interact with the backend service using the service discovery name. Here are the key aspects to note:
-    * The namespace (i.e. `default.cluster-name.local`) is created in the [core-infra](../core-infra/README.md) blueprint. Many services can be registered to a namespace that is why we don't create the namespace in a specific service definition. We created them in the core-infra blueprint and you can easily add more namespaces there
-    * We use `aws_service_discovery_dns_namespace` datasource to search and fetch the namespace.
-    * The `aws_service_discovery_service` resource is used to register the service to the namespace. You see the record type, TTL, and health check setting in this resource.
-* ECR registery for the container image. We are using only one container image for the task in this example.
-* ECS service definition:
-    * Task security group: allows ingress for TCP from all IP address in the VPC CIDR block to the container port (3000 in this example). And allows all egress.
-    * Service discovery ARN is used in the service definition. ECS will automatically manage the registration and deregistration of tasks to this service discovery registry.
-    * Tasks for this service will be deployed in private subnet
-    * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
-    * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
+## Cost
+
+This example creates one NAT gateway, three Fargate tasks, Cloud Map resources, and
+CloudWatch logs. Review current regional pricing and destroy the stack when it is not in
+use.
+
+## Quotas
+
+Confirm VPC, NAT gateway, Fargate task, elastic network interface, Cloud Map namespace,
+and service quotas in the selected Region.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review
+`terraform plan`. After deployment, request `service_discovery_endpoint` from a VPC client
+and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this directory. Networking, cluster, namespace, and service
+are owned by the same Terraform state and are removed together.

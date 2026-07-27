@@ -3,10 +3,6 @@
 # The AWS Secrets Manager secret name containing the plaintext Github access token
 github_token_secret_name   = "ecs-github-token"
 
-# The AWS Secrets Manager containing the password to use for
-# backend postgres db
-postgresdb_master_password = "postgresdb_passwd"
-
 # Repository information for your backstage application
 # repository_owner           = ""
 # repository_name            = ""

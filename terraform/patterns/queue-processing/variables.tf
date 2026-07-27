@@ -1,3 +1,15 @@
+variable "aws_region" {
+  description = "AWS region to deploy the blueprint resources into"
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "name" {
+  description = "Name prefix for resources. Note: the scheduler Lambda reads fixed SSM parameter names (PIPELINE_*), so only one copy of this pattern can run per account and Region."
+  type        = string
+  default     = "ecsdemo-queue-proc"
+}
+
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string

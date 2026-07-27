@@ -1,12 +1,19 @@
 # VPC Endpoints
 
-**CAUTION:** You will need to keep `enable_nat_gw = true` in `core-infra` [variables.tf](../core-infra/variables.tf) if you intend to pull container images from Public ECR repositories. This is not supported and is currently blocked by this [PR](https://github.com/aws/containers-roadmap/issues/1160).
+This self-contained blueprint runs ECS tasks in private subnets with **no NAT gateway and
+no internet gateway** — all AWS API traffic flows over VPC endpoints. A single
+`terraform apply` creates its own VPC, the endpoints, an ECS cluster, and the demo
+service; `terraform destroy` removes everything.
 
-This solution blueprint creates VPC Endpoints for S3, ECS, ECR(Private Repositories only), Secrets Manager, and Systems Manager, CloudWatch. There are two steps to deploying this blueprint:
+Because `public.ecr.aws` is not reachable through the ECR interface endpoints (see this
+[roadmap issue](https://github.com/aws/containers-roadmap/issues/1160)), the blueprint
+provisions an **ECR pull-through cache rule**: the task pulls its image from a private ECR
+repository over the `ecr.dkr`/`ecr.api`/S3 endpoints, and ECR transparently fetches and
+caches the upstream public image on the first pull. This is what lets the pattern run with
+no internet egress at all.
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
-  * **NOTE:** If you would like to disable the NAT Gateway, change `enable_nat_gw = false` in `core-infra` [variables.tf](../core-infra/variables.tf). Please ensure that this solution blueprint deploys successfully prior to disabling the NAT Gateway in `core-infra`.
-* Deploy the terraform templates in this repository using `terraform init` and `terraform apply`
+This blueprint creates VPC Endpoints for S3, ECS, ECR (private repositories), SQS, Secrets
+Manager, Systems Manager, and CloudWatch Logs.
 
 
 VPC Endpoints optimize the network path by avoiding traffic to internet gateways and incurring cost associated with NAT gateways, NAT instances, or maintaining firewalls. VPC Endpoints also provide you with much finer control over how users and applications access AWS services. VPC Endpoints prevent sensitive data from traversing the Internet, which helps you maintain compliance with regulations such as HIPAA, EU/US Privacy Shield, and PCI.
@@ -16,14 +23,14 @@ VPC Endpoints optimize the network path by avoiding traffic to internet gateways
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | = 5.100.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.7 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.56 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | = 5.100.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.56 |
 
 ## Modules
 
@@ -35,9 +42,9 @@ VPC Endpoints optimize the network path by avoiding traffic to internet gateways
 
 | Name | Type |
 |------|------|
-| [aws_route_table.private](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/route_table) | data source |
-| [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/subnets) | data source |
-| [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs/data-sources/vpc) | data source |
+| [aws_route_table.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route_table) | data source |
+| [aws_subnets.private](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnets) | data source |
+| [aws_vpc.vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
 
 ## Inputs
 
@@ -47,3 +54,19 @@ No inputs.
 
 No outputs.
 <!-- END_TF_DOCS -->
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

@@ -1,31 +1,63 @@
 # ECS load-balanced service
 
-This solution blueprint creates a web-facing load balanced ECS service. There are two steps to deploying this service:
+This self-contained example creates its own VPC, ECS cluster, Cloud Map namespace,
+load-balanced frontend, and private companion backend. It no longer requires a separate
+`core-infra` deployment or discovers resources by name.
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the `core-infra` then you can reuse it.
-* Deploy this blueprint using the below commands
+## Deployment
+
+This self-contained topology intentionally changes the cluster and VPC used by releases
+that predate the v7 migration. Do not apply it to an existing shared-infrastructure state
+as a routine in-place upgrade. Create a new backend key or workspace, deploy and validate
+the replacement, shift traffic, and then retire the old service. This root intentionally
+contains no migration state moves or v7 compatibility switches because it represents a
+new topology and must start from new state. See the
+[v7 migration guide](../../../docs/terraform-v7-migration.md) for state backup and plan
+review requirements.
+
 ```shell
 terraform init
 terraform plan
-terraform apply -auto-approve
+terraform apply
+terraform output -raw application_url
 ```
 
-<p align="center">
-  <img src="../../../docs/lb-service.png"/>
-</p>
+Set `name` to deploy another isolated copy in the same account and Region. The frontend
+uses `backend.<name>.local:3000`; only the frontend task security group can reach that
+backend port.
 
-The solution has following key components:
+## HTTPS
 
-* ALB: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
-    * ALB security group - allows ingress from any IP address to port 80 and allows all egress
-    * ALB subnet - ALB is created in a public subnet
-    * Listener - listens on port 80 for protocol HTTP
-    * Target group - Since we are using Fargate launch type, the targe type is IP since each task in Fargate gets its own ENI and IP address. The target group has container port (3000) and protocol (HTTP) where the application container will serve requests. The ALB runs health check against all registered targets. In this example, ALB send HTTP GET request to path "/" to container port 3000. We are using target group default health check settings. You can tune these settings to adjust the time interval and frequency of health checks. It impacts how fast tasks become available to serve traffic. (See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more.)
-* ECR registery for the container image. We are using only one container image for the task in this example.
-* ECS service definition:
-    * Task security group: allows ingress for TCP from the ALB security group to the container service port (3000 for this example). And allows all egress.
-    * Service discovery: You can register the service to AWS Cloud Map registry. You just need to provide the `namespace` but make sure the namespace is created in the `core-infra` step.
-    * Tasks for this service will be deployed in private subnet
-    * Service definition takes the load balancer target group created above as input.
-    * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
-    * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
+The public Application Load Balancer listens on HTTP port 80 only, which keeps the demo
+free of a domain-name prerequisite. For production use:
+
+1. Create or import a certificate in AWS Certificate Manager (ACM) in the deployment
+   Region for the domain that will point at the ALB.
+2. Add an HTTPS listener on port 443 to the `alb` module (`protocol = "HTTPS"`,
+   `certificate_arn` set to the ACM certificate) forwarding to the existing target
+   group.
+3. Change the port 80 listener to a `redirect` action returning `HTTP_301` to port 443
+   so plaintext requests are upgraded to TLS.
+4. Consider AWS WAF in front of the ALB for internet-facing workloads.
+
+## Cost
+
+This example creates one NAT gateway, an Application Load Balancer, five Fargate tasks,
+Cloud Map services, and CloudWatch logs. Review current regional pricing and do not leave
+the stack running when it is not in use.
+
+## Quotas
+
+Confirm VPC, NAT gateway, Fargate task, elastic network interface, load balancer, target
+group, and Cloud Map quotas in the selected Region.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review
+`terraform plan`. After deployment, request `application_url`, confirm targets are
+healthy, and inspect frontend and backend ECS service events and CloudWatch Logs.
+
+## Cleanup
+
+Run `terraform destroy` from this directory. Networking, cluster, namespace, and both
+services are owned by the same Terraform state and are removed together.

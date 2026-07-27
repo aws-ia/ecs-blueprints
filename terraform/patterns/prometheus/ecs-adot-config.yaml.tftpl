@@ -1,3 +1,13 @@
+# Terraform template rendered at apply time: `amp_remote_write_endpoint` and
+# `aws_region` are filled in from the AMP workspace created by this pattern.
+# `$${env:...}` is escaped so the OpenTelemetry Collector (not Terraform)
+# expands it from the container environment.
+#
+# Validated against aws-otel-collector v0.49.0 (see image tag in main.tf).
+# Notes for future upgrades:
+#   - The `logging` exporter was removed in ADOT v0.42.0; use `debug` instead.
+#   - Environment variables must use `$${env:VAR}` syntax; bare `$VAR` is no
+#     longer expanded by the OpenTelemetry Collector configuration resolver.
 receivers:
   prometheus:
     config:
@@ -7,7 +17,7 @@ receivers:
       scrape_configs:
         - job_name: 'test-prometheus-sample-app'
           static_configs:
-            - targets: [$PROMETHEUS_SAMPLE_APP]
+            - targets: ['$${env:PROMETHEUS_SAMPLE_APP}']
   awsecscontainermetrics:
     collection_interval: 20s
 
@@ -28,11 +38,11 @@ processors:
 
 exporters:
   prometheusremotewrite:
-    endpoint: <AMP_REMOTE_WRITE_ENDPOINT>
+    endpoint: ${amp_remote_write_endpoint}
     auth:
       authenticator: sigv4auth
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: detailed
 extensions:
   health_check:
   pprof:
@@ -40,15 +50,15 @@ extensions:
   zpages:
     endpoint: :55679
   sigv4auth:
-    region: <REGION>
+    region: ${aws_region}
 
 service:
   extensions: [pprof, zpages, health_check, sigv4auth]
   pipelines:
     metrics:
       receivers: [prometheus]
-      exporters: [logging, prometheusremotewrite]
+      exporters: [debug, prometheusremotewrite]
     metrics/ecs:
       receivers: [awsecscontainermetrics]
       processors: [filter]
-      exporters: [logging, prometheusremotewrite]
+      exporters: [debug, prometheusremotewrite]

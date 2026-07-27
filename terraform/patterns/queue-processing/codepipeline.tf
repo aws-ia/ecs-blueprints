@@ -96,6 +96,10 @@ module "codebuild_ci" {
   create_iam_role = true
   iam_role_name   = "${local.name}-codebuild-${random_id.this.hex}"
   ecr_repository  = module.ecr.repository_arn
+  pass_role_arns = [
+    module.ecs_service.task_exec_iam_role_arn,
+    module.ecs_service.tasks_iam_role_arn,
+  ]
 
   tags = local.tags
 }

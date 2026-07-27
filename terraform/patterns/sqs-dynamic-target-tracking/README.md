@@ -2,28 +2,44 @@
 
 ## Solution Overview
 
-This solution blueprint deploys an end to end data processing pipeline using ECS Fargate, Lambda, and SQS. The workload has the following requirements,
+This blueprint deploys an end to end queue processing pipeline using ECS Fargate, Lambda,
+and SQS. It is self-contained for its infrastructure — it creates its own VPC (with a
+single NAT gateway) and ECS cluster in one `terraform apply` and removes everything with
+one `terraform destroy`, with no separate `core-infra` deployment or name/tag lookups.
 
-1. messages comes to SQS Queue on a regular interval.
+**Prerequisites (the container image is built by a CI/CD pipeline):** this blueprint's
+CodePipeline builds the worker image from **your** GitHub fork, so before `terraform apply`
+you must (1) fork this repository (the app lives under
+`application-code/ecsdemo-queue-proc`) and pass its owner via the required
+`repository_owner` variable (no default), and (2) store a GitHub token as a plaintext AWS
+Secrets Manager secret matching `github_token_secret_name` (default `ecs-github-token`):
+`aws secretsmanager create-secret --name ecs-github-token --secret-string "<token>"`.
+Until the first pipeline run completes, the ECR repository is empty and the service has no
+image — this is expected. Deploy with, e.g.,
+`terraform apply -var="repository_owner=<your-github-user>"`.
+
+The workload has the following requirements:
+
+1. messages come to an SQS queue on a regular interval.
 2. each message processing duration varies.
-3. ECS Service needs to scale to handle the messages at scale
+3. the ECS service needs to scale to handle the messages at scale.
 
 For latency-sensitive applications, [AWS guidance describes a common pattern](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-using-sqs-queue.html) that allows an ECS Service to scale in response to the backlog of an Amazon SQS queue while accounting for the average message processing duration (MPD) and the application’s desired latency.
 
-This blueprint expects samples messages to be available in the SQS Queue. The blueprint provisions a lambda which runs every minute via Event bridge rule with a cron expression. This Eventbridge rule is disabled by default. Once the workload is ready to test, you can enable it to start sending `50` messages to SQS Queue every 1 minute.
+This blueprint expects sample messages to be available in the SQS queue. The blueprint provisions a Lambda function which runs every minute via an EventBridge rule. This rule is disabled by default. Once the workload is ready to test, you can enable it to start sending `50` messages to the SQS queue every minute.
 
-Every message in the SQS Queue has a field to denote the message processes time in seconds. The ECS Task does the following Operations.
+Every message in the SQS queue has a field to denote the message processing time in seconds. The ECS task does the following operations:
 
-1. reads a message from SQS Queue
-2. sleeps for the duration of message processing time
-3. delete the message from SQS Queue
-4. Publish a metric to CloudWatch with value of the message processing time
+1. reads a message from the SQS queue
+2. sleeps for the duration of the message processing time
+3. deletes the message from the SQS queue
+4. publishes a metric to CloudWatch with the value of the message processing time
 
-The ECS Servie is scaled using Target Tracking using a custom metric. The custom metric is ecsBPI (ecs Backlog per instance) and is calculated as follows.
+The ECS service is scaled using target tracking on a custom metric. The custom metric is ecsBPI (ECS backlog per instance) and is calculated as follows.
 
-ecsBPI =  ApproximateNumberOfMessages / no of ECS tasks
+ecsBPI = ApproximateNumberOfMessages / number of ECS tasks
 
-The target used for ECS Service Target tracking is ecsTargetBPI.
+The target used for ECS service target tracking is ecsTargetBPI.
 
 ecsTargetBPI = (maximum acceptable delay) / MPD
 
@@ -33,13 +49,15 @@ ecsTargetBPI = (maximum acceptable delay) / MPD
   <img src="../../../docs/ecs-sqs-scaling-arch.png"/>
 </p>
 
-The solutions has following key components:
+The solution has the following key components:
 
-* Lambda function to send test message to the SQS Queue
-* SQS queue which holds the messages
-* Lambda function that runs every 1 hour to adjust the Target for the ECS Service Target Tracking Scaling policy.
-* ECS Service which processes the message from SQS Queue by reading it and sleeping for MPD
-* CodePipeline to build and deploy the image to the ECS Cluster.
+* VPC with public and private subnets and a single NAT gateway; the queue workers run in private subnets with no inbound access and reach ECR, SQS, and CloudWatch through the NAT gateway
+* ECS cluster with Container Insights enabled (supplies the `RunningTaskCount` metric used in the scaling expression)
+* Lambda function to send test messages to the SQS queue
+* FIFO SQS queue which holds the messages, with a dead-letter queue for poison messages
+* Lambda function that runs every hour to adjust the target for the ECS service target tracking scaling policy
+* ECS service which processes messages from the SQS queue by reading each one and sleeping for its MPD
+* CodePipeline to build and deploy the image to the ECS cluster
 
 * **Please make sure you have stored the Github access token in AWS Secrets Manager as a plain text secret (not as key-value pair secret). This token is used to access the *application-code* repository and build images.**
 
@@ -47,9 +65,8 @@ The solutions has following key components:
   <img src="../../../docs/ecs-github-token.png"/>
 </p>
 
-* Clone repository to your laptop/Clooud9 VM.
+* Clone the repository to your local or managed development environment.
 * S3 bucket to store CodePipeline assets. The bucket is encrypted with AWS managed key.
-* 2 S3 buckets for source and destination artifacts
 * SNS topic for notifications from the pipeline
 * CodeBuild for building queue processing container image
     * Needs the S3 bucket created above
@@ -66,23 +83,22 @@ The solutions has following key components:
     * The image definition file name which contains mapping of container name and container image. These are the containers used in the task.
     * IAM role
 
-
 ## Deploy the Solution
 
-* Deploy the [core-infra](../core-infra/README.md). Note if you have already deployed the infra then you can reuse it as well.
 * **NOTE:** Codestar notification rules require a **one-time** creation of a service-linked role. Please verify one exists or create the codestar-notification service-linked role.
   * `aws iam get-role --role-name AWSServiceRoleForCodeStarNotifications`
     ```An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AWSServiceRoleForCodeStarNotifications cannot be found.```
   *  If you receive the error above, please create the service-linked role with the `aws cli` below.
   * `aws iam create-service-linked-role --aws-service-name codestar-notifications.amazonaws.com`
   * Again, once this is created, you will not have to complete these steps for the other examples.
-* Now you can deploy this blueprint
+* Now you can deploy this blueprint with a single apply:
 ```shell
-cd ../sqs-dynamic-target-tracking
 terraform init
 terraform plan
-terraform apply -auto-approve
+terraform apply
 ```
+
+Set `name` to deploy another isolated copy in the same account and Region.
 
 ## Test the Solution
 
@@ -97,7 +113,7 @@ terraform apply -auto-approve
 <p align="center">
   <img src="../../../docs/ecs_service_tasks_1.png"/>
 </p>
-* To start sending messages to SQS queue for testing, Go to Eventbridge Console and enable the Eventbridge rule `SQSTestMessageProducer`
+* To start sending messages to the SQS queue for testing, go to the EventBridge console and enable the rule `<name>-message-producer` (with the default `name` variable, `ecsdemo-queue-message-producer`). It sends 50 test messages per minute.
 
 <p align="center">
   <img src="../../../docs/SQSTestMessageProducer.png"/>
@@ -114,3 +130,33 @@ terraform apply -auto-approve
 <p align="center">
   <img src="../../../docs/ecs_auto_scaling.png"/>
 </p>
+
+* Watch the service scale in the ECS console (task count grows toward the 10-task maximum while the backlog per task exceeds the target, and shrinks back to 1 after you disable the rule and the queue drains). The `<name>-target-bpi-update` rule (disabled by default) can be enabled to let the second Lambda re-derive the scaling target from observed processing durations every hour.
+
+## Cost
+
+This example creates billable AWS resources: a NAT gateway, Fargate tasks (1 to 10 with
+autoscaling), two Lambda functions, an SQS FIFO queue with DLQ, CloudWatch logs and
+metrics, and CodePipeline/CodeBuild resources. The NAT gateway and running Fargate tasks
+are the main cost drivers. Review `terraform plan`, use a sandbox account, and avoid
+leaving the stack deployed when it is not in use.
+
+## Quotas
+
+Confirm that the target Region has sufficient VPC, NAT gateway, Fargate task, elastic
+network interface, Lambda concurrent execution, and CodeBuild/CodePipeline service quotas
+before deployment. The service scales up to 10 concurrent Fargate tasks during the demo.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review
+`terraform plan` before applying. After deployment, enable the message producer rule,
+confirm the queue depth and `MsgProcessingDuration` metric in CloudWatch, and watch the
+ECS service scale out. Inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Disable the EventBridge rules and let the queue drain, then run `terraform destroy` from
+this example directory. Networking, cluster, service, queues, Lambdas, and pipeline
+resources are owned by the same Terraform state and are removed together. Remove the
+separately created GitHub token secret only after confirming it is no longer needed.

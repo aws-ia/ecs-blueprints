@@ -1,3 +1,23 @@
+output "cluster_name" {
+  value       = module.ecs_cluster.name
+  description = "ECS cluster created by this example"
+}
+
+output "service_name" {
+  value       = module.ecs_service.name
+  description = "ECS service processing the queue"
+}
+
+output "queue_name" {
+  value       = module.processing_queue.queue_name
+  description = "FIFO queue holding messages to process"
+}
+
+output "queue_url" {
+  value       = module.processing_queue.queue_url
+  description = "URL of the processing queue"
+}
+
 output "lambda_function_message_producer" {
   value       = module.lambda_function_message_producer.lambda_function_arn
   description = "lambda_function_message_producer"

@@ -1,14 +1,20 @@
 provider "aws" {
-  region = local.region
+  region = var.aws_region
 }
 
 data "aws_caller_identity" "current" {}
 
-locals {
-  name   = "ecsdemo-queue-proc"
-  region = "us-west-2"
+data "aws_availability_zones" "available" {
+  state = "available"
+}
 
-  container_name = "ecsdemo-queue-proc"
+locals {
+  name     = var.name
+  region   = var.aws_region
+  vpc_cidr = "10.95.0.0/16"
+  azs      = slice(data.aws_availability_zones.available.names, 0, 2)
+
+  container_name = var.name
 
   tags = {
     Blueprint  = local.name
@@ -17,15 +23,68 @@ locals {
 }
 
 ################################################################################
+# Self-contained infrastructure
+################################################################################
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "6.6.1"
+
+  name = local.name
+  cidr = local.vpc_cidr
+
+  azs             = local.azs
+  private_subnets = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 4, index)]
+  public_subnets  = [for index, _ in local.azs : cidrsubnet(local.vpc_cidr, 8, index + 48)]
+
+  # Queue-processing tasks receive no inbound traffic; the NAT gateway provides
+  # the outbound path to ECR, S3, SQS, SSM, and CloudWatch. Single NAT keeps
+  # cost down for a demo - use one per AZ for production availability.
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
+  tags = local.tags
+}
+
+module "ecs_cluster" {
+  source  = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version = "7.5.0"
+
+  name = local.name
+
+  # The scheduler Lambda launches standalone tasks via run_task with an
+  # explicit FARGATE + FARGATE_SPOT capacity provider strategy, which requires
+  # both capacity providers to be associated with the cluster.
+  cluster_capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+  default_capacity_provider_strategy = {
+    FARGATE = {
+      weight = 1
+      base   = 1
+    }
+    FARGATE_SPOT = {
+      weight = 1
+    }
+  }
+
+  setting = [{
+    name  = "containerInsights"
+    value = "enhanced"
+  }]
+
+  tags = local.tags
+}
+
+################################################################################
 # ECS Blueprint
 ################################################################################
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  name        = local.name
-  cluster_arn = data.aws_ecs_cluster.core_infra.arn
+  disable_v7_default_name_description = true
+  name                                = local.name
+  cluster_arn                         = module.ecs_cluster.arn
 
   # Use a Standalone Task Definition (w/o Service)
   desired_count = 0
@@ -38,19 +97,17 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image                    = module.ecr.repository_url
-      readonly_root_filesystem = false
+      image                  = module.ecr.repository_url
+      readonlyRootFilesystem = false
     }
   }
 
-  subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  subnet_ids = module.vpc.private_subnets
+  vpc_id     = module.vpc.vpc_id
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -65,14 +122,15 @@ module "lambda_function" {
   source  = "terraform-aws-modules/lambda/aws"
   version = "~> 6.0"
 
-  function_name      = "${local.name}-${random_id.this.hex}"
-  description        = "Automatically invoke ECS tasks based on SQS queue size and available tasks"
-  handler            = "lambda_function.lambda_handler"
-  runtime            = "python3.9"
-  publish            = true
-  attach_policy_json = true
-  policy_json        = data.aws_iam_policy_document.lambda_role.json
-  source_path        = "../../../application-code/lambda-function-queue-trigger/"
+  function_name                  = "${local.name}-${random_id.this.hex}"
+  description                    = "Automatically invoke ECS tasks based on SQS queue size and available tasks"
+  handler                        = "lambda_function.lambda_handler"
+  runtime                        = "python3.12"
+  reserved_concurrent_executions = 1
+  publish                        = true
+  attach_policy_json             = true
+  policy_json                    = data.aws_iam_policy_document.lambda_role.json
+  source_path                    = "../../../application-code/lambda-function-queue-trigger/"
 
   cloudwatch_logs_retention_in_days = 30
 
@@ -91,7 +149,7 @@ module "lambda_function" {
 ################################################################################
 
 resource "aws_cloudwatch_event_rule" "fargate_scaling" {
-  name                = "ECSTaskTriggerScheduler"
+  name                = "${local.name}-task-trigger-scheduler"
   description         = "This rule is used for autoscaling ECS with Lambda"
   schedule_expression = "rate(2 minutes)"
 
@@ -159,6 +217,14 @@ module "sqs" {
 
   name = "${local.name}-processing-queue"
 
+  # Dead-letter queue for poison messages: after maxReceiveCount failed
+  # receives, SQS redrives the message to the DLQ so malformed messages are
+  # preserved for inspection instead of being retried forever.
+  create_dlq = true
+  redrive_policy = {
+    maxReceiveCount = 5
+  }
+
   create_queue_policy = true
   queue_policy_statements = {
     sns = {
@@ -196,6 +262,10 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 
 ################################################################################
 # ECS Scaling Params
+#
+# The scheduler Lambda (application-code/lambda-function-queue-trigger) reads
+# these exact SSM parameter names, so they cannot be prefixed with var.name.
+# Deploy only one copy of this pattern per account and Region.
 ################################################################################
 
 resource "aws_ssm_parameter" "ecs_pipeline_enabled" {
@@ -217,7 +287,7 @@ resource "aws_ssm_parameter" "ecs_pipeline_max_tasks" {
 resource "aws_ssm_parameter" "sqs_processing_queue" {
   name  = "PIPELINE_UNPROCESSED_SQS_URL"
   type  = "String"
-  value = module.sqs.queue_name
+  value = module.sqs.queue_url
 
   tags = local.tags
 }
@@ -241,7 +311,7 @@ resource "aws_ssm_parameter" "s3_destination_prefix" {
 resource "aws_ssm_parameter" "ecs_cluster_name" {
   name  = "PIPELINE_ECS_CLUSTER"
   type  = "String"
-  value = data.aws_ecs_cluster.core_infra.cluster_name
+  value = module.ecs_cluster.name
 
   tags = local.tags
 }
@@ -265,7 +335,7 @@ resource "aws_ssm_parameter" "ecs_task_container_name" {
 resource "aws_ssm_parameter" "ecs_task_subnet" {
   name  = "PIPELINE_ECS_TASK_SUBNET"
   type  = "String"
-  value = data.aws_subnets.private.ids[0]
+  value = module.vpc.private_subnets[0]
 
   tags = local.tags
 }
@@ -335,9 +405,18 @@ data "aws_iam_policy_document" "task_queue" {
 
 data "aws_iam_policy_document" "lambda_role" {
   statement {
-    sid       = "IAMPassRole"
-    actions   = ["iam:PassRole"]
-    resources = ["*"]
+    sid     = "IAMPassRole"
+    actions = ["iam:PassRole"]
+    resources = [
+      module.ecs_service.task_exec_iam_role_arn,
+      module.ecs_service.tasks_iam_role_arn,
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
   }
 
   statement {
@@ -389,15 +468,4 @@ data "aws_secretsmanager_secret" "github_token" {
 
 data "aws_secretsmanager_secret_version" "github_token" {
   secret_id = data.aws_secretsmanager_secret.github_token.id
-}
-
-data "aws_subnets" "private" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-private-*"]
-  }
-}
-
-data "aws_ecs_cluster" "core_infra" {
-  cluster_name = "core-infra"
 }

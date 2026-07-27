@@ -264,7 +264,7 @@ module "codepipeline_ci_cd" {
       version         = "1"
       input_artifacts = ["BuildArtifact_app"]
       configuration = {
-        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ClusterName = module.ecs_cluster.name
         ServiceName = module.ecs_service_amd64.name
         FileName    = "imagedefinition.json"
       }
@@ -276,7 +276,7 @@ module "codepipeline_ci_cd" {
       version         = "1"
       input_artifacts = ["BuildArtifact_app"]
       configuration = {
-        ClusterName = data.aws_ecs_cluster.core_infra.cluster_name
+        ClusterName = module.ecs_cluster.name
         ServiceName = module.ecs_service_arm64.name
         FileName    = "imagedefinition.json"
       }
@@ -285,6 +285,12 @@ module "codepipeline_ci_cd" {
 
   create_iam_role = true
   iam_role_name   = "${local.name}-pipeline-${random_id.this.hex}"
+  pass_role_arns = [
+    module.ecs_service_amd64.task_exec_iam_role_arn,
+    module.ecs_service_amd64.tasks_iam_role_arn,
+    module.ecs_service_arm64.task_exec_iam_role_arn,
+    module.ecs_service_arm64.tasks_iam_role_arn,
+  ]
 
   tags = local.tags
 }

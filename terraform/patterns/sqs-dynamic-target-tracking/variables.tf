@@ -1,3 +1,15 @@
+variable "aws_region" {
+  description = "AWS region to deploy the blueprint resources into"
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "name" {
+  description = "Name prefix for resources. Change this to deploy another copy in the same account and Region."
+  type        = string
+  default     = "ecsdemo-queue"
+}
+
 variable "repository_owner" {
   description = "The name of the owner of the Github repository"
   type        = string
