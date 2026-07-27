@@ -195,6 +195,8 @@ serve shutdown -y
 
 Tensor parallelism is a technique that allows for a model to be deployed in multiple GPUs within the same VM instance or ECS task, and it is meant to be used when the model can't fit in the memory within a single GPU. In this step, you will deploy a Llama 3.1 7B accross the 4 GPUs available in a g5.12xlarge instance
 
+> **Model provenance:** the Llama examples (`serve_llama.py`, `serve_llama_pp.py`) download model weights from `unsloth/Meta-Llama-3.1-8B-Instruct`, an unofficial Hugging Face mirror of Meta's Llama 3.1 8B Instruct weights. The mirror is used because the official `meta-llama/Llama-3.1-8B-Instruct` repository is gated and requires accepting Meta's license. To use the official repository instead, request access on Hugging Face, change `model_source` in the serve scripts to `meta-llama/Llama-3.1-8B-Instruct`, and make a Hugging Face token available to the Ray workers (for example an `HF_TOKEN` environment variable sourced from AWS Secrets Manager via the task definition `secrets` block - avoid hardcoding the token).
+
 1. Download Tensor parallelism inference files
 
 ```bash
@@ -369,3 +371,19 @@ terraform destroy
 ## Support
 
 Please open an issue for questions or unexpected behavior
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

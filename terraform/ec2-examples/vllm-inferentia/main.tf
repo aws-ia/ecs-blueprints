@@ -41,8 +41,8 @@ module "alb_sg" {
       from_port   = 8000
       to_port     = 8000
       protocol    = "tcp"
-      description = "Allow public HTTP traffic"
-      cidr_blocks = "0.0.0.0/0"
+      description = "Allow HTTP traffic from the VPC"
+      cidr_blocks = data.aws_vpc.core_infra.cidr_block
     }
   ]
   egress_rules = ["all-all"]
@@ -76,27 +76,25 @@ module "autoscaling_sg" {
 ################################################################################
 # Cluster Config
 module "ecs_cluster" {
-  source       = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version      = "~> 5.0"
-  cluster_name = local.name
-  cluster_settings = [{
+  source                              = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version                             = "7.5.0"
+  disable_v7_default_name_description = true
+  name                                = local.name
+  setting = [{
     name  = "containerInsights",
     value = "enhanced"
   }]
   # Capacity provider - autoscaling group
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
+  capacity_providers = {
     vllm = {
-      auto_scaling_group_arn = module.autoscaling.autoscaling_group_arn
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 100
-      }
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn = module.autoscaling.autoscaling_group_arn
+        managed_scaling = {
+          maximum_scaling_step_size = 1
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 100
+        }
       }
     }
   }
@@ -106,7 +104,7 @@ module "ecs_cluster" {
 # Austocaling Policy
 module "autoscaling" {
   source                          = "terraform-aws-modules/autoscaling/aws"
-  version                         = "~> 6.5"
+  version                         = "9.2.1"
   name                            = "${local.name}-asg"
   image_id                        = jsondecode(data.aws_ssm_parameter.ecs_neuron_optimized_ami.value)["image_id"]
   instance_type                   = local.instance_type
@@ -140,6 +138,12 @@ module "autoscaling" {
       }
     }
   ]
+
+  metadata_options = {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
   tags = local.tags
 }
 
@@ -201,7 +205,7 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
           }
         ]
         capabilities = {
-          add = ["IPC_LOCK", "SYS_ADMIN"]
+          add = ["IPC_LOCK"]
         }
       }
       logConfiguration = {
@@ -230,10 +234,10 @@ resource "aws_ecs_task_definition" "neuronx_vllm" {
 
 resource "aws_lb" "vllm" {
   name               = "${local.name}-alb"
-  internal           = false
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [module.alb_sg.security_group_id]
-  subnets            = data.aws_subnets.public.ids
+  subnets            = data.aws_subnets.private.ids
 
   tags = local.tags
 }
@@ -286,7 +290,7 @@ resource "aws_ecs_service" "neuronx_vllm" {
   }
 
   capacity_provider_strategy {
-    capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["vllm"].name
+    capacity_provider = module.ecs_cluster.capacity_providers["vllm"].name
     weight            = 1
     base              = 1
   }
@@ -310,12 +314,6 @@ data "aws_subnets" "private" {
   filter {
     name   = "tag:Name"
     values = ["core-infra-private-${local.region}*"]
-  }
-}
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-public-${local.region}*"] # Update to match your naming convention
   }
 }
 data "aws_vpc" "core_infra" {

@@ -61,3 +61,15 @@ variable "service_role" {
   description = "Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account"
   type        = string
 }
+
+variable "pass_role_arns" {
+  description = "ECS task and execution role ARNs that CodePipeline deploy actions may pass."
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_resource_arns" {
+  description = "ECS resource ARNs (cluster, service, task set, task definition) that the pipeline role's ECS actions are scoped to. Defaults to all resources; scope to the target cluster/service ARNs for least privilege."
+  type        = list(string)
+  default     = ["*"]
+}

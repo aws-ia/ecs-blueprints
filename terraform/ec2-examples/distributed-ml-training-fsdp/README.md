@@ -35,6 +35,8 @@ terraform apply
 
 It can take several minutes until the instances are created and connected to SSM
 
+> **Note on boot-time image builds:** the Ray container image used by this example is built locally on each instance at boot (see `user_data` in `main.tf`). The ECS agent is intentionally stopped during the build and started afterwards, so ECS cannot place tasks on an instance before the image exists. This means every new instance - including instances launched by an ASG instance refresh or scale-out - takes several extra minutes to become available while the image builds, and an instance refresh will temporarily reduce capacity during that window. For production use, publish the image to a registry (for example Amazon ECR) instead of building it at boot.
+
 ## Example: training the databricks/dolly-v2-7b model with the tiny_shakespeare dataset dataset
 
 Once the instances are running, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker Studio](https://aws.amazon.com/sagemaker/) provides a better user experience to run training jobs in python than using the bash shell.
@@ -42,9 +44,9 @@ Once the instances are running, you can connect to the EC2 instance running the 
 1. Connect to the head task
 
 ```bash
-TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-distributed-ml-training --service-name distributed_ml_training_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
+TASK_ID=$(aws ecs list-tasks --cluster ecs-demo-fsdp --service-name fsdp_training_head_service --region us-west-2 --output text | awk -F'/' '{print $NF}')
 
-aws ecs execute-command --region us-west-2 --cluster ecs-demo-distributed-ml-training --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive
+aws ecs execute-command --region us-west-2 --cluster ecs-demo-fsdp --task $TASK_ID --container ray_head --command 'bash -c "su ray"' --interactive
 ```
 
 2. Inside the container shell, check the cluster status. 3 nodes should be listed as healthy with 2.0 GPUs available - If you do not see 2.0 GPUs, the workers have not started yet.
@@ -113,12 +115,12 @@ Terraform deploys a custom dashboard in CloudWatch named "distributed-ml-trainin
 1. Stop ECS tasks
 
 ```shell
-aws ecs update-service --service distributed_ml_training_worker_service \
---desired-count 0 --cluster ecs-demo-distributed-ml-training \
+aws ecs update-service --service fsdp_training_worker_service \
+--desired-count 0 --cluster ecs-demo-fsdp \
 --region us-west-2 --no-paginate
 
-aws ecs update-service --service distributed_ml_training_head_service \
---desired-count 0 --cluster ecs-demo-distributed-ml-training \
+aws ecs update-service --service fsdp_training_head_service \
+--desired-count 0 --cluster ecs-demo-fsdp \
 --region us-west-2 --no-paginate
 
 ```
@@ -140,3 +142,19 @@ terraform destroy
 ## Support
 
 Please open an issue for questions or unexpected behavior
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

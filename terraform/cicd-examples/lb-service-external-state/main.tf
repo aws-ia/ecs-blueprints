@@ -12,9 +12,12 @@ provider "aws" {
   region = var.region
 }
 
-# Terraform backend configuration to store state in S3
+# Terraform backend configuration to store state in S3.
+# S3 native state locking (use_lockfile) requires Terraform >= 1.11.
 terraform {
-  backend "s3" {}
+  backend "s3" {
+    use_lockfile = true
+  }
 }
 
 locals {
@@ -33,7 +36,7 @@ locals {
 
 module "service_alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "~> 8.3"
+  version = "10.5.0"
 
   name = "${local.name}-alb"
 
@@ -42,62 +45,66 @@ module "service_alb" {
   vpc_id  = data.aws_vpc.vpc.id
   subnets = data.aws_subnets.public.ids
 
-  security_group_rules = {
-    ingress_all_http = {
-      type        = "ingress"
+  enable_deletion_protection = false
+
+  security_group_ingress_rules = {
+    http = {
       from_port   = 80
       to_port     = 80
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "HTTP web traffic"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-    egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = [for s in data.aws_subnet.private_cidr : s.cidr_block]
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
-  http_tcp_listeners = [
-    {
-      port               = "80"
-      protocol           = "HTTP"
-      target_group_index = 0
-    },
-    {
-      port               = "8080"
-      protocol           = "HTTP"
-      target_group_index = 1
-    },
-  ]
+  security_group_egress_rules = {
+    service = {
+      ip_protocol = "-1"
+      cidr_ipv4   = data.aws_vpc.vpc.cidr_block
+    }
+  }
 
-  target_groups = [
-    {
+  listeners = {
+    production = {
+      port     = 80
+      protocol = "HTTP"
 
-      name             = "${local.name}-green-tg"
-      backend_protocol = "HTTP"
-      backend_port     = var.container_port
-      target_type      = "ip"
+      # The blue target group receives production traffic initially; CodeDeploy
+      # shifts the listener between blue and green on each deployment.
+      forward = {
+        target_group_key = "blue"
+      }
+    }
+  }
+
+  target_groups = {
+    blue = {
+      name              = "${local.name}-blue-tg"
+      protocol          = "HTTP"
+      port              = var.container_port
+      target_type       = "ip"
+      create_attachment = false
+
       health_check = {
         path    = "/"
         port    = var.container_port
         matcher = "200-299"
       }
-    },
-    {
-      name             = "${local.name}-blue-tg"
-      backend_protocol = "HTTP"
-      backend_port     = var.container_port
-      target_type      = "ip"
+    }
+    green = {
+      name              = "${local.name}-green-tg"
+      protocol          = "HTTP"
+      port              = var.container_port
+      target_type       = "ip"
+      create_attachment = false
+
       health_check = {
         path    = "/"
         port    = var.container_port
         matcher = "200-299"
       }
-    },
-  ]
+    }
+  }
 
   tags = local.tags
 }
@@ -117,35 +124,33 @@ resource "aws_service_discovery_service" "this" {
   }
 
   health_check_custom_config {
-    failure_threshold = 1
   }
 }
 
 module "ecs_service_definition" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  name               = local.name
-  desired_count      = 3
-  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
-  enable_autoscaling = false
+  disable_v7_default_name_description = true
+  name                                = local.name
+  desired_count                       = 3
+  cluster_arn                         = data.aws_ecs_cluster.core_infra.arn
+  enable_autoscaling                  = false
 
   subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_alb_service = {
-      type                     = "ingress"
-      from_port                = var.container_port
-      to_port                  = var.container_port
-      protocol                 = "tcp"
-      description              = "Service port"
-      source_security_group_id = module.service_alb.security_group_id
+      from_port                    = var.container_port
+      to_port                      = var.container_port
+      ip_protocol                  = "tcp"
+      description                  = "Service port"
+      referenced_security_group_id = module.service_alb.security_group_id
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -153,11 +158,15 @@ module "ecs_service_definition" {
     type = "CODE_DEPLOY"
   }
 
-  load_balancer = [{
-    container_name   = var.container_name
-    container_port   = var.container_port
-    target_group_arn = element(module.service_alb.target_group_arns, 0)
-  }]
+  load_balancer = {
+    service = {
+      container_name = var.container_name
+      container_port = var.container_port
+      # The service starts on the blue target group, matching the listener's
+      # initial forward. CodeDeploy alternates task sets between blue and green.
+      target_group_arn = module.service_alb.target_groups["blue"].arn
+    }
+  }
 
   service_registries = {
     registry_arn = aws_service_discovery_service.this.arn
@@ -169,17 +178,19 @@ module "ecs_service_definition" {
 
   # Task Definition
   create_iam_role           = false
-  create_task_exec_iam_role = true
-  #task_exec_iam_role_arn = one(data.aws_iam_roles.ecs_core_infra_exec_role.arns)
-  enable_execute_command = true
+  create_task_exec_iam_role = var.task_execution_role_arn == null
+  task_exec_iam_role_arn    = var.task_execution_role_arn
+  create_tasks_iam_role     = var.task_role_arn == null
+  tasks_iam_role_arn        = var.task_role_arn
+  enable_execute_command    = true
 
   container_definitions = {
     main_container = {
-      name                     = var.container_name
-      image                    = var.container_image
-      readonly_root_filesystem = false
+      name                   = var.container_name
+      image                  = var.container_image
+      readonlyRootFilesystem = false
 
-      port_mappings = [{
+      portMappings = [{
         protocol : "tcp",
         containerPort : var.container_port
         hostPort : var.container_port
@@ -196,7 +207,7 @@ module "ecs_service_definition" {
 # Code Deploy
 ################################################################################
 
-resource "aws_sns_topic" "deployment_notificaitons" {
+resource "aws_sns_topic" "deployment_notifications" {
   name = "${var.environment}_${local.name}_deployment_topic"
 }
 
@@ -205,40 +216,16 @@ module "deploy_dev_service" {
   name            = "deploy_${var.environment}_${local.name}"
   ecs_cluster     = data.aws_ecs_cluster.core_infra.cluster_name
   ecs_service     = local.name
-  sns_topic_arn   = aws_sns_topic.deployment_notificaitons.arn
+  sns_topic_arn   = aws_sns_topic.deployment_notifications.arn
   iam_role_name   = "deploy_${var.environment}_${local.name}"
-  create_iam_role = true
-  service_role    = aws_iam_role.codedeploy_service_role.arn
-  alb_listener    = module.service_alb.http_tcp_listener_arns[0]
-  tg_blue         = "${local.name}-green-tg"
-  tg_green        = "${local.name}-blue-tg"
-}
-
-resource "aws_iam_role" "codedeploy_service_role" {
-  name = "codedeploy-service-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Effect = "Allow",
-        Principal = {
-          Service = "codedeploy.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_codedeploy_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
-  role       = aws_iam_role.codedeploy_service_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "codedeploy_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployFullAccess"
-  role       = aws_iam_role.codedeploy_service_role.name
+  create_iam_role = var.codedeploy_service_role_arn == null
+  service_role    = var.codedeploy_service_role_arn
+  alb_listener    = module.service_alb.listeners["production"].arn
+  # tg_blue is the first target group in the CodeDeploy deployment group and
+  # must be the one the listener initially forwards production traffic to
+  # (blue, above); tg_green receives the replacement task set on deployment.
+  tg_blue  = "${local.name}-blue-tg"
+  tg_green = "${local.name}-green-tg"
 }
 
 ################################################################################
@@ -274,15 +261,6 @@ data "aws_subnets" "private" {
     name   = "tag:Name"
     values = ["core-infra-external-state-private-*"]
   }
-  tags = {
-    Environment = var.environment
-  }
-}
-
-data "aws_subnet" "private_cidr" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-
   tags = {
     Environment = var.environment
   }

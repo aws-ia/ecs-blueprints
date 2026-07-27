@@ -32,32 +32,35 @@ locals {
 
 module "ecs_cluster" {
   source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  cluster_name = local.name
+  disable_v7_default_name_description = true
+  name                                = local.name
 
-  cluster_service_connect_defaults = {
+  service_connect_defaults = {
     namespace = aws_service_discovery_private_dns_namespace.this.arn
   }
 
   # Capacity provider - autoscaling groups
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
+  capacity_providers = {
     (local.name) = {
-      auto_scaling_group_arn         = module.autoscaling.autoscaling_group_arn
-      managed_termination_protection = "ENABLED"
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn         = module.autoscaling.autoscaling_group_arn
+        managed_termination_protection = "ENABLED"
 
-      managed_scaling = {
-        maximum_scaling_step_size = 5
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 60
+        managed_scaling = {
+          maximum_scaling_step_size = 5
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 60
+        }
       }
-
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
-      }
+    }
+  }
+  default_capacity_provider_strategy = {
+    (local.name) = {
+      weight = 1
+      base   = 1
     }
   }
 
@@ -107,12 +110,12 @@ module "vpc" {
 
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
 data "aws_ssm_parameter" "ecs_optimized_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended"
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended"
 }
 
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 8.3.1"
+  version = "9.2.1"
 
   name = local.name
 
@@ -143,6 +146,23 @@ module "autoscaling" {
 
   # Required for  managed_termination_protection = "ENABLED"
   protect_from_scale_in = true
+
+  block_device_mappings = [
+    {
+      device_name = "/dev/xvda"
+      ebs = {
+        delete_on_termination = true
+        encrypted             = true
+        volume_size           = 30
+        volume_type           = "gp3"
+      }
+    }
+  ]
+
+  metadata_options = {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
 
   tags = local.tags
 }

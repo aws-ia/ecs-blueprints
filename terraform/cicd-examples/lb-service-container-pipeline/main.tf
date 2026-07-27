@@ -2,19 +2,24 @@ provider "aws" {
   region = var.region
 }
 
-################################################################################
-# Parameter Store
-################################################################################
+data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
 
-# # CodeDeploy Application Parameter
-# data "aws_ssm_parameter" "codedeploy_app" {
-#   name = "/codedeploy/app/deploy_development_ecsdemo-frontend"
-# }
+locals {
+  target_cluster_name        = "core-infra-external-state"
+  target_service_name        = "ecsdemo-frontend"
+  codedeploy_application     = "deploy_development_ecsdemo-frontend"
+  codedeploy_deployment      = "deployment-group-deploy_development_ecsdemo-frontend"
+  target_service_arn         = "arn:${data.aws_partition.current.partition}:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:service/${local.target_cluster_name}/${local.target_service_name}"
+  target_task_definition     = "arn:${data.aws_partition.current.partition}:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.target_service_name}:*"
+  codedeploy_application_arn = "arn:${data.aws_partition.current.partition}:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:application:${local.codedeploy_application}"
+  codedeploy_group_arn       = "arn:${data.aws_partition.current.partition}:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentgroup:${local.codedeploy_application}/${local.codedeploy_deployment}"
+}
 
-# # CodeDeploy Deployment Group Parameter
-# data "aws_ssm_parameter" "deployment_group" {
-#   name = "/codedeploy/deployment-group/deploy_development_ecsdemo-frontend"
-# }
+resource "aws_cloudwatch_log_group" "codebuild" {
+  name              = "/aws/codebuild/dev-lb-service-codebuild"
+  retention_in_days = 7
+}
 
 ################################################################################
 # ECR and Git Repositories
@@ -55,40 +60,106 @@ resource "aws_iam_role" "codepipeline_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
+resource "aws_iam_role_policy" "codepipeline" {
+  name = "codepipeline-app"
+  role = aws_iam_role.codepipeline_role.id
 
-resource "aws_iam_role_policy_attachment" "codecommit_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeCommitFullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "s3_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "codebuild_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "cloudwatch_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "codedeploy_ecs_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
-}
-
-
-resource "aws_iam_role_policy_attachment" "codedeploy_codepipeline_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployDeployerAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codepipeline_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ReadSourceRepository"
+        Effect = "Allow"
+        Action = [
+          "codecommit:CancelUploadArchive",
+          "codecommit:GetBranch",
+          "codecommit:GetCommit",
+          "codecommit:GetUploadArchiveStatus",
+          "codecommit:UploadArchive",
+        ]
+        Resource = aws_codecommit_repository.example_repo.arn
+      },
+      {
+        Sid    = "ReadArtifactBucket"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:GetBucketVersioning",
+          "s3:ListBucket",
+        ]
+        Resource = module.codepipeline_s3_bucket.s3_bucket_arn
+      },
+      {
+        Sid    = "ReadWriteArtifacts"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+        ]
+        Resource = "${module.codepipeline_s3_bucket.s3_bucket_arn}/*"
+      },
+      {
+        Sid    = "RunContainerBuild"
+        Effect = "Allow"
+        Action = [
+          "codebuild:BatchGetBuilds",
+          "codebuild:StartBuild",
+        ]
+        Resource = module.build_container.project_arn
+      },
+      {
+        Sid    = "DeployApplication"
+        Effect = "Allow"
+        Action = [
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetApplication",
+          "codedeploy:GetApplicationRevision",
+          "codedeploy:RegisterApplicationRevision",
+        ]
+        Resource = [
+          local.codedeploy_application_arn,
+          local.codedeploy_group_arn,
+        ]
+      },
+      {
+        Sid      = "ReadDeploymentState"
+        Effect   = "Allow"
+        Action   = ["codedeploy:GetDeployment"]
+        Resource = "arn:${data.aws_partition.current.partition}:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deployment:*"
+      },
+      {
+        Sid      = "ReadDeploymentConfiguration"
+        Effect   = "Allow"
+        Action   = ["codedeploy:GetDeploymentConfig"]
+        Resource = "arn:${data.aws_partition.current.partition}:codedeploy:${var.region}:${data.aws_caller_identity.current.account_id}:deploymentconfig:*"
+      },
+      {
+        Sid    = "RegisterDeploymentTaskDefinition"
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecs:TagResource",
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "PassDeploymentTaskRoles"
+        Effect = "Allow"
+        Action = ["iam:PassRole"]
+        Resource = [
+          var.target_task_execution_role_arn,
+          var.target_task_role_arn,
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
+      },
+    ]
+  })
 }
 
 ################################################################################
@@ -112,58 +183,74 @@ resource "aws_iam_role" "codebuild_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "codebuild_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codebuild_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_codebuild_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codebuild_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "ecr_codebuild_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess" # Attach a policy that provides necessary permissions
-  role       = aws_iam_role.codebuild_role.name
-}
-
-resource "aws_iam_policy" "codebuild_all_permissions" {
-  description = "IAM policy for AWS CodeBuild with all necessary permissions"
+resource "aws_iam_role_policy" "codebuild" {
+  name = "codebuild-container"
+  role = aws_iam_role.codebuild_role.id
 
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow",
+        Sid    = "ReadArtifactBucket"
+        Effect = "Allow"
         Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters",
-          "ssm:PutParameter",
-          "ssm:DescribeParameters",
-          "ssm:ListTagsForResource",
-          "ssm:DeleteParameter",
-          "logs:*",
-          "ec2:*",
-          "ecs:*",
-          "iam:PassRole",
-          "servicediscovery:*",
-          "s3:ListBucket",
-          "s3:GetObject",
-          "s3:PutObject",
-          "codebuild:*",
-          "codedeploy:*",
-          "s3:ListAllMyBuckets",
           "s3:GetBucketLocation",
-        ],
-        Resource = "*",
+          "s3:ListBucket",
+        ]
+        Resource = module.codepipeline_s3_bucket.s3_bucket_arn
       },
-    ],
+      {
+        Sid    = "ReadWriteArtifacts"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+        ]
+        Resource = "${module.codepipeline_s3_bucket.s3_bucket_arn}/*"
+      },
+      {
+        Sid      = "AuthorizeECR"
+        Effect   = "Allow"
+        Action   = ["ecr:GetAuthorizationToken"]
+        Resource = "*"
+      },
+      {
+        Sid    = "PushContainerImage"
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:InitiateLayerUpload",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart",
+        ]
+        Resource = aws_ecr_repository.example_repo.arn
+      },
+      {
+        Sid      = "ReadTargetService"
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeServices"]
+        Resource = local.target_service_arn
+      },
+      {
+        Sid      = "ReadTargetTaskDefinition"
+        Effect   = "Allow"
+        Action   = ["ecs:DescribeTaskDefinition"]
+        Resource = local.target_task_definition
+      },
+      {
+        Sid    = "WriteBuildLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ]
+        Resource = "${aws_cloudwatch_log_group.codebuild.arn}:*"
+      },
+    ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "codebuild_all_permissions_attachment" {
-  policy_arn = aws_iam_policy.codebuild_all_permissions.arn
-  role       = aws_iam_role.codebuild_role.name
 }
 
 ################################################################################
@@ -215,18 +302,28 @@ module "build_container" {
     ]
   }
 
-  create_iam_role = true
+  logs_config = {
+    cloudwatch_logs = {
+      group_name = aws_cloudwatch_log_group.codebuild.name
+    }
+  }
+
+  create_iam_role = false
   iam_role_name   = "dev-codebuild-${random_id.this.hex}"
   ecr_repository  = aws_ecr_repository.example_repo.arn
+
+  depends_on = [aws_iam_role_policy.codebuild]
 }
 
 ################################################################################
 # CodePipeline
 ################################################################################
 
-resource "aws_codepipeline" "example_applicaiton_pipeline" {
-  name     = "example-applicaiton-pipeline"
+resource "aws_codepipeline" "example_application_pipeline" {
+  name     = "example-application-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
+
+  depends_on = [aws_iam_role_policy.codepipeline]
 
   artifact_store {
     location = module.codepipeline_s3_bucket.s3_bucket_id
@@ -281,12 +378,12 @@ resource "aws_codepipeline" "example_applicaiton_pipeline" {
       input_artifacts = ["BuildArtifact"]
 
       configuration = {
-        ApplicationName                = "deploy_development_ecsdemo-frontend"
-        DeploymentGroupName            = "deployment-group-deploy_development_ecsdemo-frontend"
+        ApplicationName                = local.codedeploy_application
+        DeploymentGroupName            = local.codedeploy_deployment
         TaskDefinitionTemplateArtifact = "BuildArtifact"
         TaskDefinitionTemplatePath     = "development-task-definition.json"
         AppSpecTemplateArtifact        = "BuildArtifact"
-        AppSpecTemplatePath            = "development-appspec.json.json"
+        AppSpecTemplatePath            = "development-appspec.json"
       }
     }
   }
