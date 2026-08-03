@@ -7,6 +7,108 @@ ssm = boto3.client('ssm')
 
 batch_size = 10
 max_tasks_per_run = 100
+run_task_batch_size = 10
+
+
+def task_definition_family(task_definition):
+    family_and_revision = task_definition.rsplit('/', 1)[-1]
+    return family_and_revision.rsplit(':', 1)[0]
+
+
+def task_definition_without_revision(task_definition):
+    family_separator = task_definition.rfind('/')
+    revision_separator = task_definition.rfind(':')
+    revision = task_definition[revision_separator + 1:]
+
+    if revision_separator > family_separator and revision.isdigit():
+        return task_definition[:revision_separator]
+    return task_definition
+
+
+def list_tasks(cluster, family, desired_status):
+    task_arns = []
+    next_token = None
+
+    while True:
+        request = {
+            'cluster': cluster,
+            'maxResults': 100,
+            'desiredStatus': desired_status,
+            'family': family,
+        }
+        if next_token:
+            request['nextToken'] = next_token
+
+        response = ecs.list_tasks(**request)
+        task_arns.extend(response.get('taskArns', []))
+        next_token = response.get('nextToken')
+        if not next_token:
+            return task_arns
+
+
+def active_task_count(cluster, task_definition):
+    family = task_definition_family(task_definition)
+    task_arns = set()
+    for desired_status in ('RUNNING', 'PENDING'):
+        task_arns.update(list_tasks(cluster, family, desired_status))
+    return len(task_arns)
+
+
+def run_tasks(count, cluster, task_definition, container, subnet, security_group, s3_dest_prefix):
+    started_tasks = 0
+    while started_tasks < count:
+        batch_count = min(run_task_batch_size, count - started_tasks)
+        response = ecs.run_task(
+            capacityProviderStrategy=[
+                {
+                    'capacityProvider': 'FARGATE',
+                    'weight': 1,
+                    'base': 2
+                }, {
+                    'capacityProvider': 'FARGATE_SPOT',
+                    'weight': 4,
+                    'base': 0
+                }
+            ],
+            cluster=cluster,
+            taskDefinition=task_definition,
+            overrides={
+                'containerOverrides': [
+                    {
+                        'name': container,
+                        'environment': [
+                            {
+                                'name': 'PIPELINE_ECS_JOB_MODE',
+                                'value': '1'
+                            }, {
+                                'name': 'PIPELINE_S3_DEST_PREFIX',
+                                'value': s3_dest_prefix
+                            }
+                        ]
+                    }
+                ]
+            },
+            count=batch_count,
+            networkConfiguration={
+                'awsvpcConfiguration': {
+                    'subnets': [subnet],
+                    'securityGroups': [security_group],
+                    'assignPublicIp': 'DISABLED'
+                }
+            },
+            propagateTags='TASK_DEFINITION'
+        )
+        tasks = response.get('tasks', [])
+        failures = response.get('failures', [])
+        if failures or len(tasks) != batch_count:
+            raise RuntimeError(
+                "ECS started {} of {} requested tasks; failures: {}".format(
+                    len(tasks), batch_count, failures
+                )
+            )
+        started_tasks += len(tasks)
+
+    return started_tasks
 
 
 def lambda_handler(event, context):
@@ -18,6 +120,7 @@ def lambda_handler(event, context):
     TASK_DEFINITION = None
     TASK_SUBNET = None
     TASK_SECURITYGROUP = None
+    S3_DEST_PREFIX = None
     response = ssm.get_parameters(
         Names=[
             'PIPELINE_UNPROCESSED_SQS_URL',
@@ -46,8 +149,7 @@ def lambda_handler(event, context):
         if param['Name'] == 'PIPELINE_ECS_TASK_CONTAINER':
             TASK_CONTAINER = param['Value']
         if param['Name'] == 'PIPELINE_ECS_TASK_DEFINITION':
-            taskdef = param['Value']
-            TASK_DEFINITION = taskdef[:taskdef.rindex(':')]
+            TASK_DEFINITION = task_definition_without_revision(param['Value'])
         if param['Name'] == 'PIPELINE_ECS_TASK_SUBNET':
             TASK_SUBNET = param['Value']
         if param['Name'] == 'PIPELINE_ECS_TASK_SECURITYGROUP':
@@ -55,7 +157,8 @@ def lambda_handler(event, context):
         if param['Name'] == 'PIPELINE_S3_DEST_PREFIX':
             S3_DEST_PREFIX = param['Value']
     if (sqs_url and pipeline_enabled and max_tasks and
-        TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITION and TASK_SUBNET and TASK_SECURITYGROUP):
+        TASK_CLUSTER and TASK_CONTAINER and TASK_DEFINITION and TASK_SUBNET and
+        TASK_SECURITYGROUP and S3_DEST_PREFIX):
         max_tasks = int(max_tasks)
     else:
         raise Exception("Required SSM: PIPELINE_ECS_MAX_TASKS,PIPELINE_UNPROCESSED_SQS_URL,PIPELINE_ENABLED,PIPELINE_ECS_CLUSTER,"
@@ -71,53 +174,18 @@ def lambda_handler(event, context):
     print("Current SQS Queue size: " + str(sqs_queue_size))
     if sqs_queue_size == 0:
         return
-    ecs_response = ecs.list_tasks(
-        cluster=TASK_CLUSTER, maxResults=100, desiredStatus='RUNNING', family=TASK_CONTAINER)
-    current_running_tasks = len(ecs_response["taskArns"])
-    available_tasks = max_tasks - current_running_tasks
+    current_active_tasks = active_task_count(TASK_CLUSTER, TASK_DEFINITION)
+    available_tasks = max_tasks - current_active_tasks
     tasks_to_start = min([ceil(sqs_queue_size / batch_size), available_tasks, max_tasks_per_run, max_tasks])
     print("ECS Tasks to start: " + str(tasks_to_start))
     if tasks_to_start <= 0:
         return
-    run_task_response = ecs.run_task(
-        capacityProviderStrategy=[
-            {
-                'capacityProvider': 'FARGATE',
-                'weight': 1,
-                'base': 2
-            }, {
-                'capacityProvider': 'FARGATE_SPOT',
-                'weight': 4,
-                'base': 0
-            }
-        ],
-        cluster=TASK_CLUSTER,
-        taskDefinition=TASK_DEFINITION,
-        overrides={
-            'containerOverrides': [
-                {
-                    'name': TASK_CONTAINER,
-                    'environment': [
-                        {
-                            'name': 'PIPELINE_ECS_JOB_MODE',
-                            'value': '1'
-                        }, {
-                            'name': 'PIPELINE_S3_DEST_PREFIX',
-                            'value': S3_DEST_PREFIX
-                        }
-                    ]
-                }
-            ]
-        },
-        count=tasks_to_start,
-        # launchType='FARGATE',
-        networkConfiguration={
-            'awsvpcConfiguration': {
-                'subnets': [TASK_SUBNET],
-                'securityGroups': [TASK_SECURITYGROUP],
-                'assignPublicIp': 'DISABLED'
-            }
-        },
-        propagateTags='TASK_DEFINITION'
+    return run_tasks(
+        tasks_to_start,
+        TASK_CLUSTER,
+        TASK_DEFINITION,
+        TASK_CONTAINER,
+        TASK_SUBNET,
+        TASK_SECURITYGROUP,
+        S3_DEST_PREFIX
     )
-    return tasks_to_start

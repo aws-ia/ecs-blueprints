@@ -7,9 +7,14 @@
   </div>
   <div class="card-body">
     <h2><%= message %></h2>
+    <% if (error && error.status) { %>
     <h3>Status: <%= error.status %></h3>
+    <% } %>
+    <% /* Stack traces are only passed in by the error handler when running in development */ %>
+    <% if (error && error.stack) { %>
     <hr />
     <pre class="text-warning bg-dark p-3"><%= error.stack %></pre>
+    <% } %>
   </div>
 </div>
 

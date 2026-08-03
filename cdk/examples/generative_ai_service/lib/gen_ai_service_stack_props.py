@@ -22,6 +22,9 @@ class GenAIServiceStackProps(StackProps):
         namespace_arn=None,
         namespace_id=None,
         service_name=None,
+        sagemaker_endpoint_names=None,
+        aoss_collection_arn=None,
+        aoss_collection_name=None,
         task_cpu="256",
         task_memory="512",
         vpc_name=None,
@@ -39,12 +42,25 @@ class GenAIServiceStackProps(StackProps):
         self.namespace_arn = namespace_arn
         self.namespace_id = namespace_id
         self.service_name = service_name
+        self.sagemaker_endpoint_names = self._parse_list(
+            sagemaker_endpoint_names
+        )
+        self.aoss_collection_arn = aoss_collection_arn
+        self.aoss_collection_name = aoss_collection_name
         self.task_cpu = task_cpu
         self.task_memory = task_memory
         self.vpc_name = vpc_name
 
         self._vpc = None
         self._sd_namespace = None
+
+    @staticmethod
+    def _parse_list(value):
+        if not value:
+            return []
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return list(value)
 
     @property
     def vpc(self):
@@ -62,4 +78,4 @@ class GenAIServiceStackProps(StackProps):
     def sd_namespace(self, value: PrivateDnsNamespace) -> None:
         self._sd_namespace = value
         self.namespace_arn = value.namespace_arn
-        self.namespace_id = value.namespace_arn
+        self.namespace_id = value.namespace_id

@@ -103,13 +103,49 @@ def delete_message(message):
 def resize_image(image_path, resized_path):
     size = 224, 224
 
+    with Image.open(image_path) as image:
+        image.thumbnail(size)
+        image.save(resized_path)
+        logger.info("Processed %s to %s", image_path, resized_path)
+
+
+def process_message(message):
+    body = json.loads(message.body)
+    if body.get('Event') == 's3:TestEvent':
+        return
+
     try:
-        with Image.open(image_path) as image:
-            image.thumbnail(size)
-            image.save(resized_path)
-            print("Processed " + image_path + " to " + resized_path)
-    except IOError:
-        print("Cannot process image " + image_path)
+        records = body['Records']
+        if not isinstance(records, list) or not records:
+            raise ValueError
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("Message does not contain S3 object events") from error
+
+    for record in records:
+        process_s3_record(record)
+
+
+def process_s3_record(record):
+    try:
+        bucket = record['s3']['bucket']['name']
+        key = urllib.parse.unquote_plus(
+            record['s3']['object']['key'], encoding='utf-8'
+        )
+    except (KeyError, TypeError) as error:
+        raise ValueError("Message does not contain an S3 object event") from error
+
+    file_name = os.path.basename(key)
+    if not file_name:
+        raise ValueError("S3 object key does not contain a file name")
+
+    download_path = os.path.join('/tmp/ecsproc', file_name)
+    upload_path = os.path.join('/tmp/ecsproc', f'thumbnail-{file_name}')
+
+    s3_client.download_file(bucket, key, download_path)
+    resize_image(download_path, upload_path)
+    s3_client.upload_file(
+        upload_path, DEST_BUCKET, f"{S3_PREFIX}/{file_name}"
+    )
 
 
 def usage_demo():
@@ -121,9 +157,6 @@ def usage_demo():
     * Upload each resized image to the destination S3 bucket.
     * Repeat until the SQS queue is empty.
     """
-
-    def unpack_message(msg):
-        return (msg.body)
 
     print('-'*88)
     print("Welcome to the Amazon Simple Queue Service (Amazon SQS) demo!")
@@ -138,28 +171,20 @@ def usage_demo():
         received_messages = receive_messages(queue, batch_size, 4)
         sys.stdout.flush()
 
+        processed_messages = []
         for message in received_messages:
-            msg = unpack_message(message)
-            body = json.loads(msg)
-            # print(body)
-            if body.get('Event') == 's3:TestEvent':
-                delete_message(message)
+            try:
+                process_message(message)
+            except Exception:
+                logger.exception(
+                    "Failed to process message %s; leaving it on the queue",
+                    message.message_id
+                )
             else:
-                try:
-                    bucket = body['Records'][0]['s3']['bucket']['name']
-                    key = urllib.parse.unquote_plus(body['Records'][0]['s3']['object']['key'], encoding='utf-8')
-                except KeyError:
-                    print(f"Invalid {bucket} or {key}")
-                file_name = os.path.split(key)
-                download_path = '/tmp/ecsproc/' + file_name[1]
-                upload_path = '/tmp/ecsproc/thumbnail-{}'.format(file_name[1])
+                processed_messages.append(message)
 
-                s3_client.download_file(bucket, key, download_path)
-                resize_image(download_path, upload_path)
-                s3_client.upload_file(upload_path, DEST_BUCKET, S3_PREFIX + "/" + file_name[1])
-
-        if received_messages:
-            delete_messages(queue, received_messages)
+        if processed_messages:
+            delete_messages(queue, processed_messages)
         else:
             more_messages = False
     print('Done.')

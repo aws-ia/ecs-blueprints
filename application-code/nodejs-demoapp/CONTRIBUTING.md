@@ -41,7 +41,7 @@ In short, when you submit code changes, your submissions are understood to be un
 
 ## Report bugs using Github's issues
 
-This project uses GitHub issues to track public bugs. Report a bug by [opening a new issue](./issues/new/choose)
+This project uses GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/aws-ia/ecs-blueprints/issues/new/choose).
 
 ## Write bug reports with detail, background, and sample code
 

@@ -1,5 +1,7 @@
+from pathlib import Path
+
 from aws_cdk import PhysicalName, Stack
-from aws_cdk.aws_ec2 import Vpc
+from aws_cdk.aws_ec2 import Peer, Port, Vpc
 from aws_cdk.aws_ecs import Cluster, ContainerImage, LogDriver
 from aws_cdk.aws_ecr_assets import Platform
 from aws_cdk.aws_ecs_patterns import (
@@ -13,8 +15,12 @@ from aws_cdk.aws_iam import (
     ServicePrincipal
 )
 from aws_cdk.aws_logs import LogGroup, RetentionDays
+from aws_cdk.aws_opensearchserverless import CfnAccessPolicy
 from aws_cdk.aws_servicediscovery import PrivateDnsNamespace
 from generative_ai_service.lib.gen_ai_service_stack_props import GenAIServiceStackProps
+
+WEB_APP_PATH = str(Path(__file__).resolve().parents[1] / "web-app")
+
 
 class GenAIServiceStack(Stack):
     def __init__(
@@ -47,7 +53,6 @@ class GenAIServiceStack(Stack):
         self.task_role = Role(
             self,
             'GenAIServiceTaskRole',
-            role_name='GenAIServiceTaskRole',
             assumed_by=ServicePrincipal('ecs-tasks.amazonaws.com'),
             description='ECS Task role for Gen AI service'
         )
@@ -58,7 +63,10 @@ class GenAIServiceStack(Stack):
             # build container image from local folder
             # image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
             # load pre-built image from public repository
-            image=ContainerImage.from_asset("web-app", platform=Platform.LINUX_AMD64),
+            image=ContainerImage.from_asset(
+                WEB_APP_PATH,
+                platform=Platform.LINUX_AMD64,
+            ),
             environment={'region': self.stack_props.aws_region},
             container_port=self.stack_props.container_port,
             execution_role=self.ecs_task_execution_role,
@@ -79,27 +87,57 @@ class GenAIServiceStack(Stack):
             memory_limit_mib=int(self.stack_props.task_memory),
             desired_count=self.stack_props.desired_count,
             enable_execute_command=True,
-            public_load_balancer=True,
+            public_load_balancer=False,
+            open_listener=False,
             task_image_options=fargate_task_image,
             enable_ecs_managed_tags=True
+        )
+        self.fargate_service.load_balancer.connections.allow_from(
+            Peer.ipv4(self.vpc.vpc_cidr_block),
+            Port.tcp(80),
+            "Allow HTTP access from the VPC",
         )
 
         # Add ECS Task IAM Role
         self.task_role.add_to_policy(
             PolicyStatement(
                 effect=Effect.ALLOW,
-                actions = ["ssm:GetParameter"],
-                resources = ["arn:aws:ssm:*"]
+                actions=["ssm:GetParameter"],
+                resources=[
+                    f"arn:{self.partition}:ssm:{self.region}:{self.account}:parameter/{parameter_name}"
+                    for parameter_name in [
+                        "aoss_endpoint",
+                        "aoss_region",
+                        "txt2img_sm_endpoint",
+                        "txt2txt_sm_endpoint",
+                    ]
+                ],
             )
         )
 
-        self.task_role.add_to_policy(
-            PolicyStatement(
-                effect=Effect.ALLOW,
-                actions=["sagemaker:InvokeEndpoint", "aoss:*"],
-                resources=["*"]
+        if self.stack_props.sagemaker_endpoint_names:
+            self.task_role.add_to_policy(
+                PolicyStatement(
+                    effect=Effect.ALLOW,
+                    actions=["sagemaker:InvokeEndpoint"],
+                    resources=[
+                        f"arn:{self.partition}:sagemaker:{self.region}:"
+                        f"{self.account}:endpoint/{endpoint_name}"
+                        for endpoint_name in (
+                            self.stack_props.sagemaker_endpoint_names
+                        )
+                    ],
+                )
             )
-        )
+
+        if (
+            self.stack_props.aoss_collection_arn
+            and self.stack_props.aoss_collection_name
+        ):
+            self.grant_aoss_access(
+                self.stack_props.aoss_collection_arn,
+                self.stack_props.aoss_collection_name,
+            )
 
         # ECS Service Auto Scaling policy
         scalable_target = self.fargate_service.service.auto_scale_task_count(
@@ -108,6 +146,51 @@ class GenAIServiceStack(Stack):
 
         scalable_target.scale_on_cpu_utilization(
             "CpuScaling", target_utilization_percent=50
+        )
+
+    def grant_aoss_access(self, collection_arn, collection_name):
+        self.task_role.add_to_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=["aoss:APIAccessAll"],
+                resources=[collection_arn],
+            )
+        )
+
+        CfnAccessPolicy(
+            self,
+            "GenAIServiceCollectionAccess",
+            name=f"ecs-{collection_name}-access",
+            type="data",
+            policy=self.to_json_string(
+                [
+                    {
+                        "Rules": [
+                            {
+                                "ResourceType": "index",
+                                "Resource": [f"index/{collection_name}/*"],
+                                "Permission": [
+                                    "aoss:CreateIndex",
+                                    "aoss:DescribeIndex",
+                                    "aoss:ReadDocument",
+                                    "aoss:UpdateIndex",
+                                    "aoss:WriteDocument",
+                                ],
+                            },
+                            {
+                                "ResourceType": "collection",
+                                "Resource": [
+                                    f"collection/{collection_name}"
+                                ],
+                                "Permission": [
+                                    "aoss:DescribeCollectionItems"
+                                ],
+                            },
+                        ],
+                        "Principal": [self.task_role.role_arn],
+                    }
+                ]
+            ),
         )
 
     @property

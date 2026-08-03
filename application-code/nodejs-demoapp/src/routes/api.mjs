@@ -10,6 +10,37 @@ import os from 'os'
 import fs from 'fs'
 import axios from 'axios'
 
+function readContainerMemory() {
+  const layouts = [
+    {
+      usage: '/sys/fs/cgroup/memory.current',
+      limit: '/sys/fs/cgroup/memory.max',
+    },
+    {
+      usage: '/sys/fs/cgroup/memory/memory.usage_in_bytes',
+      limit: '/sys/fs/cgroup/memory/memory.limit_in_bytes',
+    },
+  ]
+  const layout = layouts.find(({ usage, limit }) => fs.existsSync(usage) && fs.existsSync(limit))
+
+  if (!layout) {
+    return null
+  }
+
+  const usage = Number.parseInt(fs.readFileSync(layout.usage, 'utf8').trim(), 10)
+  const rawLimit = fs.readFileSync(layout.limit, 'utf8').trim()
+  const limit = rawLimit === 'max' ? os.totalmem() : Number.parseInt(rawLimit, 10)
+
+  if (!Number.isFinite(usage) || !Number.isFinite(limit)) {
+    return null
+  }
+
+  return {
+    usage,
+    limit: limit > 90000000000000 ? os.totalmem() : limit,
+  }
+}
+
 // =======================================================================
 // Get weather data as JSON
 // =======================================================================
@@ -47,7 +78,7 @@ router.get('/api/monitoringdata', async function (req, res, next) {
     container: false,
     memUsedBytes: 0,
     memTotalBytes: 0,
-    memAppUsedBytes: 0,
+    memProcUsedBytes: 0,
     cpuAppPercentage: 0,
   }
 
@@ -56,16 +87,9 @@ router.get('/api/monitoringdata', async function (req, res, next) {
     // MEMORY
     if (fs.existsSync('/.dockerenv')) {
       data.container = true
-
-      // Read cgroup container memory info
-      data.memUsedBytes = parseInt(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'utf8'))
-      data.memTotalBytes = parseInt(fs.readFileSync('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'utf8'))
-
-      // limit_in_bytes might not be set, in which case it contains some HUGE number
-      // Fall back to using os.totalmem()
-      if (data.memTotalBytes > 90000000000000) {
-        data.memTotalBytes = os.totalmem()
-      }
+      const memory = readContainerMemory()
+      data.memUsedBytes = memory?.usage ?? os.totalmem() - os.freemem()
+      data.memTotalBytes = memory?.limit ?? os.totalmem()
     } else {
       data.free = os.freemem()
       data.memUsedBytes = os.totalmem() - os.freemem()

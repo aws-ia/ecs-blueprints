@@ -27,3 +27,21 @@ variable "container_name" {
   default     = "ecsdemo-frontend"
   description = "container name"
 }
+
+variable "task_execution_role_arn" {
+  type        = string
+  default     = null
+  description = "ARN of a pre-provisioned ECS task execution role. A role is created when omitted."
+}
+
+variable "task_role_arn" {
+  type        = string
+  default     = null
+  description = "ARN of a pre-provisioned ECS task role. A role is created when omitted."
+}
+
+variable "codedeploy_service_role_arn" {
+  type        = string
+  default     = null
+  description = "ARN of a pre-provisioned CodeDeploy service role. A role is created when omitted."
+}

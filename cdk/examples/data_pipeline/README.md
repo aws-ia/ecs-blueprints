@@ -18,9 +18,10 @@ This blueprint expects csv data files uploaded to an S3 source bucket, in a "__p
 
 - [AWS CDK](https://aws.amazon.com/getting-started/guides/setup-cdk/module-two/)
 - [AWS CLI version 2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- [Configure the AWS credentials](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) on your machine
+- Configure short-lived credentials as described in
+  [AWS authentication](../../../docs/authentication.md).
 - [Git](https://github.com/git-guides/install-git) if you prefer to clone the source from github. If not, you may download the code from github as a zip file and unzip on your local device.
-- AWS account with administrator role access
+- A sandbox account and a role scoped to the resources shown by `cdk diff`
 - [Docker](https://docs.docker.com/engine/install/) to build the task container
 - [Python](https://www.python.org/downloads/) 3.10+ if you use python for CDK deployments
 
@@ -93,3 +94,32 @@ The solution has following key components:
 * Lambda function that prepares the data for submission to ecs tasks.
 * Parallel ECS Fargate tasks process the csv files from source S3 bucket and log the validation output in Cloudwatch. This can be modified to output clean files to another S3 bucket or load the data into a database.
 * EventBridge event that indicates the processing result for the files in a  __prefix__
+
+## Cost
+
+This example creates billable AWS resources. Review `cdk diff`, use a sandbox account, and avoid leaving the stack deployed when it is not in use.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment.
+
+## Validation
+
+Run `cdk synth` and `cdk diff` before deployment. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Record the generated bucket name before destroying the stacks:
+
+```shell
+aws cloudformation describe-stacks \
+  --stack-name DataPipelineBlueprintStack \
+  --query "Stacks[0].Outputs[?OutputKey=='DataPipelineBucketName'].OutputValue | [0]" \
+  --output text
+```
+
+Run `cdk destroy DataPipelineBlueprintStack CoreInfraStack` from the Python example
+directory. The versioned data bucket uses `RemovalPolicy.RETAIN`, so stack deletion does
+not remove it or its objects. After confirming the data is no longer needed, open the
+bucket in the Amazon S3 console, choose **Empty**, permanently delete all object versions
+and delete markers, and then choose **Delete** to remove the bucket.

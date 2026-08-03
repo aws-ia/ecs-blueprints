@@ -61,14 +61,8 @@ if prompt := st.chat_input():
         response = client.invoke_model(modelId=model_id, body=request)
 
     except (ClientError, Exception) as e:
-        msg = f"ERROR: Can't invoke '{model_id}'. Reason: {e}"
-        st.session_state.foundation_messages.append(
-            {
-                "role": "assistant",
-                "content": msg
-            }
-        )
-        st.chat_message("assistant").write(msg)
+        st.error(f"ERROR: Can't invoke '{model_id}'. Reason: {e}")
+        st.stop()
 
     # Decode the response body.
     model_response = json.loads(response["body"].read())

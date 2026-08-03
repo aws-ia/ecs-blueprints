@@ -39,6 +39,12 @@ model_id="model-txt2img-stabilityai-stable-diffusion-v2-1-base"
 inference_instance_type="ml.g4dn.4xlarge"
 ```
 
+When `deploy_jumpstart_stack` is `False`, set `sagemaker_endpoint_names` to the
+comma-separated names of the existing endpoints the task may invoke. When
+`deploy_opensearch` is `False`, set `aoss_collection_arn` and
+`aoss_collection_name` for the existing collection. The task role grants access only to
+those resources.
+
 * To work with python CDK project, below step is needed.
 ```bash
 python3 -m venv .venv
@@ -53,11 +59,18 @@ cdk ls
 
 * Deploy the CDK templates in this repository using `cdk deploy`. While it's possible for you to deploy all three CDK stacks all at once, this guide proposes a method of deploying them in two steps. The deployment of the SageMaker environment is carried out in the first step. This step takes around 8+ minutes.
 ```bash
-cdk deploy GenAISageMakerStack --require-approval never
+cdk deploy \
+  GenAITxt2ImgSageMakerStack \
+  GenAITxt2TxtSageMakerStack \
+  --require-approval never
 ```
 In the second step, we proceed with the deployment of [core_infra](../core_infra/README.md) and Generative AI serving ECS service.
 ```bash
-cdk deploy CoreInfraStack, GenAIService --require-approval never
+cdk deploy \
+  CoreInfraStack \
+  OpenSearchVectorEngineStack \
+  GenAIService \
+  --require-approval never
 ```
 
 <p align="center">
@@ -65,14 +78,14 @@ cdk deploy CoreInfraStack, GenAIService --require-approval never
 </p>
 
 The solution has following key components:
-* **Amazon SageMaker JumpStart**: Amazon SageMaker JumpStart provides pre-trained, open-source models for a wide range of problem types to help you get started with ML. You can incrementally train and tune these models before deployment as well. In this blueprints, you can check SageMaker JumpStart infrastructure stack in [here](../other_stack/generative_ai_sagemaker_stack.py).
+* **Amazon SageMaker JumpStart**: Amazon SageMaker JumpStart provides pre-trained, open-source models for a wide range of problem types to help you get started with ML. You can incrementally train and tune these models before deployment as well. See the [text-generation SageMaker stack](./lib/txt2txt_generative_ai_stack.py) used by this blueprint.
 * **Application Load Balancer**: We are using Application Load Balancer for this service. Note the following key attributes for ALB:
-  * ALB security group - allows ingress from any IP address to port 8501(Streamlit default port) and allows all egress
-  * ALB subnet - ALB is created in a public subnet
-  * Listener - listens on port 8501 for protocol HTTP
+  * ALB security group - allows ingress on port 80 only from the VPC CIDR and allows all egress
+  * ALB subnet - ALB is internal and created in private subnets; clients need network connectivity to the VPC
+  * Listener - listens on port 80 for protocol HTTP
   * Target group: Since we are using Fargate launch type, the targe type is IP because each task in Fargate gets its own ENI and IP address. The target group has container port(80) and protocol(HTTP) where the application container will serve requests. The ALB runs health check against all registered targets(See [ALB target health check documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html) to learn more).
 * **Amazon ECS** service definition:
-  * Task security group: allows ingress for TCP from the ALB security group to the container service port (8501 for this example). And allows all egress
+  * Task security group: allows ingress from the ALB security group to the container service port and allows all egress
   * Service discovery: You can register the service to AWS Cloud Map registry. You just need to provide the `namespace` but make sure the namespace is created in the `core_infra` step
   * Tasks for this service will be deployed in private subnet
   * Service definition takes the load balancer target group created above as input
@@ -85,3 +98,15 @@ To proceed with deleting the stack, use `cdk destroy`
 ```bash
 cdk destroy --all
 ```
+
+## Cost
+
+This example creates billable AWS resources. Review `cdk diff`, use a sandbox account, and avoid leaving the stack deployed when it is not in use.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment.
+
+## Validation
+
+Run `cdk synth` and `cdk diff` before deployment. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.

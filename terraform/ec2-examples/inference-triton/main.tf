@@ -52,6 +52,10 @@ EOF
 
 systemctl enable --now amazon-cloudwatch-agent.service
 
+# Keep the ECS agent stopped while the container image is built locally so the
+# cluster cannot place tasks on this instance before the image exists.
+systemctl stop ecs
+
 cat << EOF > model.json
 {
     "model":"TinyLlama/TinyLlama-1.1B-Chat-v1.0",
@@ -84,6 +88,11 @@ EOF
 
 docker build -t ecs-blueprint-triton-inference:0.1 .
 
+# --no-block: ecs.service is ordered After=cloud-final.service, and this script
+# runs inside cloud-final, so a blocking start would deadlock. The queued start
+# job runs as soon as user data (cloud-final) finishes.
+systemctl start ecs --no-block
+
   EOT
 
   tags = {
@@ -113,8 +122,8 @@ module "alb_sg" {
       from_port   = 8000
       to_port     = 8000
       protocol    = "tcp"
-      description = "Allow public HTTP traffic"
-      cidr_blocks = "0.0.0.0/0"
+      description = "Allow HTTP traffic from the VPC"
+      cidr_blocks = data.aws_vpc.core_infra.cidr_block
     }
   ]
   egress_rules = ["all-all"]
@@ -148,23 +157,21 @@ module "autoscaling_sg" {
 ################################################################################
 # Cluster Config
 module "ecs_cluster" {
-  source       = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version      = "~> 5.0"
-  cluster_name = local.name
+  source                              = "terraform-aws-modules/ecs/aws//modules/cluster"
+  version                             = "7.5.0"
+  disable_v7_default_name_description = true
+  name                                = local.name
   # Capacity provider - autoscaling group
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
+  capacity_providers = {
     triton = {
-      auto_scaling_group_arn = module.autoscaling.autoscaling_group_arn
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 100
-      }
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn = module.autoscaling.autoscaling_group_arn
+        managed_scaling = {
+          maximum_scaling_step_size = 1
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 100
+        }
       }
     }
   }
@@ -174,7 +181,7 @@ module "ecs_cluster" {
 # Austocaling Policy
 module "autoscaling" {
   source                          = "terraform-aws-modules/autoscaling/aws"
-  version                         = "~> 6.5"
+  version                         = "9.2.1"
   name                            = "${local.name}-asg"
   image_id                        = jsondecode(data.aws_ssm_parameter.ecs_gpu_optimized_ami.value)["image_id"]
   instance_type                   = local.triton_instance_type
@@ -208,6 +215,12 @@ module "autoscaling" {
       }
     }
   ]
+
+  metadata_options = {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
   tags = local.tags
 }
 
@@ -225,23 +238,15 @@ resource "aws_ecs_task_definition" "triton" {
       image  = local.triton_container_image
       cpu    = 32768
       memory = 65536
+      # Only the HTTP endpoint (8000) is exposed and allowed by the security
+      # groups/ALB. Triton's gRPC (8001) and metrics (8002) ports are not
+      # mapped; add them here and open the SGs if you need them.
       portMappings = [
         {
           containerPort = 8000
           hostPort      = 8000
           protocol      = "tcp"
-          }, {
-          containerPort = 8001
-          hostPort      = 8001
-          protocol      = "tcp"
-          }, {
-          containerPort = 8002
-          hostPort      = 8002
-          protocol      = "tcp"
         }
-      ]
-      environment = [
-
       ]
       command = ["tritonserver",
       "--model-repository=/opt/tritonserver/model_repository"]
@@ -297,10 +302,10 @@ resource "aws_ecs_task_definition" "triton" {
 
 resource "aws_lb" "triton" {
   name               = "${local.name}-alb"
-  internal           = false
+  internal           = true
   load_balancer_type = "application"
   security_groups    = [module.alb_sg.security_group_id]
-  subnets            = data.aws_subnets.public.ids
+  subnets            = data.aws_subnets.private.ids
 
   tags = local.tags
 }
@@ -353,7 +358,7 @@ resource "aws_ecs_service" "triton" {
   }
 
   capacity_provider_strategy {
-    capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["triton"].name
+    capacity_provider = module.ecs_cluster.capacity_providers["triton"].name
     weight            = 1
     base              = 1
   }
@@ -378,12 +383,6 @@ data "aws_subnets" "private" {
   filter {
     name   = "tag:Name"
     values = ["core-infra-private-${local.region}*"]
-  }
-}
-data "aws_subnets" "public" {
-  filter {
-    name   = "tag:Name"
-    values = ["core-infra-public-${local.region}*"] # Update to match your naming convention
   }
 }
 data "aws_vpc" "core_infra" {

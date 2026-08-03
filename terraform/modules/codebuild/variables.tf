@@ -76,3 +76,9 @@ variable "s3_bucket" {
     s3_bucket_arn = string
   })
 }
+
+variable "pass_role_arns" {
+  description = "ECS task and execution role ARNs that CodeBuild may pass while registering task definitions."
+  type        = list(string)
+  default     = []
+}

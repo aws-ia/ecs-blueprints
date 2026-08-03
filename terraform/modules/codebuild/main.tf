@@ -158,13 +158,21 @@ data "aws_iam_policy_document" "this" {
     ]
     resources = ["*"]
   }
-  statement {
-    sid    = "AllowIAMPassRole"
-    effect = "Allow"
-    actions = [
-      "iam:PassRole"
-    ]
-    resources = ["*"]
+  dynamic "statement" {
+    for_each = length(var.pass_role_arns) > 0 ? [true] : []
+
+    content {
+      sid       = "AllowScopedIAMPassRole"
+      effect    = "Allow"
+      actions   = ["iam:PassRole"]
+      resources = var.pass_role_arns
+
+      condition {
+        test     = "StringEquals"
+        variable = "iam:PassedToService"
+        values   = ["ecs-tasks.${data.aws_partition.current.dns_suffix}"]
+      }
+    }
   }
   statement {
     sid    = "AllowCloudWatchActions"

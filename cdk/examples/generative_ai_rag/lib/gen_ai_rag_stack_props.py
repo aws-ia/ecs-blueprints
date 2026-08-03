@@ -22,6 +22,7 @@ class GenAIRagServiceStackProps(StackProps):
         namespace_arn=None,
         namespace_id=None,
         service_name=None,
+        knowledge_base_id=None,
         task_cpu="256",
         task_memory="512",
         vpc_name=None,
@@ -39,6 +40,7 @@ class GenAIRagServiceStackProps(StackProps):
         self.namespace_arn = namespace_arn
         self.namespace_id = namespace_id
         self.service_name = service_name
+        self.knowledge_base_id = knowledge_base_id
         self.task_cpu = task_cpu
         self.task_memory = task_memory
         self.vpc_name = vpc_name
@@ -62,4 +64,4 @@ class GenAIRagServiceStackProps(StackProps):
     def sd_namespace(self, value: PrivateDnsNamespace) -> None:
         self._sd_namespace = value
         self.namespace_arn = value.namespace_arn
-        self.namespace_id = value.namespace_arn
+        self.namespace_id = value.namespace_id

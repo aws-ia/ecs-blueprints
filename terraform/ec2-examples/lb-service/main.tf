@@ -21,11 +21,12 @@ locals {
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  name          = local.name
-  desired_count = 3
-  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
+  disable_v7_default_name_description = true
+  name                                = local.name
+  desired_count                       = 3
+  cluster_arn                         = data.aws_ecs_cluster.core_infra.arn
 
   # Task Definition
   enable_execute_command   = true
@@ -40,10 +41,10 @@ module "ecs_service" {
 
   container_definitions = {
     (local.container_name) = {
-      image                    = "public.ecr.aws/aws-containers/ecsdemo-frontend"
-      readonly_root_filesystem = false
+      image                  = "public.ecr.aws/aws-containers/ecsdemo-frontend:776fd50"
+      readonlyRootFilesystem = false
 
-      port_mappings = [
+      portMappings = [
         {
           protocol      = "tcp",
           containerPort = local.container_port
@@ -72,21 +73,19 @@ module "ecs_service" {
   }
 
   subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     alb_ingress = {
-      type                     = "ingress"
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      description              = "Service port"
-      source_security_group_id = module.alb.security_group_id
+      from_port                    = local.container_port
+      to_port                      = local.container_port
+      ip_protocol                  = "tcp"
+      description                  = "Service port"
+      referenced_security_group_id = module.alb.security_group_id
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -108,7 +107,6 @@ resource "aws_service_discovery_service" "this" {
   }
 
   health_check_custom_config {
-    failure_threshold = 1
   }
 }
 
@@ -152,9 +150,9 @@ module "alb" {
 
   target_groups = {
     ecs-task = {
-      backend_protocol = "HTTP"
-      backend_port     = local.container_port
-      target_type      = "ip"
+      protocol    = "HTTP"
+      port        = local.container_port
+      target_type = "ip"
 
       health_check = {
         enabled             = true

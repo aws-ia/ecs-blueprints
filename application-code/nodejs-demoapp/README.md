@@ -23,10 +23,6 @@ The app has several basic pages accessed from the top navigation menu, some of w
 
 ![](https://img.shields.io/github/last-commit/benc-uk/nodejs-demoapp) ![](https://img.shields.io/github/release-date/benc-uk/nodejs-demoapp) ![](https://img.shields.io/github/v/release/benc-uk/nodejs-demoapp) ![](https://img.shields.io/github/commit-activity/y/benc-uk/nodejs-demoapp)
 
-Live instance:
-
-[![](https://img.shields.io/website?label=Hosted%3A%20Kubernetes&up_message=online&url=https%3A%2F%2Fnodejs-demoapp.kube.benco.io%2F)](https://nodejs-demoapp.kube.benco.io/)
-
 # Running and Testing Locally
 
 ### Pre-reqs
@@ -87,9 +83,10 @@ docker run --rm -it -p 3000:3000 ghcr.io/benc-uk/nodejs-demoapp:latest
 
 Should you want to build your own container, use `make image` and the above variables to customise the name & tag.
 
-## Kubernetes
+## Amazon ECS
 
-The app can easily be deployed to Kubernetes using Helm, see [deploy/kubernetes/readme.md](deploy/kubernetes/readme.md) for details
+See the [ECS Blueprints repository](../../README.md) for deployment examples that use this
+application.
 
 # GitHub Actions CI/CD
 
@@ -148,7 +145,8 @@ If running in Amazon ECS, all of these values can be injected as container envir
 
 ## Deployment
 
-See [deployment folder](./deploy) for deploying into Kubernetes with Helm or into Azure with Bicep and Container Apps.
+See the [ECS Blueprints repository](../../README.md) for Terraform and CDK deployment
+patterns.
 
 # Updates
 

@@ -46,7 +46,7 @@ task_definition=service_information['services'][0]['taskDefinition']
 updated_arn = re.sub(r':\d+$', '', task_definition)
 
 # Extracting task revision numbers
-rev_number = re.findall(r'\d+$', task_definition)
+rev_number = re.findall(r':(\d+)$', task_definition)
 
 if rev_number:
     # Incrementing task revision numbers
@@ -54,6 +54,10 @@ if rev_number:
 
     # Constructing the updated ARN with the incremented numbers
     new_task_definition_arn = f'{updated_arn}:{updated_numbers}'
+else:
+    # The ARN has no revision suffix; ECS resolves an unqualified family/ARN to
+    # the latest active revision, so use it as-is.
+    new_task_definition_arn = updated_arn
 
 with open('appspec.json', 'r') as file:
     app_spec_original_json = json.load(file)
@@ -64,7 +68,7 @@ app_spec_original_json['Resources'][0]['TargetService']['Properties']['NetworkCo
 app_spec_original_json['Resources'][0]['TargetService']['Properties']['NetworkConfiguration']['awsvpcConfiguration']['securityGroups'] = security_groups
 
 # Save the modified JSON to a new file
-app_spec_file_name = f'{app_environment}-appspec.json.json'
+app_spec_file_name = f'{app_environment}-appspec.json'
 
 # Save the modified JSON to a new file
 with open(app_spec_file_name, 'w') as file:
