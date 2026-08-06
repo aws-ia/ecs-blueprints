@@ -1,6 +1,5 @@
-from distutils import util
-
 from aws_cdk import App, Environment
+from components.config import strtobool
 from components.core_infrastructure_construct import CoreInfrastructureProps
 from core_infra.lib.core_infra_stack import CoreInfraStack
 from dotenv import dotenv_values
@@ -16,14 +15,14 @@ app = App()
 
 env_config = dotenv_values(".env")
 
-deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
-deploy_jumpstart = bool(util.strtobool(env_config.pop("deploy_jumpstart_stack")))
+deploy_core = bool(strtobool(env_config["deploy_core_stack"]))
+deploy_jumpstart = bool(strtobool(env_config.pop("deploy_jumpstart_stack")))
 
 # opensearch stack
 if 'deploy_opensearch' not in env_config:
     deploy_opensearch = False
 else:
-    deploy_opensearch = bool(util.strtobool(env_config.pop("deploy_opensearch")))
+    deploy_opensearch = bool(strtobool(env_config.pop("deploy_opensearch")))
 
 if deploy_jumpstart:
     if "txt2img_model_id" in env_config:

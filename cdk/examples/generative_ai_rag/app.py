@@ -1,6 +1,5 @@
-from distutils import util
-
 from aws_cdk import App, Environment
+from components.config import strtobool
 from components.core_infrastructure_construct import CoreInfrastructureProps
 from core_infra.lib.core_infra_stack import CoreInfraStack
 from dotenv import dotenv_values
@@ -13,8 +12,8 @@ app = App()
 
 env_config = dotenv_values(".env")
 
-deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
-deploy_bedrock = bool(util.strtobool(env_config.pop("deploy_bedrock")))
+deploy_core = bool(strtobool(env_config["deploy_core_stack"]))
+deploy_bedrock = bool(strtobool(env_config.pop("deploy_bedrock")))
 
 if deploy_bedrock:
     BedrockStack(
