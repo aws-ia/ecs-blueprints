@@ -7,9 +7,9 @@
 		"test": "mocha"
 	},
 	"dependencies": {
-		"express": "^4.22.2",
+		"express": "^4.22.3",
 		"express-healthcheck": "^0.1.0",
-		"morgan": "^1.11.0"
+		"morgan": "^1.12.1"
 	},
 	"devDependencies": {
 		"mocha": "^10.8.2",

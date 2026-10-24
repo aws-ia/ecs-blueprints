@@ -79,7 +79,9 @@ terraform destroy
 
 ## Inputs
 
-No inputs.
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | AWS Region in which to deploy the example. | `string` | `"us-west-2"` | no |
 
 ## Outputs
 
