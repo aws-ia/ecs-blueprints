@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12-alpine3.21
+FROM python:3.12-alpine3.24
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 

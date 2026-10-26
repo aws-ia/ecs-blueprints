@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/node:22-bookworm-slim
+FROM node:22-bookworm-slim
 
 # set the default NODE_ENV to production
 # for dev/test build with: docker build --build-arg NODE=development .

@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm
 
 RUN useradd --create-home --uid 10001 appuser && \
     install -d -o appuser -g appuser /app

@@ -1,6 +1,6 @@
-ARG IMAGE_BASE=22-alpine3.21
+ARG IMAGE_BASE=22-alpine3.24
 
-FROM public.ecr.aws/docker/library/node:$IMAGE_BASE
+FROM node:$IMAGE_BASE
 LABEL Name="Node.js Demo App" Version=4.8.6
 LABEL org.opencontainers.image.source="https://github.com/benc-uk/nodejs-demoapp"
 ENV NODE_ENV=production
