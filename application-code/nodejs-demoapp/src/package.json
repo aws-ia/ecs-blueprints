@@ -4,7 +4,7 @@
   "version": "4.8.6",
   "author": "Ben Coleman",
   "engines": {
-    "node": ">=16.0.0"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "license": "MIT",
   "repository": {
@@ -35,9 +35,9 @@
   "devDependencies": {
     "eslint": "^8.17.0",
     "mocha": "^12.0.3",
-    "mochawesome": "^7.1.3",
-    "newman": "^6.0.0",
-    "nodemon": "^2.0.16",
+    "mochawesome": "^8.1.1",
+    "newman": "^6.2.3",
+    "nodemon": "^3.1.14",
     "prettier": "^2.7.1",
     "supertest": "^6.2.3"
   }

@@ -38,12 +38,12 @@ async function getWeather(pos) {
 
     weatherIcon.classList.add(`owi-${data.weather[0].icon}`)
     locationSpan.textContent = ` - ${data.name}`
-    addWeatherDetails(`The weather currently is: &nbsp; ${data.weather[0].description}`)
-    addWeatherDetails(`Current temperature: &nbsp; ${data.main.temp}°C`)
-    addWeatherDetails(`Temperature feels like: &nbsp; ${data.main.feels_like}°C`)
-    addWeatherDetails(`Cloud cover: &nbsp; ${data.clouds.all}%`)
-    addWeatherDetails(`Volume of rain in last hour: &nbsp; ${data.rain ? data.rain['1h'] : 0}mm`)
-    addWeatherDetails(`Wind speed: &nbsp; ${(data.wind.speed * 2.24).toFixed(1)} mph`)
+    addWeatherDetails(`The weather currently is: ${data.weather[0].description}`)
+    addWeatherDetails(`Current temperature: ${data.main.temp}°C`)
+    addWeatherDetails(`Temperature feels like: ${data.main.feels_like}°C`)
+    addWeatherDetails(`Cloud cover: ${data.clouds.all}%`)
+    addWeatherDetails(`Volume of rain in last hour: ${data.rain ? data.rain['1h'] : 0}mm`)
+    addWeatherDetails(`Wind speed: ${(data.wind.speed * 2.24).toFixed(1)} mph`)
   } catch (err) {
     error.classList.add('show')
     error.textContent = err
@@ -52,6 +52,6 @@ async function getWeather(pos) {
 
 function addWeatherDetails(details) {
   const li = document.createElement('li')
-  li.innerHTML = details
+  li.textContent = details
   weatherList.appendChild(li)
 }

@@ -1,7 +1,18 @@
 console.log = function () {}
 
+import assert from 'node:assert/strict'
 import request from 'supertest'
-import app from '../server.mjs'
+import app, { sessionCookieOptions } from '../server.mjs'
+
+describe('Session cookie security', function () {
+  it('Requires HTTPS and browser-only access', function () {
+    assert.deepEqual(sessionCookieOptions, {
+      secure: true,
+      httpOnly: true,
+      sameSite: 'lax',
+    })
+  })
+})
 
 describe('Check home page', function () {
   it('Responds with 200 & HTML', function (done) {
@@ -9,6 +20,7 @@ describe('Check home page', function () {
       .get('/')
       .expect('Content-Type', /html/)
       .expect(/Ben Coleman/)
+      .expect(/integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg\+OMhuP\+IlRH9sENBO0LRn5q\+8nbTov4\+1p"/)
       .expect(200, done)
   })
 })
@@ -44,7 +56,10 @@ describe('Weather API', function () {
     })
   } else {
     it('Responds with 500', function (done) {
-      request(app).get('/api/weather/51.40329/0.05619').expect(500, done)
+      request(app)
+        .get('/api/weather/51.40329/0.05619')
+        .expect(500)
+        .expect({ error: 'Weather data is temporarily unavailable' }, done)
     })
   }
 })

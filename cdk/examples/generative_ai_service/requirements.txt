@@ -1,9 +1,9 @@
 aws-cdk-lib==2.262.1
 constructs>=10.4.2,<11.0.0
-python-dotenv==1.1.1
+python-dotenv==1.2.4
 streamlit
 boto3
-sagemaker==2.256.0
+sagemaker==2.257.7
 sentence_transformers
 opensearch-py
 torch==2.8.0

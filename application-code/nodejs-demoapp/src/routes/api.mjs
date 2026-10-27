@@ -66,7 +66,11 @@ router.get('/api/weather/:lat/:long', async function (req, res, next) {
       throw new Error(`Current weather not available for: ${long},${lat}`)
     }
   } catch (e) {
-    return res.status(500).send(`API error fetching weather: ${e.toString()}`)
+    console.error('Weather API request failed', {
+      code: e.code,
+      status: e.response?.status,
+    })
+    return res.status(500).send({ error: 'Weather data is temporarily unavailable' })
   }
 })
 

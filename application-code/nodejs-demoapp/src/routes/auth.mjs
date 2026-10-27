@@ -24,7 +24,9 @@ let msal
 try {
   msal = (await import('@azure/msal-node')).default
 } catch (err) {
-  console.log('### ⚠️ @azure/msal-node is not installed - auth routes are disabled. Run `npm install @azure/msal-node` to enable authentication.')
+  console.log(
+    '### ⚠️ @azure/msal-node is not installed - auth routes are disabled. Run `npm install @azure/msal-node` to enable authentication.'
+  )
 }
 
 const AUTH_SCOPES = ['user.read']
@@ -79,10 +81,12 @@ router.get('/login', async (req, res) => {
     // Now redirect to the oauth2 URL we have been given
     res.redirect(authURL)
   } catch (err) {
+    console.error('MSAL login failed', err)
+    res.status(500)
     res.render('error', {
       title: 'MSAL authentication failed',
-      message: err,
-      error: err,
+      message: 'Authentication is temporarily unavailable',
+      error: {},
     })
   }
 })
@@ -109,10 +113,12 @@ router.get(`/${AUTH_CALLBACK_PATH}`, async (req, res) => {
 
     res.redirect('/account')
   } catch (err) {
+    console.error('MSAL callback failed', err)
+    res.status(500)
     res.render('error', {
       title: 'MSAL authentication failed',
-      message: err,
-      error: err,
+      message: 'Authentication is temporarily unavailable',
+      error: {},
     })
   }
 })
