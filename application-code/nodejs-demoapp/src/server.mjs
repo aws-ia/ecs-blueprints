@@ -27,16 +27,22 @@ const app = new express()
 // which is fine for this demo — set SESSION_SECRET when running more than one
 // instance or when sessions must survive restarts.
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')
+export const sessionCookieOptions = Object.freeze({
+  secure: true,
+  httpOnly: true,
+  sameSite: 'lax',
+})
 
 // View engine setup, static content & session
 const __dirname = path.resolve()
 app.set('views', [path.join(__dirname, 'views'), path.join(__dirname, 'todo')])
 app.set('view engine', 'ejs')
+app.set('trust proxy', 1)
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(
   session({
     secret: sessionSecret,
-    cookie: { secure: false },
+    cookie: sessionCookieOptions,
     resave: false,
     saveUninitialized: false,
   })

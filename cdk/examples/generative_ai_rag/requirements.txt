@@ -1,5 +1,5 @@
 aws-cdk-lib==2.262.1
-python-dotenv==1.1.1
+python-dotenv==1.2.4
 streamlit
 boto3
 cdklabs.generative-ai-cdk-constructs==0.1.318

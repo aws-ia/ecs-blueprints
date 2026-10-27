@@ -51,21 +51,36 @@ function addNewTodo() {
 function addTodoToTable(todo) {
   const table = document.querySelector('#todo-table')
   const row = document.createElement('tr')
-  row.id = `${todo._id}`
+  const todoId = String(todo._id)
+  row.id = todoId
 
-  // prettier-ignore
-  row.innerHTML = `
-    <td>
-      <i class="todo-check far ${todo.done ? 'fa-check-square' : 'fa-square'}" onclick="clickTodoDone('${todo._id}')"></i>
-    </td>
-    <td>
-      <div contentEditable="${todo.done ? 'false' : 'true'}" onkeydown="keyFilter(event)"
-        class="todo-title ${todo.done ? 'todo-done' : ''}" onfocusout="editTodo('${todo._id}', this)">
-        ${todo.title}
-      </div>
-    </td>
-    <td>${todo.type}</td>
-    <td><button class="btn btn-danger" onClick="deleteTodo('${todo._id}')"><i class="fa fa-trash fa-fw"></i></button></td>`
+  const checkCell = row.insertCell()
+  const checkIcon = document.createElement('i')
+  checkIcon.className = `todo-check far ${todo.done ? 'fa-check-square' : 'fa-square'}`
+  checkIcon.addEventListener('click', () => clickTodoDone(todoId))
+  checkCell.appendChild(checkIcon)
+
+  const titleCell = row.insertCell()
+  const title = document.createElement('div')
+  title.contentEditable = todo.done ? 'false' : 'true'
+  title.className = `todo-title ${todo.done ? 'todo-done' : ''}`
+  title.textContent = String(todo.title ?? '')
+  title.addEventListener('keydown', keyFilter)
+  title.addEventListener('focusout', () => editTodo(todoId, title))
+  titleCell.appendChild(title)
+
+  const typeCell = row.insertCell()
+  typeCell.textContent = String(todo.type ?? '')
+
+  const deleteCell = row.insertCell()
+  const deleteButton = document.createElement('button')
+  deleteButton.type = 'button'
+  deleteButton.className = 'btn btn-danger'
+  deleteButton.addEventListener('click', () => deleteTodo(todoId))
+  const deleteIcon = document.createElement('i')
+  deleteIcon.className = 'fa fa-trash fa-fw'
+  deleteButton.appendChild(deleteIcon)
+  deleteCell.appendChild(deleteButton)
 
   table.appendChild(row)
 }
@@ -79,7 +94,7 @@ function editTodo(id, e) {
   const todo = todos.find((t) => {
     return t._id == id
   })
-  todo.title = e.innerHTML
+  todo.title = e.innerText
   updateTodo(todo, () => {})
 }
 

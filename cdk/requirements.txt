@@ -1,4 +1,4 @@
 aws-cdk-lib==2.262.1
 cdklabs.generative-ai-cdk-constructs==0.1.318
 constructs>=10.4.2,<11.0.0
-python-dotenv==1.1.1
+python-dotenv==1.2.4

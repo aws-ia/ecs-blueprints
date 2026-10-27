@@ -51,6 +51,10 @@ body {
   color: #999999;
 }
 
+.todo-title {
+  white-space: pre-wrap;
+}
+
 .todo-check {
   cursor: pointer;
   font-size: 3rem;

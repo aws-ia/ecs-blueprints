@@ -113,16 +113,11 @@ router.delete('/api/todo/:id', async function (req, res, next) {
 // Helper to send standard error and track it
 //
 function sendError(res, err, code = 500) {
-  console.dir(err)
-  console.log(`### Error with API ${JSON.stringify(err)}`)
-  let statuscode = code
-  if (err.code > 1) {
-    statuscode = err.code
-  }
+  console.error('Todo API request failed', err)
 
   // TODO: Track exception via AWS X-Ray
 
-  res.status(statuscode).send(err)
+  res.status(code).send({ error: 'Todo request failed' })
   return
 }
 

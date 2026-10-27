@@ -3,6 +3,9 @@
 	"version": "1.0.0",
 	"license": "ISC",
 	"main": "server.js",
+	"engines": {
+		"node": "^20.19.0 || >=22.12.0"
+	},
 	"scripts": {
 		"test": "mocha"
 	},
@@ -12,7 +15,7 @@
 		"morgan": "^1.12.1"
 	},
 	"devDependencies": {
-		"mocha": "^10.8.2",
+		"mocha": "^12.0.3",
 		"supertest": "^6.3.3"
 	}
 }
