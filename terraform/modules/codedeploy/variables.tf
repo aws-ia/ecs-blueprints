@@ -64,6 +64,24 @@ variable "iam_role_use_name_prefix" {
 }
 
 variable "service_role" {
-  description = "Amazon Resource Name (ARN) of the AWS Identity and Access Management (IAM) role that enables AWS CodeBuild to interact with dependent AWS services on behalf of the AWS account"
+  description = "ARN of an existing CodeDeploy service role. Required when create_iam_role is false."
   type        = string
+  default     = null
+}
+
+variable "deployment_config_name" {
+  description = "CodeDeploy deployment configuration controlling how production traffic shifts to the replacement task set, e.g. CodeDeployDefault.ECSAllAtOnce, CodeDeployDefault.ECSCanary10Percent5Minutes, or CodeDeployDefault.ECSLinear10PercentEvery1Minutes."
+  type        = string
+  default     = "CodeDeployDefault.ECSAllAtOnce"
+}
+
+variable "action_on_timeout" {
+  description = "What CodeDeploy does when the deployment is ready but traffic has not been rerouted: CONTINUE_DEPLOYMENT shifts traffic immediately, STOP_DEPLOYMENT waits for a manual traffic rerouting (or times out)."
+  type        = string
+  default     = "CONTINUE_DEPLOYMENT"
+
+  validation {
+    condition     = contains(["CONTINUE_DEPLOYMENT", "STOP_DEPLOYMENT"], var.action_on_timeout)
+    error_message = "action_on_timeout must be CONTINUE_DEPLOYMENT or STOP_DEPLOYMENT."
+  }
 }

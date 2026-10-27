@@ -72,25 +72,22 @@ systemctl enable --now amazon-cloudwatch-agent.service
 
 module "ecs_cluster" {
   source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  cluster_name = local.name
+  disable_v7_default_name_description = true
+  name                                = local.name
   # Capacity provider - autoscaling groups
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
+  capacity_providers = {
     vllm_inference = {
-      auto_scaling_group_arn = module.autoscaling_vllm.autoscaling_group_arn
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn = module.autoscaling_vllm.autoscaling_group_arn
 
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 60
-      }
-
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
+        managed_scaling = {
+          maximum_scaling_step_size = 1
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 60
+        }
       }
     },
   }
@@ -102,7 +99,7 @@ module "ecs_cluster" {
 
 module "autoscaling_vllm" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.5"
+  version = "9.2.1"
 
   name          = local.name
   image_id      = jsondecode(data.aws_ssm_parameter.ecs_gpu_optimized_ami.value)["image_id"]
@@ -139,7 +136,7 @@ module "autoscaling_vllm" {
       no_device   = 0
       ebs = {
         delete_on_termination = true
-        encrypted             = false
+        encrypted             = true
         volume_size           = 200
         volume_type           = "gp3"
       }
@@ -187,12 +184,13 @@ module "autoscaling_sg" {
 
 module "ecs_service_vllm" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  name               = "vllm_inference_service"
-  desired_count      = 1
-  cluster_arn        = module.ecs_cluster.arn
-  enable_autoscaling = false
+  disable_v7_default_name_description = true
+  name                                = "vllm_inference_service"
+  desired_count                       = 1
+  cluster_arn                         = module.ecs_cluster.arn
+  enable_autoscaling                  = false
   #memory             = 127555
   memory = 184320
   cpu    = 10240
@@ -201,18 +199,15 @@ module "ecs_service_vllm" {
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
-      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["vllm_inference"].name # needs to match name of capacity provider
+      capacity_provider = module.ecs_cluster.capacity_providers["vllm_inference"].name # needs to match name of capacity provider
       weight            = 1
       base              = 1
     }
   }
 
-  task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
-  tasks_iam_role_name        = "taskRole"
-  tasks_iam_role_description = "Task role for ${local.name}"
-  tasks_iam_role_policies = {
-    ReadOnlyAccess = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-  }
+  task_exec_iam_role_arn             = aws_iam_role.task_execution_role.arn
+  tasks_iam_role_name                = "taskRole"
+  tasks_iam_role_description         = "Task role for ${local.name}"
   tasks_iam_role_statements          = []
   create_task_exec_iam_role          = false
   enable_execute_command             = true
@@ -220,13 +215,13 @@ module "ecs_service_vllm" {
   container_definitions = {
 
     vllm = {
-      readonly_root_filesystem = false
-      image                    = local.container_image
-      cpu                      = 10240
-      memory                   = 184320
-      memory_reservation       = 184320
-      command                  = ["--tensor-parallel-size", "4", "--model", "unsloth/Meta-Llama-3.1-8B-Instruct"]
-      linux_parameters = {
+      readonlyRootFilesystem = false
+      image                  = local.container_image
+      cpu                    = 10240
+      memory                 = 184320
+      memoryReservation      = 184320
+      command                = ["--tensor-parallel-size", "4", "--model", "unsloth/Meta-Llama-3.1-8B-Instruct"]
+      linuxParameters = {
         sharedMemorySize = 20480
       }
       environment = [
@@ -235,16 +230,16 @@ module "ecs_service_vllm" {
           value = "/.cache/huggingface/hub"
         }
       ]
-      resource_requirements = [{
+      resourceRequirements = [{
         type  = "GPU"
         value = 4
       }]
-      mount_points = [{
+      mountPoints = [{
         sourceVolume  = "cache_huggingface"
         containerPath = "/.cache/huggingface/hub"
         readOnly      = false
       }]
-      port_mappings = [
+      portMappings = [
         {
           protocol      = "tcp",
           containerPort = local.container_port
@@ -260,20 +255,16 @@ module "ecs_service_vllm" {
 
   network_mode = "awsvpc"
   subnet_ids   = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_private_ips = {
-      type        = "ingress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["10.0.0.0/8"]
+      ip_protocol = "-1"
+      cidr_ipv4   = data.aws_vpc.core_infra.cidr_block
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
   tags = local.tags
@@ -306,10 +297,12 @@ resource "aws_iam_role" "task_execution_role" {
       }
     ]
   })
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-  ]
   tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role" {
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_cloudwatch_dashboard" "vllm_dashboard" {
@@ -488,11 +481,17 @@ resource "null_resource" "wait_for_instance" {
   depends_on = [
     module.autoscaling_vllm
   ]
+  # Stable triggers: re-run only when the ASG or its launch template version
+  # changes, instead of on every apply (timestamp()).
   triggers = {
-    always_run = timestamp()
+    asg_name                = module.autoscaling_vllm.autoscaling_group_name
+    launch_template_version = module.autoscaling_vllm.launch_template_latest_version
   }
   provisioner "local-exec" {
     command = "${path.module}/check_instance_state.sh ${local.name}"
+    environment = {
+      AWS_REGION = local.region
+    }
   }
 }
 
@@ -508,5 +507,14 @@ data "aws_instances" "tagged_instances" {
   filter {
     name   = "instance-state-name"
     values = ["running"]
+  }
+
+  # The CloudWatch dashboard below indexes ids[0]. Fail with a clear message
+  # instead of an index-out-of-range error when GPU capacity could not launch.
+  lifecycle {
+    postcondition {
+      condition     = length(self.ids) >= 1
+      error_message = "GPU capacity not available: expected at least 1 running instance tagged Blueprint=${local.name}, found ${length(self.ids)}. Check EC2 capacity/quotas for ${local.instance_type} in ${local.region} and re-run apply."
+    }
   }
 }

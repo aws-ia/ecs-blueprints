@@ -78,4 +78,4 @@ class CICDServiceStackProps(StackProps):
     def sd_namespace(self, value: PrivateDnsNamespace) -> None:
         self._sd_namespace = value
         self.namespace_arn = value.namespace_arn
-        self.namespace_id = value.namespace_arn
+        self.namespace_id = value.namespace_id

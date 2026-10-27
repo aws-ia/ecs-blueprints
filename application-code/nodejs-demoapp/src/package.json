@@ -23,14 +23,14 @@
     "lint-fix": "eslint . --ext mjs --fix && prettier --write **/*.mjs"
   },
   "dependencies": {
-    "axios": "^1.18.0",
+    "axios": "^1.20.0",
     "cookie-parser": "^1.4.7",
-    "dotenv": "^16.0.1",
-    "ejs": "^3.1.10",
-    "express": "~4.21.2",
-    "express-session": "^1.18.2",
-    "mongodb": "^4.17.0",
-    "morgan": "~1.10.1"
+    "dotenv": "^16.6.1",
+    "ejs": "^6.0.1",
+    "express": "~4.22.3",
+    "express-session": "^1.19.0",
+    "mongodb": "^4.17.2",
+    "morgan": "~1.12.1"
   },
   "devDependencies": {
     "eslint": "^8.17.0",

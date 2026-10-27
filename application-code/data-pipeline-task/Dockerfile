@@ -1,10 +1,16 @@
-FROM public.ecr.aws/docker/library/python:3.9-slim
+FROM python:3.12-slim-bookworm
 
-WORKDIR /tmp
+RUN useradd --create-home --uid 10001 appuser && \
+    install -d -o appuser -g appuser /app
+
+WORKDIR /app
 
 COPY requirements.txt .
-RUN /usr/local/bin/python -m pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN python -m pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir -r requirements.txt
 
 COPY task.py .
-CMD ["python","task.py"]
+
+USER appuser
+
+CMD ["python", "task.py"]

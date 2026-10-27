@@ -28,3 +28,19 @@ The solution has following key components:
     * Tasks for this service will be deployed in private subnet
     * Task definition consisting of task vCPU size, task memory, and container information including the above created ECR repository URL.
     * Task definition also takes the task execution role ARN which is used by ECS agent to fetch ECR images and send logs to AWS CloudWatch on behalf of the task.
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

@@ -1,12 +1,11 @@
 provider "aws" {
-  region = local.region
+  region = var.aws_region
 }
 
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = basename(path.cwd)
-  region = "us-west-2"
+  name = basename(path.cwd)
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -23,17 +22,24 @@ locals {
 
 module "ecs_cluster" {
   source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  cluster_name = local.name
+  disable_v7_default_name_description = true
+  name                                = local.name
 
-  cluster_service_connect_defaults = {
+  service_connect_defaults = {
     namespace = aws_service_discovery_private_dns_namespace.this.arn
   }
 
-  fargate_capacity_providers = {
-    FARGATE      = {}
-    FARGATE_SPOT = {}
+  cluster_capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+  default_capacity_provider_strategy = {
+    FARGATE = {
+      weight = 1
+      base   = 1
+    }
+    FARGATE_SPOT = {
+      weight = 1
+    }
   }
 
   tags = local.tags

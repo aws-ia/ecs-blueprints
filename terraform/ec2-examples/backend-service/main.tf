@@ -21,12 +21,13 @@ locals {
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  name               = local.name
-  desired_count      = 3
-  cluster_arn        = data.aws_ecs_cluster.core_infra.arn
-  enable_autoscaling = false
+  disable_v7_default_name_description = true
+  name                                = local.name
+  desired_count                       = 3
+  cluster_arn                         = data.aws_ecs_cluster.core_infra.arn
+  enable_autoscaling                  = false
 
   # Task Definition
   enable_execute_command   = true
@@ -41,9 +42,9 @@ module "ecs_service" {
 
   container_definitions = {
     ecsdemo-nodejs = {
-      image                    = local.container_image
-      readonly_root_filesystem = false
-      port_mappings = [
+      image                  = local.container_image
+      readonlyRootFilesystem = false
+      portMappings = [
         {
           protocol      = "tcp",
           containerPort = local.container_port
@@ -57,21 +58,19 @@ module "ecs_service" {
   }
 
   subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_all_service = {
-      type        = "ingress"
       from_port   = local.container_port
       to_port     = local.container_port
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "Service port"
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_ipv4   = data.aws_vpc.vpc.cidr_block
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -93,13 +92,19 @@ resource "aws_service_discovery_service" "this" {
   }
 
   health_check_custom_config {
-    failure_threshold = 1
   }
 }
 
 ################################################################################
 # Supporting Resources
 ################################################################################
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = ["core-infra"]
+  }
+}
 
 data "aws_subnets" "private" {
   filter {

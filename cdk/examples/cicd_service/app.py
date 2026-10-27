@@ -1,4 +1,4 @@
-from distutils import util
+from components.config import find_namespace, parse_bool
 
 from aws_cdk import App, Environment
 from components.core_infrastructure_construct import CoreInfrastructureProps
@@ -11,7 +11,7 @@ app = App()
 
 env_config = dotenv_values(".env")
 
-deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
+deploy_core = parse_bool(env_config["deploy_core_stack"])
 
 cicd_stack_props = CICDServiceStackProps(**env_config)
 
@@ -33,11 +33,10 @@ if deploy_core:
     )
     cicd_stack_props.vpc = core_stack.vpc
     cicd_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
-    cicd_stack_props.sd_namespace = [
-        ns
-        for ns in core_stack.private_dns_namespaces
-        if ns.namespace_name == cicd_stack_props.namespace_name
-    ][0]
+    cicd_stack_props.sd_namespace = find_namespace(
+        core_stack.private_dns_namespaces,
+        cicd_stack_props.namespace_name,
+    )
     cicd_stack_props.ecs_task_execution_role_arn = core_stack.ecs_task_execution_role_arn
 
 cicd_service_stack = CICDServiceStack(

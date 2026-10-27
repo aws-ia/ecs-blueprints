@@ -9,9 +9,18 @@ resource "aws_codedeploy_app" "this" {
 
 resource "aws_codedeploy_deployment_group" "this" {
   app_name               = aws_codedeploy_app.this.name
-  deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
+  deployment_config_name = var.deployment_config_name
   deployment_group_name  = "deployment-group-${var.name}"
-  service_role_arn       = var.service_role
+  service_role_arn       = var.service_role != null ? var.service_role : aws_iam_role.this[0].arn
+
+  lifecycle {
+    precondition {
+      condition     = var.create_iam_role || var.service_role != null
+      error_message = "No CodeDeploy service role is available: set create_iam_role = true to have the module create one, or provide an existing role ARN via service_role."
+    }
+
+    ignore_changes = [blue_green_deployment_config]
+  }
 
   auto_rollback_configuration {
     enabled = true
@@ -20,7 +29,7 @@ resource "aws_codedeploy_deployment_group" "this" {
 
   blue_green_deployment_config {
     deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
+      action_on_timeout = var.action_on_timeout
     }
 
     terminate_blue_instances_on_deployment_success {
@@ -68,10 +77,6 @@ resource "aws_codedeploy_deployment_group" "this" {
   }
 
   tags = var.tags
-
-  lifecycle {
-    ignore_changes = [blue_green_deployment_config]
-  }
 }
 
 ################################################################################

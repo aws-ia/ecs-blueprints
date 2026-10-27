@@ -110,3 +110,15 @@ The input values ​​below can be modified in the `cdk.json` file.
 | <a name="output_public_subnets"></a> [public\_subnets](#output\_public\_subnets) | A list of public subnets |
 | <a name="output_sd_namespaces"></a> [sd\_namespaces](#output\_sd\_namespaces) | Service discovery namespaces already available |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | The ID of the VPC |
+
+## Cost
+
+This example creates billable AWS resources. Review `cdk diff`, use a sandbox account, and avoid leaving the stack deployed when it is not in use.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment.
+
+## Validation
+
+Run `cdk synth` and `cdk diff` before deployment. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.

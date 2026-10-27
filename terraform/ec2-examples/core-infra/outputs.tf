@@ -47,7 +47,7 @@ output "cluster_capacity_providers" {
 
 output "cluster_autoscaling_capacity_providers" {
   description = "Map of capacity providers created and their attributes"
-  value       = module.ecs_cluster.autoscaling_capacity_providers
+  value       = module.ecs_cluster.capacity_providers
 }
 
 output "service_discovery_namespaces" {

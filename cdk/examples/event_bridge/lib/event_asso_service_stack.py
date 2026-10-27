@@ -1,5 +1,5 @@
 from aws_cdk import PhysicalName, Stack, Duration
-from aws_cdk.aws_ec2 import Vpc, Port
+from aws_cdk.aws_ec2 import Vpc, Peer, Port, SubnetSelection, SubnetType
 from aws_cdk.aws_ecs import CloudMapOptions, Cluster, ContainerImage, LogDriver, TaskDefinition, Compatibility, FargateService, PortMapping
 from aws_cdk.aws_iam import Role, PolicyStatement
 from aws_cdk.aws_logs import LogGroup, RetentionDays, MetricFilter, FilterPattern
@@ -64,7 +64,10 @@ class EventAssociatedServiceStack(Stack):
             metric_namespace="ECS/TaskMetric",
             metric_name="ecs-task-fail-count",
             filter_name="fail-count-filter",
-            filter_pattern=FilterPattern.string_value("$.detail.stopCode","=","TaskFailedToStart"),
+            filter_pattern=FilterPattern.any(
+                FilterPattern.string_value("$.detail.stopCode", "=", "TaskFailedToStart"),
+                FilterPattern.string_value("$.detail.stopCode", "=", "EssentialContainerExited"),
+            ),
             metric_value="1",
             default_value=0,
             unit= Unit.COUNT
@@ -130,7 +133,8 @@ class EventAssociatedServiceStack(Stack):
             service_name=self.stack_props.service_name,
             task_definition=fargate_task_def,
             enable_execute_command=True,
-            assign_public_ip=True,
+            assign_public_ip=False,
+            vpc_subnets=SubnetSelection(subnet_type=SubnetType.PRIVATE_WITH_EGRESS),
             cluster=self.ecs_cluster,
             desired_count=self.stack_props.desired_count,
             cloud_map_options=CloudMapOptions(
@@ -140,7 +144,10 @@ class EventAssociatedServiceStack(Stack):
             enable_ecs_managed_tags=True
         )
 
-        self.fargate_service.connections.allow_from_any_ipv4(Port.tcp(self.stack_props.container_port))
+        self.fargate_service.connections.allow_from(
+            Peer.ipv4(self.vpc.vpc_cidr_block),
+            Port.tcp(self.stack_props.container_port),
+        )
 
 
     @property

@@ -13,9 +13,12 @@ provider "aws" {
   region = var.region
 }
 
-# Terraform backend configuration to store state in S3
+# Terraform backend configuration to store state in S3.
+# S3 native state locking (use_lockfile) requires Terraform >= 1.11.
 terraform {
-  backend "s3" {}
+  backend "s3" {
+    use_lockfile = true
+  }
 }
 
 data "aws_availability_zones" "available" {}
@@ -39,17 +42,24 @@ locals {
 
 module "ecs" {
   source  = "terraform-aws-modules/ecs/aws"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  cluster_name = local.name
+  disable_v7_default_name_description = true
+  cluster_name                        = local.name
 
   cluster_service_connect_defaults = {
     namespace = aws_service_discovery_private_dns_namespace.this.arn
   }
 
-  fargate_capacity_providers = {
-    FARGATE      = {}
-    FARGATE_SPOT = {}
+  cluster_capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+  default_capacity_provider_strategy = {
+    FARGATE = {
+      weight = 1
+      base   = 1
+    }
+    FARGATE_SPOT = {
+      weight = 1
+    }
   }
 
   # Shared task execution role

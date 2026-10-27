@@ -35,7 +35,10 @@ terraform apply
 
 ## Example: training the resnet model with the FashionMNIST dataset
 
-Once the cluster is deployed, you can connect to the EC2 instance running the head container using SSM, and open a bash shell in the container from there. This is only for demonstration purposes - Using notebooks with [SageMaker](https://aws.amazon.com/sagemaker/) or [Cloud 9](https://aws.amazon.com/cloud9/) provide a better user experience to run training jobs in python than using the bash shell
+Once the cluster is deployed, connect to the EC2 instance running the head container
+through Systems Manager and open a shell in the container. This is intended for
+demonstration; for interactive Python training, use a local Jupyter environment or
+[SageMaker Studio](https://aws.amazon.com/sagemaker/studio/).
 
 1. Connect to the instance
 ```bash
@@ -173,3 +176,19 @@ terraform destroy
 ## Support
 
 Please open an issue for questions or unexpected behavior
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

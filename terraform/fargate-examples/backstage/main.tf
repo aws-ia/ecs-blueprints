@@ -1,12 +1,12 @@
 provider "aws" {
-  region = "us-west-2"
+  region = var.aws_region
 }
 
 data "aws_caller_identity" "current" {}
 
 locals {
   name   = "unicorn-ui"
-  region = "us-west-2"
+  region = var.aws_region
 
   container_port = 7007 # Container port is specific to this app example
   container_name = "unicorn-ui"
@@ -23,23 +23,24 @@ locals {
 
 module "ecs_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.6"
+  version = "7.5.0"
 
-  name          = local.name
-  desired_count = 3
-  cluster_arn   = data.aws_ecs_cluster.core_infra.arn
+  disable_v7_default_name_description = true
+  name                                = local.name
+  desired_count                       = 3
+  cluster_arn                         = data.aws_ecs_cluster.core_infra.arn
 
   # Task Definition
   enable_execute_command = true
   task_exec_secret_arns = [
     data.aws_secretsmanager_secret.github_token.arn,
-    data.aws_secretsmanager_secret.postgresdb_master_password.arn,
+    module.aurora_postgresdb.cluster_master_user_secret[0].secret_arn,
   ]
 
   container_definitions = {
     (local.container_name) = {
-      image                    = module.ecr.repository_url
-      readonly_root_filesystem = false
+      image                  = module.ecr.repository_url
+      readonlyRootFilesystem = false
 
       environment = [
         { name = "BASE_URL", value = "http://${module.alb.dns_name}" },
@@ -50,10 +51,10 @@ module "ecs_service" {
 
       secrets = [
         { name = "GITHUB_TOKEN", valueFrom = data.aws_secretsmanager_secret.github_token.arn },
-        { name = "POSTGRES_PASSWORD", valueFrom = data.aws_secretsmanager_secret.postgresdb_master_password.arn }
+        { name = "POSTGRES_PASSWORD", valueFrom = "${module.aurora_postgresdb.cluster_master_user_secret[0].secret_arn}:password::" }
       ]
 
-      port_mappings = [
+      portMappings = [
         {
           protocol      = "tcp",
           containerPort = local.container_port
@@ -75,21 +76,19 @@ module "ecs_service" {
   }
 
   subnet_ids = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_alb_service = {
-      type                     = "ingress"
-      from_port                = local.container_port
-      to_port                  = local.container_port
-      protocol                 = "tcp"
-      description              = "Service port"
-      source_security_group_id = module.alb.security_group_id
+      from_port                    = local.container_port
+      to_port                      = local.container_port
+      ip_protocol                  = "tcp"
+      description                  = "Service port"
+      referenced_security_group_id = module.alb.security_group_id
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
 
@@ -111,7 +110,6 @@ resource "aws_service_discovery_service" "this" {
   }
 
   health_check_custom_config {
-    failure_threshold = 1
   }
 }
 
@@ -155,9 +153,9 @@ module "alb" {
 
   target_groups = {
     ecs-task = {
-      backend_protocol = "HTTP"
-      backend_port     = local.container_port
-      target_type      = "ip"
+      protocol    = "HTTP"
+      port        = local.container_port
+      target_type = "ip"
 
       health_check = {
         enabled             = true
@@ -190,7 +188,7 @@ module "aurora_postgresdb" {
 
   name        = "backstage-db"
   engine      = "aurora-postgresql"
-  engine_mode = "serverless"
+  engine_mode = "provisioned"
 
   vpc_id                 = data.aws_vpc.vpc.id
   subnets                = data.aws_subnets.private.ids
@@ -206,14 +204,18 @@ module "aurora_postgresdb" {
   apply_immediately   = true
   monitoring_interval = 60
 
-  scaling_configuration = {
+  serverlessv2_scaling_configuration = {
     min_capacity = 2
     max_capacity = 2
   }
 
-  manage_master_user_password = false
+  instance_class = "db.serverless"
+  instances = {
+    one = {}
+  }
+
+  manage_master_user_password = true
   master_username             = "postgres"
-  master_password             = data.aws_secretsmanager_secret_version.postgresdb_master_password.secret_string
   port                        = 5432
 
   tags = local.tags
@@ -225,14 +227,6 @@ module "aurora_postgresdb" {
 
 resource "random_id" "this" {
   byte_length = "2"
-}
-
-data "aws_secretsmanager_secret" "postgresdb_master_password" {
-  name = var.postgresdb_master_password
-}
-
-data "aws_secretsmanager_secret_version" "postgresdb_master_password" {
-  secret_id = data.aws_secretsmanager_secret.postgresdb_master_password.id
 }
 
 data "aws_secretsmanager_secret" "github_token" {

@@ -5,7 +5,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 locals {
-  name                       = "ecs-demo-distributed-ml-training"
+  name                       = "ecs-demo-fsdp"
   region                     = "us-west-2"
   instance_type_workers      = "g5.12xlarge"
   instance_type_head         = "g5.12xlarge"
@@ -57,12 +57,21 @@ EOF
 
 systemctl enable --now amazon-cloudwatch-agent.service
 
+# Keep the ECS agent stopped while the container image is built locally so the
+# cluster cannot place tasks on this instance before the image exists.
+systemctl stop ecs
+
 cat << 'EOF' > Dockerfile
 FROM docker.io/rayproject/ray:2.38.0-py310-gpu
 RUN pip install datasets evaluate "transformers==4.29.2" "torch>=1.12.0" "lightning==2.0.2"
 EOF
 
 docker build -t ecs-blueprint-fsdp-ray:2.38.0-py310-gpu .
+
+# --no-block: ecs.service is ordered After=cloud-final.service, and this script
+# runs inside cloud-final, so a blocking start would deadlock. The queued start
+# job runs as soon as user data (cloud-final) finishes.
+systemctl start ecs --no-block
 
   EOT
 
@@ -111,12 +120,21 @@ EOF
 
 systemctl enable --now amazon-cloudwatch-agent.service
 
+# Keep the ECS agent stopped while the container image is built locally so the
+# cluster cannot place tasks on this instance before the image exists.
+systemctl stop ecs
+
 cat << 'EOF' > Dockerfile
 FROM docker.io/rayproject/ray:2.38.0-py310-gpu
 RUN pip install datasets evaluate "transformers==4.29.2" "torch>=1.12.0" "lightning==2.0.2"
 EOF
 
 docker build -t ecs-blueprint-fsdp-ray:2.38.0-py310-gpu .
+
+# --no-block: ecs.service is ordered After=cloud-final.service, and this script
+# runs inside cloud-final, so a blocking start would deadlock. The queued start
+# job runs as soon as user data (cloud-final) finishes.
+systemctl start ecs --no-block
 
   EOT
 
@@ -132,35 +150,35 @@ docker build -t ecs-blueprint-fsdp-ray:2.38.0-py310-gpu .
 
 module "ecs_cluster" {
   source  = "terraform-aws-modules/ecs/aws//modules/cluster"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  cluster_name = local.name
+  disable_v7_default_name_description = true
+  name                                = local.name
   # Capacity provider - autoscaling groups
-  default_capacity_provider_use_fargate = false
-  autoscaling_capacity_providers = {
-    distributed_ml_training_head = {
-      auto_scaling_group_arn = module.autoscaling_head.autoscaling_group_arn
+  # Capacity provider names are unique per account/region, so they are
+  # prefixed with fsdp to avoid colliding with distributed-ml-training.
+  capacity_providers = {
+    fsdp_training_head = {
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn = module.autoscaling_head.autoscaling_group_arn
 
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        status                    = "ENABLED"
-        target_capacity           = 60
-      }
-
-      default_capacity_provider_strategy = {
-        weight = 1
-        base   = 1
+        managed_scaling = {
+          maximum_scaling_step_size = 1
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 60
+        }
       }
     },
-    distributed_ml_training_workers = {
-      auto_scaling_group_arn = module.autoscaling_workers.autoscaling_group_arn
-      managed_scaling = {
-        maximum_scaling_step_size = 1
-        minimum_scaling_step_size = 1
-        _scaling_step_size        = 1
-        status                    = "ENABLED"
-        target_capacity           = 60
+    fsdp_training_workers = {
+      auto_scaling_group_provider = {
+        auto_scaling_group_arn = module.autoscaling_workers.autoscaling_group_arn
+        managed_scaling = {
+          maximum_scaling_step_size = 1
+          minimum_scaling_step_size = 1
+          status                    = "ENABLED"
+          target_capacity           = 60
+        }
       }
     },
   }
@@ -171,7 +189,10 @@ module "ecs_cluster" {
 }
 
 resource "aws_service_discovery_service" "this" {
-  name = "head"
+  # Unique per example: other blueprints (distributed-ml-training,
+  # distributed-inference-ray-serve) register their own head service in the
+  # shared default.core-infra.local namespace.
+  name = "head-fsdp"
   dns_config {
     namespace_id = data.aws_service_discovery_dns_namespace.core_infra.id
     dns_records {
@@ -184,13 +205,13 @@ resource "aws_service_discovery_service" "this" {
 
 
 resource "aws_placement_group" "workers" {
-  name     = "ml-training"
+  name     = "${local.name}-ml-training"
   strategy = "cluster"
 }
 
 module "autoscaling_head" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 8.3.1"
+  version = "9.2.1"
 
   name = "${local.name}-head"
 
@@ -228,7 +249,7 @@ module "autoscaling_head" {
       no_device   = 0
       ebs = {
         delete_on_termination = true
-        encrypted             = false
+        encrypted             = true
         volume_size           = 200
         volume_type           = "gp3"
       }
@@ -244,7 +265,7 @@ module "autoscaling_head" {
 
 module "autoscaling_workers" {
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 8.3.1"
+  version = "9.2.1"
 
   name = "${local.name}-workers"
 
@@ -282,7 +303,7 @@ module "autoscaling_workers" {
       no_device   = 0
       ebs = {
         delete_on_termination = true
-        encrypted             = false
+        encrypted             = true
         volume_size           = 200
         volume_type           = "gp3"
       }
@@ -331,19 +352,20 @@ module "autoscaling_sg" {
 
 module "ecs_service_head" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
-  version = "~> 5.0"
+  version = "7.5.0"
 
-  name               = "distributed_ml_training_head_service"
-  desired_count      = 1
-  cluster_arn        = module.ecs_cluster.arn
-  enable_autoscaling = false
-  memory             = 184320
-  cpu                = 10240
+  disable_v7_default_name_description = true
+  name                                = "fsdp_training_head_service"
+  desired_count                       = 1
+  cluster_arn                         = module.ecs_cluster.arn
+  enable_autoscaling                  = false
+  memory                              = 184320
+  cpu                                 = 10240
 
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
-      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["distributed_ml_training_head"].name # needs to match name of capacity provider
+      capacity_provider = module.ecs_cluster.capacity_providers["fsdp_training_head"].name # needs to match name of capacity provider
       weight            = 1
       base              = 1
     }
@@ -352,9 +374,6 @@ module "ecs_service_head" {
   task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
   tasks_iam_role_name        = "taskRole"
   tasks_iam_role_description = "Task role for ${local.name}"
-  tasks_iam_role_policies = {
-    ReadOnlyAccess = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-  }
   tasks_iam_role_statements = [
     {
       effect  = "Allow",
@@ -371,22 +390,22 @@ module "ecs_service_head" {
   container_definitions = {
 
     ray_head = {
-      readonly_root_filesystem = false
-      image                    = local.ray_head_container_image
-      user                     = 1000
-      cpu                      = 10240
-      memory                   = 184320
-      memory_reservation       = 184320
-      command                  = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --head --dashboard-host=0.0.0.0 --metrics-export-port=8080 --num-cpus=10 --num-gpus=4 --memory=193273528320 --block"]
-      linux_parameters = {
+      readonlyRootFilesystem = false
+      image                  = local.ray_head_container_image
+      user                   = 1000
+      cpu                    = 10240
+      memory                 = 184320
+      memoryReservation      = 184320
+      command                = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --head --dashboard-host=0.0.0.0 --metrics-export-port=8080 --num-cpus=10 --num-gpus=4 --memory=193273528320 --block"]
+      linuxParameters = {
         sharedMemorySize   = 20480
         initProcessEnabled = true
       }
-      resource_requirements = [{
+      resourceRequirements = [{
         type  = "GPU"
         value = 4
       }]
-      mount_points = [{
+      mountPoints = [{
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
@@ -395,7 +414,7 @@ module "ecs_service_head" {
   }
   volume = {
     "tmp" = {
-      dockerVolumeConfiguration = {
+      docker_volume_configuration = {
         scope         = "shared",
         driver        = "local",
         autoprovision = true
@@ -409,20 +428,16 @@ module "ecs_service_head" {
 
   network_mode = "awsvpc"
   subnet_ids   = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_private_ips = {
-      type        = "ingress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["10.0.0.0/8"]
+      ip_protocol = "-1"
+      cidr_ipv4   = data.aws_vpc.core_infra.cidr_block
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
   tags = local.tags
@@ -430,21 +445,22 @@ module "ecs_service_head" {
 
 
 module "ecs_service_workers" {
-  source                             = "terraform-aws-modules/ecs/aws//modules/service"
-  version                            = "~> 5.0"
-  deployment_minimum_healthy_percent = 0
-  name                               = "distributed_ml_training_worker_service"
-  desired_count                      = 1
-  cluster_arn                        = module.ecs_cluster.arn
-  enable_autoscaling                 = false
-  memory                             = 184320
-  cpu                                = 10240
+  source                              = "terraform-aws-modules/ecs/aws//modules/service"
+  version                             = "7.5.0"
+  disable_v7_default_name_description = true
+  deployment_minimum_healthy_percent  = 0
+  name                                = "fsdp_training_worker_service"
+  desired_count                       = 1
+  cluster_arn                         = module.ecs_cluster.arn
+  enable_autoscaling                  = false
+  memory                              = 184320
+  cpu                                 = 10240
   # Task Definition
 
   requires_compatibilities = ["EC2"]
   capacity_provider_strategy = {
     default = {
-      capacity_provider = module.ecs_cluster.autoscaling_capacity_providers["distributed_ml_training_workers"].name # needs to match name of capacity provider
+      capacity_provider = module.ecs_cluster.capacity_providers["fsdp_training_workers"].name # needs to match name of capacity provider
       weight            = 1
       base              = 1
     }
@@ -453,9 +469,6 @@ module "ecs_service_workers" {
   task_exec_iam_role_arn     = aws_iam_role.task_execution_role.arn
   tasks_iam_role_name        = "taskRole"
   tasks_iam_role_description = "Task role for ${local.name}"
-  tasks_iam_role_policies = {
-    ReadOnlyAccess = "arn:aws:iam::aws:policy/ReadOnlyAccess"
-  }
   tasks_iam_role_statements = [
     {
       actions = ["s3:*"]
@@ -471,21 +484,21 @@ module "ecs_service_workers" {
 
   container_definitions = {
     ray_work = {
-      readonly_root_filesystem = false
-      image                    = local.ray_worker_container_image
-      user                     = 1000
-      cpu                      = 10240
-      memory                   = 184320
-      memory_reservation       = 184320
-      command                  = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --block --num-cpus=10 --num-gpus=4 --memory=193273528320 --address=head.default.core-infra.local:6379 --metrics-export-port=8080"]
-      linux_parameters = {
+      readonlyRootFilesystem = false
+      image                  = local.ray_worker_container_image
+      user                   = 1000
+      cpu                    = 10240
+      memory                 = 184320
+      memoryReservation      = 184320
+      command                = ["/bin/bash", "-lc", "--", "ulimit -n 65536; ray start --block --num-cpus=10 --num-gpus=4 --memory=193273528320 --address=${aws_service_discovery_service.this.name}.${data.aws_service_discovery_dns_namespace.core_infra.name}:6379 --metrics-export-port=8080"]
+      linuxParameters = {
         sharedMemorySize = 10240
       }
-      resource_requirements = [{
+      resourceRequirements = [{
         type  = "GPU"
         value = 4
       }]
-      mount_points = [{
+      mountPoints = [{
         sourceVolume  = "tmp"
         containerPath = "/tmp"
         readOnly      = false
@@ -494,7 +507,7 @@ module "ecs_service_workers" {
   }
   volume = {
     "tmp" = {
-      dockerVolumeConfiguration = {
+      docker_volume_configuration = {
         scope         = "shared",
         driver        = "local",
         autoprovision = true
@@ -504,20 +517,16 @@ module "ecs_service_workers" {
 
   network_mode = "awsvpc"
   subnet_ids   = data.aws_subnets.private.ids
-  security_group_rules = {
+  security_group_ingress_rules = {
     ingress_private_ips = {
-      type        = "ingress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["10.0.0.0/8"]
+      ip_protocol = "-1"
+      cidr_ipv4   = data.aws_vpc.core_infra.cidr_block
     }
+  }
+  security_group_egress_rules = {
     egress_all = {
-      type        = "egress"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
     }
   }
   tags = local.tags
@@ -528,8 +537,11 @@ resource "random_id" "bucket_name" {
 }
 
 resource "aws_s3_bucket" "results" {
-  bucket        = "dt-results-${random_id.bucket_name.hex}"
-  tags          = local.tags
+  bucket = "dt-results-${random_id.bucket_name.hex}"
+  tags   = local.tags
+  # force_destroy is intentional for this demo so `terraform destroy` removes
+  # the bucket even when it still contains training results. Remove it if you
+  # need to retain outputs.
   force_destroy = true
 }
 
@@ -543,8 +555,21 @@ resource "aws_s3_bucket_public_access_block" "results_access_block" {
   restrict_public_buckets = true
 }
 
+# Explicit SSE-S3 encryption at rest for training results
+resource "aws_s3_bucket_server_side_encryption_configuration" "results" {
+  bucket = aws_s3_bucket.results.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_iam_role" "task_execution_role" {
-  name = "distributed_training_task_execution_role"
+  # Unique per example: distributed-ml-training creates
+  # "distributed_training_task_execution_role" in the same account.
+  name = "fsdp_training_task_execution_role"
 
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
@@ -569,10 +594,12 @@ resource "aws_iam_role" "task_execution_role" {
       }
     ]
   })
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-  ]
   tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role" {
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 ################################################################################
@@ -582,7 +609,7 @@ resource "aws_iam_role" "task_execution_role" {
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI.html#ecs-optimized-ami-linux
 
 data "aws_ssm_parameter" "ecs_gpu_optimized_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2/gpu/recommended"
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/gpu/recommended"
 }
 
 data "aws_subnets" "private" {
@@ -608,11 +635,19 @@ resource "null_resource" "wait_for_instance" {
   depends_on = [
     module.autoscaling_head
   ]
+  # Stable triggers: re-run only when the ASGs or their launch template
+  # versions change, instead of on every apply (timestamp()).
   triggers = {
-    always_run = timestamp()
+    head_asg_name                  = module.autoscaling_head.autoscaling_group_name
+    head_launch_template_version   = module.autoscaling_head.launch_template_latest_version
+    worker_asg_name                = module.autoscaling_workers.autoscaling_group_name
+    worker_launch_template_version = module.autoscaling_workers.launch_template_latest_version
   }
   provisioner "local-exec" {
-    command = "${path.module}/check_instance_state.sh ecs-demo-distributed-ml-training"
+    command = "${path.module}/check_instance_state.sh ${local.name}"
+    environment = {
+      AWS_REGION = local.region
+    }
   }
 }
 
@@ -622,12 +657,19 @@ data "aws_instances" "tagged_instances" {
   ]
   filter {
     name   = "tag:Blueprint"
-    values = ["ecs-demo-distributed-ml-training"]
+    values = [local.name]
   }
 
   filter {
     name   = "instance-state-name"
     values = ["running"]
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = length(self.ids) >= 2
+      error_message = "GPU capacity not available: expected at least 2 running instances tagged Blueprint=${local.name} (head + worker), found ${length(self.ids)}. Check EC2 capacity/quotas for ${local.instance_type_workers} in ${local.region} and re-run apply."
+    }
   }
 }
 

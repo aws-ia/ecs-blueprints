@@ -1,109 +1,122 @@
-from typing import List
-import boto3
-import os
-import json
 import csv
-from datetime import datetime
+import json
+import os
 from datetime import date
-from botocore.exceptions import ClientError
 
-def convert_to_json_string(t):
-    return f'{t}'
+import boto3
 
-now = date.today()
-processing_date = now.strftime("%m-%d-%Y")
 
-s3Client = boto3.client('s3')
-workflowClient = boto3.client('stepfunctions')
-try:
-    s3BucketName = os.environ["S3_BUCKET"]
-    foldername = os.environ['FOLDERNAME']
-    task_token = os.environ['TASK_TOKEN']
-    print (os.environ['FILES'])
-    file_list = json.loads(os.environ['FILES'])
-    for file in file_list:
-        print ("Reading file : " + file)
-        fileName = os.path.basename(file)
-        clean_data = open(fileName+'_processed.csv', "w")
-        faulty_data = open(fileName+'_errors.csv', "w")
-        fileObj = s3Client.get_object(Bucket=s3BucketName, Key=file)
-        data = fileObj['Body'].read().decode('utf-8').splitlines(True)
-        reader = csv.reader(data)
-        writerClean = csv.writer(clean_data, delimiter='\t', quotechar='"', quoting=csv.QUOTE_ALL)
-        writerFaulty = csv.writer(faulty_data, delimiter='\t', quotechar='"', quoting=csv.QUOTE_ALL)
-        rownum = 0
-        number_of_clean_rows = 0
-        number_of_faulty_rows = 0
-        number_of_columns = 0
-        for row in reader:
-            if (rownum == 0):
-                number_of_columns = len(row)
-                print("Number of columns in file = ", len(row))
-            if (len(row) == number_of_columns):
-                writerClean.writerow(row)
-                number_of_clean_rows = number_of_clean_rows+1
-            else:
-                writerFaulty.writerow(row)
-                number_of_faulty_rows = number_of_faulty_rows+1
-            rownum = rownum + 1
+s3_client = boto3.client("s3")
+workflow_client = boto3.client("stepfunctions")
 
-        print ("Number of rows in file : " + str(rownum))
-        print ("Number of clean rows : " , str(number_of_clean_rows))
-        print ("Number of faulty rows : ", str(number_of_faulty_rows))
-        # print("Getting attributes of " + file)
-        # response = s3Client.get_object_attributes(
-        #     Bucket=s3BucketName,
-        #     Key=file,
-        #     ObjectAttributes=['ETag', 'Checksum', 'StorageClass', 'ObjectSize']
-        # )
-        # print(response)
-        # FUTURE: Upload clean and faulty files to another bucket or folder
 
+def convert_to_json_string(value):
+    return f"{value}"
+
+
+def send_failure(task_token, folder_name, file_list, error):
     result = {
-        "id": foldername,
-        "files": file_list,
-        "result": "pass",
-        "processing_date": processing_date,
-        "code": "O"
-    }
-    print(result)
-    if task_token:
-        print("Sending success output to Step Functions with task token " + task_token)
-        workflowClient.send_task_success(
-            taskToken=task_token,
-            output=json.dumps(result, default=convert_to_json_string)
-        )
-# Catch any boto3 client exception
-except ClientError as e:
-    result = {
-        'error': e.__dict__,
-        "id": foldername,
-        "files": file_list,
-        "processing_date": processing_date
-    }
-    print(result)
-    if task_token:
-        print("Sending failure output to Step Functions with task token " + task_token)
-        workflowClient.send_task_failure(
-            taskToken=task_token,
-            error="DataProcessingException",
-            cause=json.dumps(result, default=convert_to_json_string)
-        )
-# Catch any generic python exception
-except Exception as e:
-    result = {
-        "id": foldername,
+        "id": folder_name,
         "files": file_list,
         "result": "fail",
-        "error": e,
+        "error": str(error),
+        "error_type": type(error).__name__,
         "cause": "processing error",
-        "processing_date": processing_date
+        "processing_date": date.today().strftime("%m-%d-%Y"),
     }
     print(result)
-    if task_token:
-        print("Sending failure output to Step Functions with task token " + task_token)
-        workflowClient.send_task_failure(
-            taskToken=task_token,
-            error="DataProcessingException",
-            cause=json.dumps(result, default=convert_to_json_string)
+
+    if not task_token:
+        return
+
+    print("Sending failure output to Step Functions")
+    workflow_client.send_task_failure(
+        taskToken=task_token,
+        error="DataProcessingException",
+        cause=json.dumps(result, default=convert_to_json_string),
+    )
+
+
+def process_file(bucket_name, key):
+    print(f"Reading file: {key}")
+    file_name = os.path.basename(key)
+    file_object = s3_client.get_object(Bucket=bucket_name, Key=key)
+    data = file_object["Body"].read().decode("utf-8").splitlines(True)
+
+    with open(
+        f"{file_name}_processed.csv", "w", newline="", encoding="utf-8"
+    ) as clean_data, open(
+        f"{file_name}_errors.csv", "w", newline="", encoding="utf-8"
+    ) as faulty_data:
+        reader = csv.reader(data)
+        clean_writer = csv.writer(
+            clean_data, delimiter="\t", quotechar='"', quoting=csv.QUOTE_ALL
         )
+        faulty_writer = csv.writer(
+            faulty_data, delimiter="\t", quotechar='"', quoting=csv.QUOTE_ALL
+        )
+
+        row_count = 0
+        clean_row_count = 0
+        faulty_row_count = 0
+        column_count = 0
+        for row in reader:
+            if row_count == 0:
+                column_count = len(row)
+                print("Number of columns in file =", column_count)
+            if len(row) == column_count:
+                clean_writer.writerow(row)
+                clean_row_count += 1
+            else:
+                faulty_writer.writerow(row)
+                faulty_row_count += 1
+            row_count += 1
+
+    print("Number of rows in file:", row_count)
+    print("Number of clean rows:", clean_row_count)
+    print("Number of faulty rows:", faulty_row_count)
+
+
+def main():
+    task_token = os.environ.get("TASK_TOKEN", "")
+    folder_name = os.environ.get("FOLDERNAME")
+    file_list = []
+
+    try:
+        bucket_name = os.environ["S3_BUCKET"]
+        folder_name = os.environ["FOLDERNAME"]
+        task_token = os.environ["TASK_TOKEN"]
+        file_list = json.loads(os.environ["FILES"])
+        if not isinstance(file_list, list):
+            raise ValueError("FILES must contain a JSON array")
+
+        for key in file_list:
+            process_file(bucket_name, key)
+
+        result = {
+            "id": folder_name,
+            "files": file_list,
+            "result": "pass",
+            "processing_date": date.today().strftime("%m-%d-%Y"),
+            "code": "O",
+        }
+        print(result)
+        workflow_client.send_task_success(
+            taskToken=task_token,
+            output=json.dumps(result, default=convert_to_json_string),
+        )
+    except Exception as error:
+        try:
+            send_failure(
+                task_token,
+                folder_name,
+                file_list,
+                error,
+            )
+        except Exception as callback_error:
+            print(f"Unable to report task failure: {callback_error}")
+        raise
+
+
+if __name__ == "__main__":
+    main()

@@ -17,8 +17,16 @@ import express from 'express'
 import path from 'path'
 import logger from 'morgan'
 import session from 'express-session'
+import crypto from 'crypto'
 
 const app = new express()
+
+// Session signing secret: read from SESSION_SECRET, otherwise generate a
+// per-instance random secret at startup. A random secret invalidates all
+// sessions on restart and breaks session affinity across multiple instances,
+// which is fine for this demo — set SESSION_SECRET when running more than one
+// instance or when sessions must survive restarts.
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')
 
 // View engine setup, static content & session
 const __dirname = path.resolve()
@@ -27,7 +35,7 @@ app.set('view engine', 'ejs')
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(
   session({
-    secret: 'Shape without form, shade without colour',
+    secret: sessionSecret,
     cookie: { secure: false },
     resave: false,
     saveUninitialized: false,
@@ -53,7 +61,7 @@ app.use('/', apiRoutes)
 
 // Initialize authentication only when configured
 // TODO: Update to use Cognito
-if (process.env.OGNITO_IDENTITY_POOL_ID) {
+if (process.env.COGNITO_IDENTITY_POOL_ID) {
   // app.use('/', authRoutes)
 }
 
@@ -85,12 +93,14 @@ app.use(function (err, req, res, next) {
 
   // AWS X-Ray: Collect error here
 
-  // Render the error page
+  // Render the error page. Only expose error details (stack trace) in
+  // development — leaking internals to clients is an information disclosure
+  // risk in production.
   res.status(err.status || 500)
   res.render('error', {
     title: 'Error',
     message: err.message,
-    error: err,
+    error: req.app.get('env') === 'development' ? err : {},
   })
 })
 

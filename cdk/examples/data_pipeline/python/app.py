@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import aws_cdk as cdk
-from distutils import util
+from components.config import parse_bool
 
 from components.core_infrastructure_construct import CoreInfrastructureProps
 from core_infra.lib.core_infra_stack import CoreInfraStack
@@ -15,7 +15,7 @@ app = cdk.App()
 
 env_config = dotenv_values(".env")
 
-deploy_core = bool(util.strtobool(env_config["deploy_core_stack"]))
+deploy_core = parse_bool(env_config["deploy_core_stack"])
 
 data_pipeline_stack_props = DataPipelineStackProps(**env_config)
 
@@ -36,6 +36,7 @@ if deploy_core:
         ),
     )
     data_pipeline_stack_props.ecs_cluster_name = core_stack.ecs_cluster_name
+    data_pipeline_stack_props.vpc = core_stack.vpc
 
 data_pipeline_stack = DataPipelineStack(app,
     "DataPipelineBlueprintStack",

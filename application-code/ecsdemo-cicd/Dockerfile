@@ -1,13 +1,14 @@
-FROM public.ecr.aws/docker/library/alpine:latest
+FROM python:3.12-alpine3.24
 
-RUN apk add --no-cache python3 py3-pip && \
-python3 -m venv /path/to/venv
-
-ENV PATH="/path/to/venv/bin:$PATH"
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
-ADD . /app
 
-RUN pip3 install -r requirements.txt
+COPY requirements.txt .
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
-CMD ["python3", "app.py"]
+COPY --chown=appuser:appgroup . .
+
+USER appuser
+
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "2", "--access-logfile", "-", "app:app"]

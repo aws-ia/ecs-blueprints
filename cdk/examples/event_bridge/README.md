@@ -119,3 +119,19 @@ To proceed with deleting the stack, use `cdk destroy`
 ```bash
 cdk destroy
 ```
+
+## Cost
+
+This example creates billable AWS resources. Review `cdk diff`, use a sandbox account, and avoid leaving the stack deployed when it is not in use.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment.
+
+## Validation
+
+Run `cdk synth` and `cdk diff` before deployment. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `cdk destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

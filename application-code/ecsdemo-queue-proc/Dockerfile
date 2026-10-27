@@ -1,11 +1,17 @@
-FROM public.ecr.aws/docker/library/python:alpine3.16
+FROM python:3.12-alpine3.24
 
-RUN mkdir -p /tmp/ecsproc/
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    mkdir -p /tmp/ecsproc && \
+    chown appuser:appgroup /tmp/ecsproc
 
 WORKDIR /app
 
-COPY ./src /app
+COPY ./src/requirements.txt .
+RUN python -m pip install --no-cache-dir --prefer-binary -r requirements.txt
 
-RUN pip install -r requirements.txt
+COPY --chown=appuser:appgroup ./src /app
 
-ENTRYPOINT python app.py
+USER appuser
+
+ENTRYPOINT ["python", "app.py"]

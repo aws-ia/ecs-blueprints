@@ -8,8 +8,8 @@ This solution blueprint creates the infrastructure to run models in multiple nue
 *	ECS Cluster
 *	ECS Service Definition:
     *	vLLM Service: Configured to serve requests for GenAI inference using vLLM.
-*	Application Load Balancer:
-    *	Exposes the vLLM inference service endpoint to clients.
+*	Internal Application Load Balancer:
+    *	Exposes the vLLM inference service only to clients with VPC connectivity.
     *	Configured with a target group and health checks for monitoring service availability.
 *	CloudWatch Logs:
     *	Logs from ECS tasks and services are collected in CloudWatch for monitoring and debugging.
@@ -35,7 +35,7 @@ terraform apply
 
 ## Example: Running GenAI Inference
 
-Once the cluster and services are deployed, you can use the load balancer DNS name (output during the deployment) to send requests to the vLLM service.
+Once the cluster and services are deployed, run the request from a host with network access to the VPC and use the internal load balancer DNS name output by Terraform.
 
 
 Send a POST request to the vLLM OpenAI-compatible endpoint:
@@ -131,3 +131,19 @@ terraform destroy
 ## Support
 
 Please open an issue for questions or unexpected behavior
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

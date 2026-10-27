@@ -7,6 +7,8 @@ This solution blueprint creates the infrastructure to run models in multiple GPU
 * ECS service:
   * vllm service: runs an inference task of unsloth/Meta-Llama-3.1-8B-Instruct in 4 GPUs within a g5.12xlarge instance
 
+> **Model provenance:** this example downloads model weights from `unsloth/Meta-Llama-3.1-8B-Instruct`, an unofficial Hugging Face mirror of Meta's Llama 3.1 8B Instruct weights. The mirror is used because the official `meta-llama/Llama-3.1-8B-Instruct` repository is gated and requires accepting Meta's license. To use the official repository instead, request access on Hugging Face, change the `--model` argument in `main.tf` to `meta-llama/Llama-3.1-8B-Instruct`, and pass a Hugging Face token to the container (for example an `HF_TOKEN` environment variable sourced from AWS Secrets Manager via the task definition `secrets` block - avoid hardcoding the token in Terraform).
+
 ## Deployment
 
 1. Deploy core-infra resources
@@ -145,3 +147,19 @@ terraform destroy
 ## Support
 
 Please open an issue for questions or unexpected behavior
+
+## Cost
+
+This example creates billable AWS resources. Review `terraform plan`, use a sandbox account, and avoid leaving the stack deployed when it is not in use. NAT gateways, load balancers, databases, and accelerated instances are common cost drivers where present.
+
+## Quotas
+
+Confirm that the target Region has sufficient ECS task, elastic network interface, load balancer, and any workload-specific service quotas before deployment. EC2 examples also require available capacity for the selected instance types.
+
+## Validation
+
+Run `terraform fmt -check`, `terraform init`, `terraform validate`, and review `terraform plan` before applying. After deployment, use the functional check described above and inspect ECS service events and CloudWatch Logs for task failures.
+
+## Cleanup
+
+Run `terraform destroy` from this example directory. Remove retained data or separately created secrets only after confirming they are no longer needed.

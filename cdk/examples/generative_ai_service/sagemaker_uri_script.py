@@ -1,7 +1,4 @@
-import sagemaker
 from sagemaker import image_uris, model_uris
-
-session = sagemaker.Session()
 
 def get_sagemaker_uris(model_id, instance_type, region_name):
 

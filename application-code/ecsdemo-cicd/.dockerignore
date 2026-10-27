@@ -1,0 +1,7 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+.env
+development-*.json

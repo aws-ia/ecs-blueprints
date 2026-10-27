@@ -27,7 +27,7 @@ export function createDataPipelineStateMachine(
         itemsPath: "$.results",
         maxConcurrency: 0,
         resultPath: "$.results"
-      }).iterator(broadcastTask);
+      }).itemProcessor(broadcastTask);
 
       const broadcastErrorStatus = new tasks.EventBridgePutEvents(stack, 'Broadcast error status', {
         entries: [{
@@ -46,7 +46,7 @@ export function createDataPipelineStateMachine(
         },
         {
           name: "FOLDERNAME",
-          value: "$.foldername"
+          value: sfn.JsonPath.stringAt("$.foldername")
         },
         {
           name: "FILES",
@@ -64,9 +64,7 @@ export function createDataPipelineStateMachine(
         launchTarget: new tasks.EcsFargateLaunchTarget({
           platformVersion: ecs.FargatePlatformVersion.LATEST
         }),
-        integrationPattern: sfn.IntegrationPattern.RUN_JOB,
-        // Comment above line and uncomment below line if you would like to send output back to the workflow
-        /*integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,*/
+        integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
         containerOverrides: [containerOverride],
         assignPublicIp: false,
         taskTimeout: sfn.Timeout.duration(cdk.Duration.minutes(20))
@@ -101,7 +99,7 @@ export function createDataPipelineStateMachine(
         errors: ["States.ALL"],
         resultPath: "$"
       })
-      .iterator(processDataTask)
+      .itemProcessor(processDataTask)
       .next(broadcastStatus);
 
       /******* Fail state when lambda unable to prepare data ******/
@@ -135,7 +133,7 @@ export function createDataPipelineStateMachine(
       .next(processReadinessCheck)
 
       return new sfn.StateMachine(stack, "DataPipelineStateMachine", {
-        definition,
+        definitionBody: sfn.DefinitionBody.fromChainable(definition),
         timeout: cdk.Duration.minutes(30)
       });
     }

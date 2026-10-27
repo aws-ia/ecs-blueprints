@@ -6,6 +6,9 @@ env:
 phases:
   install:
     commands:
+      # Installs the latest Terraform from the HashiCorp apt repository. The
+      # external-state roots use S3 native state locking (use_lockfile), which
+      # requires Terraform >= 1.11.
       - wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
       - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
       - sudo apt update && sudo apt install terraform

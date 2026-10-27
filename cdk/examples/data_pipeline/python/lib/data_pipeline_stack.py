@@ -8,7 +8,6 @@ import aws_cdk.aws_ecr as ecr
 import aws_cdk.aws_events as events
 import aws_cdk.aws_events_targets as targets
 import aws_cdk.aws_lambda as functions
-from lib.data_pipeline_roles import add_step_function_role_policies, add_ecs_task_execution_role_policies, add_ecs_task_role_policies, add_lambda_execution_role_policies
 from lib.data_pipeline_workflow import create_data_pipeline_statemachine
 from lib.data_pipeline_stack_props import DataPipelineStackProps
 
@@ -25,7 +24,7 @@ class DataPipelineStack(cdk.Stack):
 
         self.stack_props = data_pipeline_stack_props
         self._ecs_cluster = None
-        self._vpc = None
+        self._vpc = data_pipeline_stack_props.vpc
 
         log_group = logs.LogGroup(
             self,
@@ -55,32 +54,11 @@ class DataPipelineStack(cdk.Stack):
             assumed_by=iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
             description='Role assumed by task to perform its function'
         )
-        sfn_execution_role = iam.Role(
-            self,
-            'DataPipelineSfnExecutionRole',
-            assumed_by= iam.ServicePrincipal('states.amazonaws.com'),
-            description='StepFunction execution role'
-        )
-        sfn_execution_role.add_to_principal_policy(
-            iam.PolicyStatement(actions=['iam:PassRole'],
-                            effect=iam.Effect.ALLOW,
-                            resources=[
-                                ecs_task_execution_role.role_arn,
-                                ecs_task_role.role_arn
-                            ],
-                            conditions={
-                                'StringLike': {'iam:PassedToService': 'ecs-tasks.amazonaws.com'}
-                            }))
         lambda_execution_role = iam.Role(self, 'DataPipelineLambdaExecutionRole',
                                        assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
                                        description='Lambda execution role',
                                        managed_policies=[
-                                           iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaVPCAccessExecutionRole'),
                                            iam.ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')])
-        sfn_execution_role = add_step_function_role_policies(sfn_execution_role, data_pipeline_stack_props)
-        ecs_task_execution_role = add_ecs_task_execution_role_policies(ecs_task_execution_role, data_pipeline_stack_props)
-        ecs_task_role = add_ecs_task_role_policies(ecs_task_role, data_pipeline_stack_props)
-        lambda_execution_role = add_lambda_execution_role_policies(lambda_execution_role)
 
         # Specify the container to use
         ecr_repository = ecr.Repository.from_repository_attributes(
@@ -88,6 +66,21 @@ class DataPipelineStack(cdk.Stack):
           'DataPipelineEcrRepository',
           repository_name= 'process-data',
           repository_arn= 'arn:aws:ecr:'+data_pipeline_stack_props.aws_region+':'+data_pipeline_stack_props.account_number+':repository/process-data'
+        )
+
+        ecr_repository.grant_pull(ecs_task_execution_role)
+        log_group.grant_write(ecs_task_execution_role)
+        bucket.grant_read(lambda_execution_role)
+        bucket.grant_read(ecs_task_role)
+        ecs_task_role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=[
+                    'states:SendTaskFailure',
+                    'states:SendTaskHeartbeat',
+                    'states:SendTaskSuccess',
+                ],
+                resources=['*'],
+            )
         )
 
         # Create the fargate task definition

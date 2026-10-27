@@ -158,6 +158,10 @@ module "codepipeline_ci_cd" {
 
   create_iam_role = true
   iam_role_name   = "${module.ecs_service.name}-pipeline-${random_id.this.hex}"
+  pass_role_arns = [
+    module.ecs_service.task_exec_iam_role_arn,
+    module.ecs_service.tasks_iam_role_arn,
+  ]
 
   tags = local.tags
 }
